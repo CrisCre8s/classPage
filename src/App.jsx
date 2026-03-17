@@ -58,7 +58,9 @@ export default function App() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            alert("Danke für dein Feedback!");
+            alert(
+              "Dein Feedback wurde in den Papierkorb verschoben. Danke! 🗑️",
+            );
           }}
         >
           <label
