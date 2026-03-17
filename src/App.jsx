@@ -12,6 +12,7 @@ export default function App() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          marginTop: "2rem",
           marginBottom: "2rem",
         }}
       >
@@ -37,14 +38,13 @@ export default function App() {
       <section
         className="feedback-section"
         style={{
-          margin: "2rem 0",
           padding: "1.5rem",
           background: "linear-gradient(120deg, #232323 0%, #181818 100%)",
           borderRadius: "16px",
           boxShadow: "0 2px 12px rgba(255,179,0,0.06)",
           border: "1px solid #ffb30033",
           width: "80%",
-          margin: "0 auto",
+          margin: "2rem auto",
         }}
       >
         <h2
