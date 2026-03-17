@@ -1,6 +1,6 @@
-# H-FI24-1B \u2013 Klassen-Hub
+# H-FI24-1B Klassen-Hub
 
-Minimalistischer Dark-Mode Link-Hub mit integriertem AI-Chatbot f\u00fcr die Berufsschulklasse **H-FI24-1B** an der SBSZ Hermsdorf.
+Minimalistischer Dark-Mode Link-Hub mit integriertem AI-Chatbot für die Berufsschulklasse **H-FI24-1B** an der SBSZ Hermsdorf.
 
 ## Tech-Stack
 
