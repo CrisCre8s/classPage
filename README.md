@@ -1,89 +1,80 @@
-# 🎓 H-FI24-1B Klassen-Hub
+# H-FI24-1B \u2013 Klassen-Hub
 
-Minimalistischer Dark-Mode Hub fuer die Berufsschulklasse H-FI24-1B am SBSZ Hermsdorf.
+Minimalistischer Dark-Mode Link-Hub mit integriertem AI-Chatbot f\u00fcr die Berufsschulklasse **H-FI24-1B** an der SBSZ Hermsdorf.
 
-## Features
+## Tech-Stack
 
-- **Link-Hub** – Schnellzugriff auf Stundenplan, Klassenbuch & Schulwebseite
-- **KI-Chatbot** – Integrierter Assistent ueber Vercel AI Gateway
+| Bereich | Technologie |
+|---------|------------|
+| Frontend | React 18 + Vite |
+| Styling | Vanilla CSS (Custom Properties) |
+| AI-Backend | Vercel Serverless Function + AI Gateway |
+| Icons | Ionicons v4 |
+| Hosting | Vercel |
 
----
-
-## Projektstruktur
-
-```
-klassen-hub/
-├── public/
-│   ├── index.html      ← Hauptseite
-│   ├── style.css       ← Stylesheet (Dark Mode)
-│   └── main.js         ← Link-Rendering & Chat-Logik
-├── api/
-│   └── chat.js         ← Serverless Function (AI Gateway)
-├── .env.local          ← Lokale Umgebungsvariablen
-├── vercel.json         ← Vercel-Konfiguration
-└── README.md
-```
-
----
-
-## Setup-Anleitung
-
-### 1. GitHub-Repository anlegen
+## Schnellstart (lokal)
 
 ```bash
-# Neues Verzeichnis oder dieses Repo klonen
-git init klassen-hub
+# 1. Repository klonen
+git clone https://github.com/DEIN-USER/klassen-hub.git
 cd klassen-hub
 
-# Dateien hinzufuegen
-git add .
-git commit -m "Initial commit: Klassen-Hub"
+# 2. Abhaengigkeiten installieren
+npm install
 
-# Remote hinzufuegen (eigenes GitHub-Repo erstellen)
-git remote add origin https://github.com/DEIN-USERNAME/klassen-hub.git
+# 3. Umgebungsvariable anlegen
+cp .env.local.example .env.local
+# AI_GATEWAY_KEY eintragen
+
+# 4. Entwicklungsserver starten
+npm run dev
+```
+
+> **Hinweis:** Der Chatbot funktioniert lokal nur mit `npx vercel dev`, da die Serverless Function unter /api/chat ueber die Vercel CLI bereitgestellt wird.
+
+## Deployment auf Vercel
+
+### 1. GitHub-Repository erstellen
+
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/DEIN-USER/klassen-hub.git
 git push -u origin main
 ```
 
-### 2. Vercel-Projekt erstellen
+### 2. Vercel-Projekt anlegen
 
-1. Gehe zu [vercel.com](https://vercel.com) und melde dich an.
-2. Klicke auf **"Add New Project"**.
-3. Importiere dein GitHub-Repository **klassen-hub**.
-4. Vercel erkennt die `vercel.json` automatisch.
-5. Klicke auf **Deploy**.
+1. [vercel.com/new](https://vercel.com/new) aufrufen
+2. GitHub-Repository importieren
+3. Framework Preset: **Vite**
+4. **Deploy** klicken
 
-### 3. Umgebungsvariablen setzen
+### 3. Umgebungsvariable setzen
 
-1. Oeffne dein Projekt auf Vercel.
-2. Gehe zu **Settings → Environment Variables**.
-3. Erstelle eine neue Variable:
-   - **Name:** `AI_GATEWAY_KEY`
-   - **Value:** Dein Vercel AI Gateway API-Key
-   - **Environments:** Production, Preview, Development
-4. Klicke auf **Save**.
-5. Starte ein neues Deployment (oder pushe einen neuen Commit).
+1. Vercel Dashboard > Projekt > **Settings** > **Environment Variables**
+2. `AI_GATEWAY_KEY` = dein Vercel AI Gateway API-Key
+3. **Redeploy** ausloesen
 
-### 4. Vercel AI Gateway konfigurieren
+### 4. AI Gateway aktivieren
 
-1. Gehe in deinem Vercel-Dashboard zu **AI → Gateway**.
-2. Erstelle einen neuen Gateway und verbinde einen AI-Provider (z. B. OpenAI).
-3. Kopiere den API-Key und trage ihn als `AI_GATEWAY_KEY` ein (siehe Schritt 3).
+1. Vercel Dashboard > **AI** > **Gateway**
+2. Gateway erstellen, API-Key generieren
+3. Key als `AI_GATEWAY_KEY` eintragen (Schritt 3)
 
----
+## Links bearbeiten
 
-## Links anpassen
-
-Oeffne `public/main.js` und ergaenze das `links`-Array:
+`src/data/links.js` oeffnen und neues Objekt anfuegen:
 
 ```js
-const links = [
-  { title: "Neuer Link", url: "https://...", desc: "Beschreibung", emoji: "🔗" },
-  // ...
-];
+{
+  title: "Mein neuer Link",
+  url: "https://example.com",
+  description: "Kurze Beschreibung",
+  icon: "globe-outline"
+}
 ```
 
----
-
-## Lizenz
-
-MIT
+Icons: [Ionicons v4](https://ionic.io/ionicons/v4)
