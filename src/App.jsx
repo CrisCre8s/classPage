@@ -45,6 +45,8 @@ export default function App() {
           border: "1px solid #ffb30033",
           width: "80%",
           margin: "2rem auto",
+          transition:
+            "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s",
         }}
       >
         <h2
