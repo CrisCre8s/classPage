@@ -43,6 +43,8 @@ export default function App() {
           borderRadius: "16px",
           boxShadow: "0 2px 12px rgba(255,179,0,0.06)",
           border: "1px solid #ffb30033",
+          width: "80%",
+          margin: "0 auto",
         }}
       >
         <h2

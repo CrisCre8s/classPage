@@ -108,6 +108,8 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  width: 80%;
+  margin: 0 auto;
 }
 @media (min-width: 600px) {
   .link-grid {
