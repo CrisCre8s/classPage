@@ -22,11 +22,17 @@ const links = [
     icon: "school-outline",
   },
   {
+    title: "Azubi-Portal",
+    url: "https://azubi.gfi.ihk.de/",
+    description: "Azubi-Infocenter und AzubiCard prüfen",
+    icon: "person-outline",
+  },
+  {
     globusHub: true,
     icon: "pricetags-outline",
     name: "Globus Hermsdorf",
     beschreibung:
-      "Alle aktuellen Rabatte, Angebote und Aktionen im Globus Hermsdorf. Finde die besten Preise und spare bei deinem Einkauf!",
+      "Hier findest du alle wichtigen Informationen rund um deinen Globus. Von Rabatten bis zu Spritpreisen.",
     url: "https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/",
     oeffnungszeiten: [
       { tag: "Montag - Samstag", zeit: "08:00 - 20:00 Uhr" },

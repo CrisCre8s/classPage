@@ -300,7 +300,7 @@ body {
   padding: 2rem 1.5rem;
   margin: 2.5rem 0;
   color: var(--text);
-  border: 1px solid transparent;
+  border: 1px solid #ffb30033;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,

@@ -20,8 +20,9 @@ export default function App() {
           src="https://sbsz-hsp.de/images/hdf2.jpg"
           alt="SBSZ Hermsdorf"
           style={{
+            border: "1px solid #ffb30033",
             borderRadius: "16px",
-            boxShadow: "0 4px 24px rgba(79,140,255,0.08)",
+            boxShadow: "0 2px 12px rgba(255,179,0,0.06)",
             maxWidth: "100%",
             height: "auto",
             display: "block",
@@ -29,7 +30,7 @@ export default function App() {
         />
       </div>
       <header className="header">
-        <h1>H-FI24-1B – Klassen-Hub</h1>
+        <h1>SBSZ-HSP-SCHUL-HUB</h1>
         <p>Dein zentraler Anlaufpunkt für alle wichtigen Schullinks</p>
       </header>
       <LinkGrid />
@@ -51,7 +52,7 @@ export default function App() {
       >
         <h2
           style={{
-            color: "#ffb300",
+            color: "#f5f5f5",
             fontSize: "1.2rem",
             marginBottom: "0.7rem",
             textShadow: "0 2px 8px #ff980033",
