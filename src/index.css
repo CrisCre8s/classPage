@@ -38,10 +38,10 @@ body {
 .it-shape {
   position: absolute;
   z-index: 0;
-  opacity: 0.10;
+  opacity: 0.1;
   border-radius: 24px;
   background: linear-gradient(135deg, #ffb300 0%, #ff9800 100%);
-  box-shadow: 0 8px 32px rgba(79,140,255,0.12);
+  box-shadow: 0 8px 32px rgba(79, 140, 255, 0.12);
   animation: floatShape 6s ease-in-out infinite alternate;
 }
 .it-shape.shape1 {
@@ -67,9 +67,12 @@ body {
   animation-delay: 1s;
 }
 @keyframes floatShape {
-  0% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(20px) scale(1.05); }
-}
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(20px) scale(1.05);
+  }
 }
 
 /* Layout */
@@ -81,7 +84,9 @@ body {
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  transition: background 0.4s, box-shadow 0.4s;
+  transition:
+    background 0.4s,
+    box-shadow 0.4s;
   border: 1px solid #ffb30033;
 }
 .header {
@@ -159,6 +164,9 @@ body {
   font-size: 0.95rem;
   color: var(--text-muted);
   line-height: 1.6;
+}
+.shift-right {
+  grid-column-start: 2;
 }
 
 /* Chatbot FAB */

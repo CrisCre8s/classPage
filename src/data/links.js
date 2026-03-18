@@ -26,6 +26,7 @@ const links = [
     url: "https://azubi.gfi.ihk.de/",
     description: "Azubi-Infocenter und AzubiCard prüfen",
     icon: "person-outline",
+    extraClass: "shift-right",
   },
   {
     globusHub: true,

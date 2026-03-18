@@ -60,7 +60,7 @@ export default function LinkCard(props) {
       href={props.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="link-card"
+      className={`link-card ${props.extraClass || ""}`}
     >
       <ion-icon name={props.icon}></ion-icon>
       <span className="card-title">{props.title}</span>
