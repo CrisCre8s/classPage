@@ -64,7 +64,7 @@ export default function App() {
           onSubmit={(e) => {
             e.preventDefault();
             alert(
-              "Dein Feedback wurde in den Papierkorb verschoben. Danke! 🗑️",
+              "Sorry, dieses Feature ist noch in Arbeit! Aber deine Rückmeldung ist uns wichtig. Bitte melde dich bei Christian direkt!",
             );
           }}
         >
