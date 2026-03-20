@@ -115,7 +115,6 @@ body {
   gap: 1.5rem;
   width: 80%;
   margin: 0 auto;
-  overflow: hidden;
   word-break: break-word;
 }
 @media (max-width: 600px) {
