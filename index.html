@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<<<<<<< HEAD
     <title>SBSZ-HSP-SCHUL-HUB</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,5 +23,232 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+=======
+    <title>H-FI24-1B Klassen-Hub</title>
+    <link rel="stylesheet" href="/index.css" />
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.js"
+    ></script>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Hero Image -->
+      <div
+        style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 2rem;
+          margin-bottom: 2rem;
+        "
+      >
+        <img
+          src="https://sbsz-hsp.de/images/hdf2.jpg"
+          alt="SBSZ Hermsdorf"
+          style="
+            border: 1px solid #ffb30033;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(255, 179, 0, 0.06);
+            max-width: 100%;
+            height: auto;
+            display: block;
+          "
+        />
+      </div>
+
+      <!-- Header -->
+      <header class="header">
+        <h1>SBSZ-HSP-SCHUL-HUB</h1>
+        <p>Dein zentraler Anlaufpunkt für alle wichtigen Schullinks</p>
+      </header>
+
+      <!-- Link Grid -->
+      <div class="link-grid">
+        <a
+          class="link-card"
+          href="https://sbsz-hsp.com/"
+          target="_blank"
+          rel="noopener"
+        >
+          <ion-icon name="home-outline"></ion-icon>
+          <span class="card-title">Schulwebseite</span>
+          <span class="card-desc">Offizielle Webseite der SBSZ Hermsdorf</span>
+        </a>
+
+        <a
+          class="link-card"
+          href="https://sbsz-hsp.com/davinci-timetable.html"
+          target="_blank"
+          rel="noopener"
+        >
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span class="card-title">Stundenplan & Vertretungsplan</span>
+          <span class="card-desc"
+            >Aktueller Stunden- und Vertretungsplan der Klasse</span
+          >
+        </a>
+
+        <a
+          class="link-card"
+          href="https://sbsz-hsp.com/hip/default.php"
+          target="_blank"
+          rel="noopener"
+        >
+          <ion-icon name="school-outline"></ion-icon>
+          <span class="card-title">Klassenbuch & Noten</span>
+          <span class="card-desc"
+            >Notenübersicht und Klassenbucheintragungen</span
+          >
+        </a>
+
+        <a
+          class="link-card shift-right"
+          href="https://azubi.gfi.ihk.de/"
+          target="_blank"
+          rel="noopener"
+        >
+          <ion-icon name="person-outline"></ion-icon>
+          <span class="card-title">Azubi-Portal</span>
+          <span class="card-desc">Azubi-Infocenter und AzubiCard prüfen</span>
+        </a>
+
+        <!-- Globus Hub -->
+        <div class="globus-hub">
+          <div class="globus-hub-header">
+            <ion-icon name="storefront-outline"></ion-icon>
+            <h2>Globus Hermsdorf</h2>
+          </div>
+          <p class="globus-hub-desc">
+            Hier findest du alle wichtigen Informationen rund um deinen Globus.
+            Von Rabatten bis zu Spritpreisen.
+          </p>
+          <a
+            class="globus-hub-link"
+            href="https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/"
+            target="_blank"
+            rel="noopener"
+          >
+            Zu den aktuellen Rabatten →
+          </a>
+          <div class="globus-hub-info">
+            <div>
+              <strong>Öffnungszeiten:</strong>
+              <ul>
+                <li>Montag - Samstag: 08:00 - 20:00 Uhr</li>
+                <li>Sonntag: geschlossen</li>
+              </ul>
+            </div>
+            <div>
+              <strong>Kontakt:</strong><br />
+              Am Globus 1, 07629 Hermsdorf<br />
+              Tel: <a href="tel:+4936601930">+49 36601 930</a><br />
+              <a
+                href="https://www.globus.de/hermsdorf/"
+                target="_blank"
+                rel="noopener"
+                >Webseite</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Section -->
+    <section
+      style="
+        padding: 1.5rem;
+        background: linear-gradient(120deg, #232323 0%, #181818 100%);
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(255, 179, 0, 0.06);
+        border: 1px solid #ffb30033;
+        width: 80%;
+        margin: 2rem auto;
+      "
+    >
+      <h2
+        style="
+          color: #f5f5f5;
+          font-size: 1.2rem;
+          margin-bottom: 0.7rem;
+          text-shadow: 0 2px 8px #ff980033;
+        "
+      >
+        Feedback & Wünsche
+      </h2>
+      <form id="feedback-form">
+        <label
+          for="feedback"
+          style="display: block; margin-bottom: 0.5rem; color: #ffd580"
+        >
+          Was können wir verbessern?
+        </label>
+        <textarea
+          id="feedback"
+          name="feedback"
+          rows="3"
+          required
+          style="
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ffb300;
+            padding: 0.7rem;
+            margin-bottom: 1rem;
+            resize: vertical;
+            background: #181818;
+            color: #ffd580;
+          "
+        >
+        </textarea>
+        <button
+          type="submit"
+          style="
+            background: #ffb300;
+            color: #181818;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+          "
+        >
+          Absenden
+        </button>
+      </form>
+    </section>
+
+    <!-- Chatbot FAB -->
+    <button class="chat-fab" id="chat-fab">
+      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+    </button>
+
+    <!-- Chat Overlay -->
+    <div class="chat-overlay" id="chat-overlay" style="display: none">
+      <div class="chat-header">
+        <span>🤖 Klassen-Chatbot</span>
+        <button id="chat-close">✕</button>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-bubble bot">Hallo! Wie kann ich dir helfen?</div>
+      </div>
+      <div class="chat-input-row">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Nachricht eingeben..."
+        />
+        <button id="chat-send">
+          <ion-icon name="send-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <script src="/script.js"></script>
+>>>>>>> 24170e0 (deleting react, make it more simple)
   </body>
 </html>

@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+<<<<<<< HEAD
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -17,3 +18,9 @@
     "vite": "^6.0.0"
   }
 }
+=======
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
+>>>>>>> 24170e0 (deleting react, make it more simple)
