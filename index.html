@@ -17,26 +17,11 @@
   <body>
     <div class="app">
       <!-- Hero Image -->
-      <div
-        style="
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          margin-top: 2rem;
-          margin-bottom: 2rem;
-        "
-      >
+      <div class="hero-wrapper">
         <img
+          class="hero-img"
           src="https://sbsz-hsp.de/images/hdf2.jpg"
           alt="SBSZ Hermsdorf"
-          style="
-            border: 1px solid #ffb30033;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(255, 179, 0, 0.06);
-            max-width: 100%;
-            height: auto;
-            display: block;
-          "
         />
       </div>
 
@@ -139,32 +124,10 @@
     </div>
 
     <!-- Feedback Section -->
-    <section
-      style="
-        padding: 1.5rem;
-        background: linear-gradient(120deg, #232323 0%, #181818 100%);
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(255, 179, 0, 0.06);
-        border: 1px solid #ffb30033;
-        width: 80%;
-        margin: 2rem auto;
-      "
-    >
-      <h2
-        style="
-          color: #f5f5f5;
-          font-size: 1.2rem;
-          margin-bottom: 0.7rem;
-          text-shadow: 0 2px 8px #ff980033;
-        "
-      >
-        Feedback & Wünsche
-      </h2>
+    <section class="feedback-section">
+      <h2 class="feedback-title">Feedback & Wünsche</h2>
       <form id="feedback-form">
-        <label
-          for="feedback"
-          style="display: block; margin-bottom: 0.5rem; color: #ffd580"
-        >
+        <label for="feedback" class="feedback-label">
           Was können wir verbessern?
         </label>
         <textarea
@@ -172,32 +135,9 @@
           name="feedback"
           rows="3"
           required
-          style="
-            width: 100%;
-            border-radius: 8px;
-            border: 1px solid #ffb300;
-            padding: 0.7rem;
-            margin-bottom: 1rem;
-            resize: vertical;
-            background: #181818;
-            color: #ffd580;
-          "
-        >
-        </textarea>
-        <button
-          type="submit"
-          style="
-            background: #ffb300;
-            color: #181818;
-            border: none;
-            border-radius: 8px;
-            padding: 0.6rem 1.2rem;
-            font-weight: 600;
-            cursor: pointer;
-          "
-        >
-          Absenden
-        </button>
+          class="feedback-textarea"
+        ></textarea>
+        <button type="submit" class="feedback-btn">Absenden</button>
       </form>
     </section>
 

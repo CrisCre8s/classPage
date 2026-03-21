@@ -380,3 +380,73 @@ body {
   color: var(--accent);
   filter: drop-shadow(0 2px 8px #ff980033);
 }
+
+/* ===== Hero Image ===== */
+.hero-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.hero-img {
+  border: 1px solid #ffb30033;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(255, 179, 0, 0.06);
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ===== Feedback Section ===== */
+.feedback-section {
+  padding: 1.5rem;
+  background: linear-gradient(120deg, #232323 0%, #181818 100%);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(255, 179, 0, 0.06);
+  border: 1px solid #ffb30033;
+  width: 80%;
+  margin: 2rem auto;
+}
+
+.feedback-title {
+  color: #f5f5f5;
+  font-size: 1.2rem;
+  margin-bottom: 0.7rem;
+  text-shadow: 0 2px 8px #ff980033;
+}
+
+.feedback-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #ffd580;
+}
+
+.feedback-textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ffb300;
+  padding: 0.7rem;
+  margin-bottom: 1rem;
+  resize: vertical;
+  background: #181818;
+  color: #ffd580;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.feedback-btn {
+  background: #ffb300;
+  color: #181818;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.feedback-btn:hover {
+  background: #ff9800;
+}
