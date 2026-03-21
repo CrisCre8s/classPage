@@ -1,16 +1,29 @@
 # H-FI24-1B Klassen-Hub
 
-Minimalistischer Dark-Mode Link-Hub mit integriertem AI-Chatbot für die Berufsschulklasse **H-FI24-1B** an der SBSZ Hermsdorf.
+Minimalistischer Dark-Mode Link-Hub für die Berufsschulklasse **H-FI24-1B** an der SBSZ Hermsdorf.
 
 ## Tech-Stack
 
-| Bereich | Technologie |
-|---------|------------|
-| Frontend | React 18 + Vite |
-| Styling | Vanilla CSS (Custom Properties) |
-| AI-Backend | Vercel Serverless Function + AI Gateway |
-| Icons | Ionicons v4 |
-| Hosting | Vercel |
+| Bereich      | Technologie                            |
+|--------------|----------------------------------------|
+| Frontend     | Vanilla HTML + Vite                    |
+| Styling      | Vanilla CSS (Custom Properties)        |
+| Icons        | Ionicons                               |
+| AI-Chatbot   | Vercel Serverless Function (/api/chat) |
+| Hosting      | Vercel                                 |
+
+## Projektstruktur
+
+```
+klassen-hub/
+├── public/
+│   ├── index.css       # Alle Styles
+│   └── script.js       # Feedback-Form & Chatbot-Logik
+├── index.html          # Haupt-HTML
+├── vite.config.js
+├── vercel.json
+└── package.json
+```
 
 ## Schnellstart (lokal)
 
@@ -22,15 +35,11 @@ cd klassen-hub
 # 2. Abhaengigkeiten installieren
 npm install
 
-# 3. Umgebungsvariable anlegen
-cp .env.local.example .env.local
-# AI_GATEWAY_KEY eintragen
-
-# 4. Entwicklungsserver starten
+# 3. Entwicklungsserver starten
 npm run dev
 ```
 
-> **Hinweis:** Der Chatbot funktioniert lokal nur mit `npx vercel dev`, da die Serverless Function unter /api/chat ueber die Vercel CLI bereitgestellt wird.
+> **Hinweis:** Der Chatbot funktioniert lokal nur mit `npx vercel dev`, da die Serverless Function unter `/api/chat` über die Vercel CLI bereitgestellt wird.
 
 ## Deployment auf Vercel
 
@@ -52,7 +61,7 @@ git push -u origin main
 3. Framework Preset: **Vite**
 4. **Deploy** klicken
 
-### 3. Umgebungsvariable setzen
+### 3. Umgebungsvariable setzen (für Chatbot)
 
 1. Vercel Dashboard > Projekt > **Settings** > **Environment Variables**
 2. `AI_GATEWAY_KEY` = dein Vercel AI Gateway API-Key
@@ -66,15 +75,22 @@ git push -u origin main
 
 ## Links bearbeiten
 
-`src/data/links.js` oeffnen und neues Objekt anfuegen:
+Öffne `index.html` und füge eine neue Link-Card im `.link-grid` hinzu:
 
-```js
-{
-  title: "Mein neuer Link",
-  url: "https://example.com",
-  description: "Kurze Beschreibung",
-  icon: "globe-outline"
-}
+```html
+<a class="link-card" href="https://example.com" target="_blank" rel="noopener">
+  <ion-icon name="globe-outline"></ion-icon>
+  <span class="card-title">Mein neuer Link</span>
+  <span class="card-desc">Kurze Beschreibung</span>
+</a>
 ```
 
-Icons: [Ionicons v4](https://ionic.io/ionicons/v4)
+Icons: [Ionicons](https://ionic.io/ionicons)
+
+## Features
+
+- 🔗 Schnellzugriff auf alle wichtigen Schullinks
+- 🏪 Globus Hermsdorf Info-Block (Öffnungszeiten, Kontakt, Rabatte)
+- 💬 AI-Chatbot (via Vercel Serverless Function)
+- 📝 Feedback-Formular
+- 📱 Responsives Layout (Mobile & Desktop)
