@@ -112,7 +112,7 @@ section {
 
 @media (max-width: 650px) {
   .hero-img {
-    height: 15rem;
+    height: 10rem;
   }
 }
 
@@ -201,10 +201,22 @@ section {
   font-weight: 600;
 }
 
+@media (max-width: 650px) {
+  .link-card .card-title {
+    font-size: 1.3rem;
+  }
+}
+
 .link-card .card-desc {
   font-size: 1.3rem;
   color: deepskyblue;
   line-height: 1.6;
+}
+
+@media (max-width: 650px) {
+  .link-card .card-desc {
+    font-size: 1rem;
+  }
 }
 
 .shift-right {
@@ -245,6 +257,12 @@ section {
   font-size: 1.3rem;
 }
 
+@media (max-width: 650px) {
+  .globus-hub-desc {
+    font-size: 1rem;
+  }
+}
+
 .globus-hub-link {
   display: inline-block;
   margin-bottom: 1.2rem;
@@ -253,6 +271,12 @@ section {
   font-weight: 600;
   text-decoration: none;
   transition: color 0.18s;
+}
+
+@media (max-width: 650px) {
+  .globus-hub-link {
+    font-size: 1rem;
+  }
 }
 
 .globus-hub-link:hover {
@@ -312,11 +336,23 @@ section {
   text-shadow: 0 2px 8px #ff980033;
 }
 
+@media (max-width: 650px) {
+  .feedback-title {
+    font-size: 1.3rem;
+  }
+}
+
 .feedback-label {
   display: block;
   margin-bottom: 0.5rem;
   color: deepskyblue;
   font-size: 1.3rem;
+}
+
+@media (max-width: 650px) {
+  .feedback-label {
+    font-size: 1rem;
+  }
 }
 
 .feedback-textarea {
@@ -342,6 +378,12 @@ section {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+}
+
+@media (max-width: 650px) {
+  .feedback-btn {
+    font-size: 1rem;
+  }
 }
 
 .feedback-btn:hover {
