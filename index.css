@@ -59,6 +59,24 @@ section {
   min-height: 100vh;
 }
 
+.border-around {
+  padding: 2rem;
+  border: 6px solid black;
+  margin: 10rem;
+  border-radius: 2rem;
+  box-shadow: 3px 4px 12px black;
+}
+
+@media (max-width: 650px) {
+  .border-around {
+    padding: 1rem;
+    border: 6px solid black;
+    margin: 2rem;
+    border-radius: 2rem;
+    box-shadow: 3px 4px 12px black;
+  }
+}
+
 /* Hero section */
 .hero {
   max-width: 130rem;
@@ -110,6 +128,15 @@ section {
   box-shadow: 3px 4px 12px black;
 }
 
+@media (max-width: 650px) {
+  .section-hero {
+    margin: 1rem 0;
+    border-radius: 1rem;
+    background-color: #e9ecef;
+    box-shadow: 3px 4px 12px black;
+  }
+}
+
 .header-text {
   font-size: 1.4rem;
   padding-top: 1rem;
@@ -126,12 +153,14 @@ section {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   margin: 0 4rem;
+  align-items: center;
 }
 
 @media (max-width: 1125px) {
   .link-grid {
     display: flex;
     flex-direction: column;
+    margin: 0;
   }
 }
 
