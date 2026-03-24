@@ -59,6 +59,12 @@ section {
   min-height: 100vh;
 }
 
+@media (max-width: 650px) {
+  .background {
+    background-position: 0;
+  }
+}
+
 .border-around {
   padding: 2rem;
   border: 6px solid black;
