@@ -67,19 +67,22 @@ section {
 
 .border-around {
   padding: 2rem;
-  border: 6px solid black;
   margin: 10rem;
   border-radius: 2rem;
-  box-shadow: 3px 4px 12px black;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 650px) {
   .border-around {
     padding: 1rem;
-    border: 6px solid black;
     margin: 2rem;
-    border-radius: 2rem;
-    box-shadow: 3px 4px 12px black;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -397,7 +400,7 @@ section {
   color: black;
 }
 
-/* Chatbot FAB */
+/* Chatbot FAB
 .chat-fab {
   position: fixed;
   bottom: 1.5rem;
@@ -428,7 +431,7 @@ section {
   font-size: 1.6rem;
 }
 
-/* Chat-Overlay */
+/* Chat-Overlay 
 .chat-overlay {
   position: fixed;
   bottom: 5.5rem;
@@ -540,4 +543,4 @@ section {
 
 .chat-input-row button ion-icon {
   font-size: 1.25rem;
-}
+} */
