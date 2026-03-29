@@ -79,10 +79,6 @@ section {
   .border-around {
     padding: 1rem;
     margin: 2rem;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -140,9 +136,6 @@ section {
 @media (max-width: 650px) {
   .section-hero {
     margin: 1rem 0;
-    border-radius: 1rem;
-    background-color: black;
-    box-shadow: 3px 4px 12px yellow;
   }
 }
 
