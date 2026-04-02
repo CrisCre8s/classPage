@@ -237,40 +237,6 @@ section {
   }
 }
 
-.img-useless {
-  position: relative;
-  overflow: hidden;
-}
-
-.img-useless::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("/uselessWebsite.png");
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  border-radius: var(--radius);
-}
-
-.img-useless:hover::before {
-  opacity: 1;
-}
-
-.img-useless:hover .card-title,
-.img-useless:hover .card-desc,
-.img-useless:hover ion-icon {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.img-useless .card-title,
-.img-useless .card-desc,
-.img-useless ion-icon {
-  transition: opacity 0.3s ease;
-}
-
 .img-schoolWebsite {
   position: relative;
   overflow: hidden;
@@ -420,6 +386,40 @@ section {
 .img-azubiPage .card-title,
 .img-azubiPage .card-desc,
 .img-azubiPage ion-icon {
+  transition: opacity 0.3s ease;
+}
+
+.img-useless {
+  position: relative;
+  overflow: hidden;
+}
+
+.img-useless::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/uselessWebsite.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--radius);
+}
+
+.img-useless:hover::before {
+  opacity: 1;
+}
+
+.img-useless:hover .card-title,
+.img-useless:hover .card-desc,
+.img-useless:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.img-useless .card-title,
+.img-useless .card-desc,
+.img-useless ion-icon {
   transition: opacity 0.3s ease;
 }
 
