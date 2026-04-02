@@ -70,7 +70,7 @@ section {
   padding: 2rem;
   margin: 4rem 20rem;
   border-radius: 2rem;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 24px white;
@@ -235,6 +235,192 @@ section {
   .globus-hub-section .link-card {
     margin: 1rem 0;
   }
+}
+
+.img-useless {
+  position: relative;
+  overflow: hidden;
+}
+
+.img-useless::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/uselessWebsite.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--radius);
+}
+
+.img-useless:hover::before {
+  opacity: 1;
+}
+
+.img-useless:hover .card-title,
+.img-useless:hover .card-desc,
+.img-useless:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.img-useless .card-title,
+.img-useless .card-desc,
+.img-useless ion-icon {
+  transition: opacity 0.3s ease;
+}
+
+.img-schoolWebsite {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.img-schoolWebsite::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/schoolWebsite.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: rgb(246, 249, 212);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--radius);
+  z-index: 2;
+}
+
+.img-schoolWebsite:hover::before {
+  opacity: 1;
+}
+
+.img-schoolWebsite:hover .card-title,
+.img-schoolWebsite:hover .card-desc,
+.img-schoolWebsite:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.img-schoolWebsite .card-title,
+.img-schoolWebsite .card-desc,
+.img-schoolWebsite ion-icon {
+  transition: opacity 0.3s ease;
+}
+
+.img-schoolPlan {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.img-schoolPlan::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/schoolPlan.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: black;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--radius);
+  z-index: 2;
+}
+
+.img-schoolPlan:hover::before {
+  opacity: 1;
+}
+
+.img-schoolPlan:hover .card-title,
+.img-schoolPlan:hover .card-desc,
+.img-schoolPlan:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.img-schoolPlan .card-title,
+.img-schoolPlan .card-desc,
+.img-schoolPlan ion-icon {
+  transition: opacity 0.3s ease;
+}
+
+.img-notePage {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.img-notePage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/notePage.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: black;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--radius);
+  z-index: 2;
+}
+
+.img-notePage:hover::before {
+  opacity: 1;
+}
+
+.img-notePage:hover .card-title,
+.img-notePage:hover .card-desc,
+.img-notePage:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.img-notePage .card-title,
+.img-notePage .card-desc,
+.img-notePage ion-icon {
+  transition: opacity 0.3s ease;
+}
+
+.img-azubiPage {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.img-azubiPage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/azubiPage.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: black;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--radius);
+  z-index: 2;
+}
+
+.img-azubiPage:hover::before {
+  opacity: 1;
+}
+
+.img-azubiPage:hover .card-title,
+.img-azubiPage:hover .card-desc,
+.img-azubiPage:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.img-azubiPage .card-title,
+.img-azubiPage .card-desc,
+.img-azubiPage ion-icon {
+  transition: opacity 0.3s ease;
 }
 
 /* Globus Hub Styles */
