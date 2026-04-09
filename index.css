@@ -68,7 +68,7 @@ section {
 
 .border-around {
   padding: 2rem;
-  margin: 4rem 60rem;
+  margin: 4rem 30rem;
   border-radius: 2rem;
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(12px);
@@ -188,9 +188,7 @@ section {
 
 .link-card:hover {
   transform: translateY(-4px);
-  border-color: yellow;
-  background: grey;
-  color: white;
+  box-shadow: 3px 4px 12px red;
 }
 
 .link-card ion-icon {
@@ -256,6 +254,7 @@ section {
   transition: opacity 0.3s ease;
   border-radius: var(--radius);
   z-index: 2;
+  border: 6px solid red;
 }
 
 .img-schoolWebsite:hover::before {
@@ -294,6 +293,7 @@ section {
   transition: opacity 0.3s ease;
   border-radius: var(--radius);
   z-index: 2;
+  border: 6px solid red;
 }
 
 .img-schoolPlan:hover::before {
@@ -332,6 +332,7 @@ section {
   transition: opacity 0.3s ease;
   border-radius: var(--radius);
   z-index: 2;
+  border: 6px solid red;
 }
 
 .img-notePage:hover::before {
@@ -370,6 +371,7 @@ section {
   transition: opacity 0.3s ease;
   border-radius: var(--radius);
   z-index: 2;
+  border: 6px solid red;
 }
 
 .img-azubiPage:hover::before {
@@ -404,6 +406,7 @@ section {
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: var(--radius);
+  border: 6px solid red;
 }
 
 .img-useless:hover::before {
