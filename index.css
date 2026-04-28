@@ -165,6 +165,7 @@ section {
   box-shadow:
     6px 6px 0px var(--accent-dark),
     /* harter Pixel-Schatten */ 12px 12px 0px rgba(255, 100, 0, 0.3);
+  image-rendering: auto;
 }
 
 @media (max-width: 1125px) {
@@ -301,6 +302,8 @@ section {
   border-radius: 0;
   z-index: 2;
   border: 6px solid var(--accent);
+  image-rendering: auto;
+  filter: brightness(0.95) contrast(1.05);
 }
 
 .img-schoolWebsite::before {
@@ -328,6 +331,7 @@ section {
 .img-useless::before {
   background-image: url("/uselessWebsite.png");
   background-size: cover;
+  background-position: center;
 }
 
 .img-schoolWebsite:hover::before,

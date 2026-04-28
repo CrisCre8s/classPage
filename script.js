@@ -1,19 +1,24 @@
 // ===== Canvas Setup =====
 const canvas = document.getElementById("bg-canvas");
-const ctx = canvas.getContext("2d"); // ✅ ctx definieren!
+const ctx = canvas.getContext("2d");
 
-// ✅ Größe setzen BEVOR Sterne erstellt werden
+// Größe setzen BEVOR Sterne erstellt werden
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+
+  stars.forEach((star) => {
+    star.x = Math.random() * canvas.width;
+    star.y = Math.random() * canvas.height;
+  });
 });
 
 // ===== Sternfeld =====
 const stars = Array.from({ length: 150 }, () => ({
-  x: Math.random() * canvas.width, // ✅ jetzt > 0
+  x: Math.random() * canvas.width,
   y: Math.random() * canvas.height,
   size: Math.random() < 0.8 ? 1 : 2,
   speed: 0.5 + Math.random() * 2,
@@ -42,7 +47,7 @@ function draw() {
   requestAnimationFrame(draw);
 }
 
-draw(); // ✅ Animation starten!
+draw();
 
 // ===== Intro Logic =====
 const sectionHero = document.querySelector(".section-hero");
