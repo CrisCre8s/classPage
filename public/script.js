@@ -129,4 +129,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
     grid.appendChild(card);
   });
+
+  // ===== Zurück-Button =====
+  const backBtn = document.getElementById("back-btn");
+
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      // Alle Sections ausblenden
+      allSections.forEach((sec, i) => {
+        if (i >= 2) {
+          sec.style.transition = "opacity 0.6s ease";
+          sec.style.opacity = "0";
+
+          setTimeout(() => {
+            sec.classList.add("hidden");
+          }, 600);
+        }
+      });
+
+      setTimeout(() => {
+        // Hero + Bild wieder einblenden
+        sectionHero.style.display = "";
+        sectionHero.style.opacity = "0";
+        heroWrapper.style.display = "";
+        heroWrapper.style.opacity = "0";
+        borderAround.classList.add("intro-mode");
+
+        heroImg.style.animation = "pulse 2.5s infinite";
+
+        setTimeout(() => {
+          sectionHero.style.transition = "opacity 0.6s ease";
+          sectionHero.style.opacity = "1";
+          heroWrapper.style.transition = "opacity 0.6s ease";
+          heroWrapper.style.opacity = "1";
+        }, 20);
+      }, 600);
+    });
+  }
 });

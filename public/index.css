@@ -586,3 +586,49 @@ section {
   color: white;
   border-bottom-color: white;
 }
+
+/* ===== Zurück-Button ===== */
+.back-section {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0 1rem;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.6rem;
+  color: var(--accent);
+  background: #0d0d0d;
+  border: 2px solid var(--accent);
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px var(--accent-dark);
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2);
+}
+
+.back-btn:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 6px 6px 0px var(--accent);
+  color: white;
+}
+
+.back-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--accent);
+}
+
+.back-btn ion-icon {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 650px) {
+  .back-btn {
+    font-size: 0.4rem;
+    padding: 0.6rem 1rem;
+  }
+}
