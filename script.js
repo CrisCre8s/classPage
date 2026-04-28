@@ -2,10 +2,19 @@
 const canvas = document.getElementById("bg-canvas");
 const ctx = canvas.getContext("2d");
 
-// Größe setzen BEVOR Sterne erstellt werden
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// ===== Sternfeld — VOR dem resize listener! =====
+const stars = Array.from({ length: 150 }, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  size: Math.random() < 0.8 ? 1 : 2,
+  speed: 0.5 + Math.random() * 2,
+  brightness: Math.random(),
+}));
+
+// ✅ Resize NACH stars Definition
 window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -15,15 +24,6 @@ window.addEventListener("resize", () => {
     star.y = Math.random() * canvas.height;
   });
 });
-
-// ===== Sternfeld =====
-const stars = Array.from({ length: 150 }, () => ({
-  x: Math.random() * canvas.width,
-  y: Math.random() * canvas.height,
-  size: Math.random() < 0.8 ? 1 : 2,
-  speed: 0.5 + Math.random() * 2,
-  brightness: Math.random(),
-}));
 
 function draw() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
@@ -58,12 +58,11 @@ const borderAround = document.querySelector(".border-around");
 
 borderAround.classList.add("intro-mode");
 
+// Sections beim Start verstecken
 allSections.forEach((sec, i) => {
   if (i >= 2) {
-    sec.style.display = "none";
-    sec.style.opacity = "0";
+    sec.classList.add("hidden");
     sec.style.transition = "opacity 0.6s ease";
-    sec.style.pointerEvents = "none";
   }
 });
 
@@ -80,6 +79,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Beim Klick einblenden
 heroImg.addEventListener("click", () => {
   heroImg.style.animation = "none";
   sectionHero.style.transition = "opacity 0.6s ease";
@@ -94,7 +94,7 @@ heroImg.addEventListener("click", () => {
 
     allSections.forEach((sec, i) => {
       if (i >= 2) {
-        sec.style.display = "block";
+        sec.classList.remove("hidden");
         sec.style.pointerEvents = "auto";
         setTimeout(() => {
           sec.style.opacity = "1";

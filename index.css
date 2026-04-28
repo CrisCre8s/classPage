@@ -68,6 +68,13 @@ main {
   }
 }
 
+/* ===== Hidden Sections ===== */
+.hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ===== Haupt-Container ===== */
 /* Pixel-Border Effekt: mehrfache box-shadow statt border-radius */
 .border-around {
