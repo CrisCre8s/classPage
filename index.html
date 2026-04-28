@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>H-FI24-1B Klassen-Hub</title>
     <link rel="stylesheet" href="/index.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <script
       type="module"
       src="https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.esm.js"
@@ -15,6 +19,7 @@
     ></script>
   </head>
   <body>
+    <canvas id="bg-canvas"></canvas>
     <div class="background">
       <main>
         <div class="border-around">
@@ -25,9 +30,6 @@
                   <h1 class="h1-header">
                     Willkommen auf deinem SBSZ-Hermsdorf-SCHUL-HUB
                   </h1>
-                  <p class="header-text">
-                    Dein zentraler Anlaufpunkt für alle wichtigen Schullinks
-                  </p>
                 </div>
               </div>
             </div>
@@ -119,9 +121,22 @@
                 </a>
               </div>
             </div>
-            <!-- closes .link-grid -->
           </section>
-          <!-- closes grid section -->
+
+          <!-- Berichtsheft Hub -->
+          <section class="berichte-section">
+            <div class="link-card">
+              <div class="berichte-header">
+                <ion-icon name="document-text-outline"></ion-icon>
+                <h2>Berichtsheft</h2>
+              </div>
+              <p class="berichte-desc">
+                Hier findest du die Einträge der letzten Schulwochen zum
+                Anschauen.
+              </p>
+              <div class="berichte-grid" id="berichte-grid"></div>
+            </div>
+          </section>
 
           <!-- Globus Hub — own full-width section -->
           <section class="globus-hub-section">
@@ -163,25 +178,6 @@
                 </div>
               </div>
             </div>
-          </section>
-          <!-- closes .globus-hub-section -->
-
-          <!-- Feedback Section -->
-          <section class="feedback-section">
-            <h2 class="feedback-title">Feedback & Wünsche</h2>
-            <form id="feedback-form">
-              <label for="feedback" class="feedback-label"
-                >Was können wir verbessern?</label
-              >
-              <textarea
-                id="feedback"
-                name="feedback"
-                rows="3"
-                required
-                class="feedback-textarea"
-              ></textarea>
-              <button type="submit" class="feedback-btn">Absenden</button>
-            </form>
           </section>
 
           <script src="/script.js"></script>
