@@ -173,6 +173,8 @@ section {
     6px 6px 0px var(--accent-dark),
     /* harter Pixel-Schatten */ 12px 12px 0px rgba(255, 100, 0, 0.3);
   image-rendering: auto;
+  cursor: pointer;
+  animation: pulse 2.5s infinite;
 }
 
 @media (max-width: 1125px) {
@@ -185,6 +187,33 @@ section {
   .hero-img {
     height: 10rem;
     border-width: 3px;
+  }
+}
+
+.hero-img-hint {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.45rem;
+  color: var(--accent-dim);
+  text-align: center;
+  margin-top: 1.2rem;
+  line-height: 2;
+  animation: pulse 2.5s infinite;
+}
+
+@media (max-width: 650px) {
+  .hero-img-hint {
+    font-size: 0.25rem;
+  }
+}
+
+/* Pulse fürs Bild und Hinweistext */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
   }
 }
 

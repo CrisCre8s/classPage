@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ===== Canvas Setup =====
   const canvas = document.getElementById("bg-canvas");
-  if (!canvas) return; // ✅ Sicherheitscheck
+  if (!canvas) return; // Sicherheitscheck
   const ctx = canvas.getContext("2d");
 
   canvas.width = window.innerWidth;
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const allSections = document.querySelectorAll("section");
   const borderAround = document.querySelector(".border-around");
 
-  if (!heroImg || !borderAround) return; // ✅ Sicherheitscheck
+  if (!heroImg || !borderAround) return; // Sicherheitscheck
 
   borderAround.classList.add("intro-mode");
 
@@ -67,19 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
       sec.style.transition = "opacity 0.6s ease";
     }
   });
-
-  heroImg.style.cursor = "pointer";
-  heroImg.title = "Klicke hier, um zum Hub zu kommen!";
-  heroImg.style.animation = "pulse 2.5s infinite";
-
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
-    }
-  `;
-  document.head.appendChild(style);
 
   heroImg.addEventListener("click", () => {
     heroImg.style.animation = "none";
@@ -155,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
         heroWrapper.style.opacity = "0";
         borderAround.classList.add("intro-mode");
 
-        heroImg.style.animation = "pulse 2.5s infinite";
+        heroImg.style.removeProperty("animation");
 
         setTimeout(() => {
           sectionHero.style.transition = "opacity 0.6s ease";
