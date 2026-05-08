@@ -2,54 +2,80 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== Canvas Setup =====
   const canvas = document.getElementById("bg-canvas");
   if (!canvas) return;
-  const ctx = canvas.getContext("2d");
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  canvas.style.willChange = "transform";
+  canvas.style.pointerEvents = "none";
 
-  const stars = Array.from({ length: 150 }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: Math.random() < 0.8 ? 1 : 2,
-    speed: 0.5 + Math.random() * 2,
-    brightness: Math.random(),
-  }));
+  let W = (canvas.width = window.innerWidth);
+  let H = (canvas.height = window.innerHeight);
+  let CX = W / 2;
+  let CY = H / 2;
 
-  window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    stars.forEach((star) => {
-      star.x = Math.random() * canvas.width;
-      star.y = Math.random() * canvas.height;
-    });
-  });
+  // ← GEÄNDERT: isMobile + if/else komplett entfernt
 
-  function draw() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const STAR_COUNT = 180; // ← GEÄNDERT: immer 180, egal ob Mobile oder Desktop
 
-    stars.forEach((star) => {
-      star.x -= star.speed;
-      if (star.x < 0) {
-        star.x = canvas.width;
-        star.y = Math.random() * canvas.height;
-      }
-
-      star.brightness += 0.02;
-      const alpha = 0.5 + Math.abs(Math.sin(star.brightness)) * 0.5;
-      ctx.fillStyle = `rgba(200, 162, 255, ${alpha})`;
-      ctx.fillRect(
-        Math.floor(star.x),
-        Math.floor(star.y),
-        star.size,
-        star.size,
-      );
-    });
-
-    requestAnimationFrame(draw);
+  function randomStar() {
+    const angle = Math.random() * Math.PI * 2;
+    return {
+      angle,
+      dist: 20 + Math.random() * 80,
+      speed: 0.6 + Math.random() * 5,
+      size: 0,
+      brightness: Math.random(),
+    };
   }
 
-  draw();
+  const stars = Array.from({ length: STAR_COUNT }, randomStar);
+
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      CX = W / 2;
+      CY = H / 2;
+    }, 200);
+  });
+
+  const FRAME_MS = 1000 / 240;
+  let lastTime = 0;
+
+  function draw(ts) {
+    requestAnimationFrame(draw);
+    if (ts - lastTime < FRAME_MS) return;
+    lastTime = ts;
+
+    ctx.fillStyle = "rgba(10, 10, 10, 0.25)";
+    ctx.fillRect(0, 0, W, H);
+
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      s.dist += s.speed;
+      s.size = s.dist * 0.012;
+
+      const x = CX + Math.cos(s.angle) * s.dist;
+      const y = CY + Math.sin(s.angle) * s.dist;
+
+      if (x < 0 || x > W || y < 0 || y > H) {
+        Object.assign(stars[i], randomStar());
+        continue;
+      }
+
+      const alpha = Math.min(s.dist / 120, 1);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#c8a2ff";
+
+      const sz = Math.max(s.size, 0.5);
+      ctx.fillRect(x | 0, y | 0, sz, sz);
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  requestAnimationFrame(draw);
 
   // ===== Hilfsfunktionen Scroll-Lock =====
   function lockScroll() {
@@ -77,7 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
   borderAround.classList.add("intro-mode");
   lockScroll();
 
-  // Alle Sections ab Index 2 verstecken
   allSections.forEach((sec, i) => {
     if (i >= 2) {
       sec.classList.add("hidden");
@@ -205,14 +230,11 @@ document.addEventListener("DOMContentLoaded", () => {
           item.style.removeProperty("transition");
         });
 
-        // Intro wieder aufbauen
         sectionHero.style.display = "";
         sectionHero.style.opacity = "0";
         pcSection.style.display = "";
         pcSection.style.opacity = "0";
         borderAround.classList.add("intro-mode");
-
-        // Scroll SOFORT sperren bevor Fade-In
         lockScroll();
 
         if (scrImg) {

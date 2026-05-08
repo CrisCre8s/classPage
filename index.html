@@ -80,6 +80,7 @@
                   <span></span><span></span><span></span><span></span>
                 </div>
                 <div class="bdg">POWER<br />UP</div>
+                <!-- ← GEÄNDERT: war "Start Power" -->
               </div>
             </div>
           </section>
@@ -93,11 +94,15 @@
                   target="_blank"
                   rel="noopener"
                 >
-                  <ion-icon name="home-outline"></ion-icon>
-                  <span class="card-title">Schulwebseite</span>
-                  <span class="card-desc"
-                    >Offizielle Webseite der SBSZ Hermsdorf</span
-                  >
+                  <div class="link-card-inner">
+                    <!-- ← NEU -->
+                    <ion-icon name="home-outline"></ion-icon>
+                    <span class="card-title">Schulwebseite</span>
+                    <span class="card-desc"
+                      >Offizielle Webseite der SBSZ Hermsdorf</span
+                    >
+                  </div>
+                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -108,11 +113,17 @@
                   target="_blank"
                   rel="noopener"
                 >
-                  <ion-icon name="calendar-outline"></ion-icon>
-                  <span class="card-title">Stundenplan & Vertretungsplan</span>
-                  <span class="card-desc"
-                    >Aktueller Stunden- und Vertretungsplan der Klasse</span
-                  >
+                  <div class="link-card-inner">
+                    <!-- ← NEU -->
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <span class="card-title"
+                      >Stundenplan & Vertretungsplan</span
+                    >
+                    <span class="card-desc"
+                      >Aktueller Stunden- und Vertretungsplan der Klasse</span
+                    >
+                  </div>
+                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -123,11 +134,15 @@
                   target="_blank"
                   rel="noopener"
                 >
-                  <ion-icon name="school-outline"></ion-icon>
-                  <span class="card-title">Klassenbuch & Noten</span>
-                  <span class="card-desc"
-                    >Notenübersicht und Klassenbucheintragungen</span
-                  >
+                  <div class="link-card-inner">
+                    <!-- ← NEU -->
+                    <ion-icon name="school-outline"></ion-icon>
+                    <span class="card-title">Klassenbuch & Noten</span>
+                    <span class="card-desc"
+                      >Notenübersicht und Klassenbucheintragungen</span
+                    >
+                  </div>
+                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -138,11 +153,15 @@
                   target="_blank"
                   rel="noopener"
                 >
-                  <ion-icon name="person-outline"></ion-icon>
-                  <span class="card-title">Azubi-Portal</span>
-                  <span class="card-desc"
-                    >Azubi-Infocenter und AzubiCard prüfen</span
-                  >
+                  <div class="link-card-inner">
+                    <!-- ← NEU -->
+                    <ion-icon name="person-outline"></ion-icon>
+                    <span class="card-title">Azubi-Portal</span>
+                    <span class="card-desc"
+                      >Azubi-Infocenter und AzubiCard prüfen</span
+                    >
+                  </div>
+                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -153,9 +172,13 @@
                   target="_blank"
                   rel="noopener"
                 >
-                  <ion-icon name="happy-outline"></ion-icon>
-                  <span class="card-title">Take Me To A Useless Website</span>
-                  <span class="card-desc">Für deine Langeweile</span>
+                  <div class="link-card-inner">
+                    <!-- ← NEU -->
+                    <ion-icon name="happy-outline"></ion-icon>
+                    <span class="card-title">Take Me To A Useless Website</span>
+                    <span class="card-desc">Für deine Langeweile</span>
+                  </div>
+                  <!-- ← NEU -->
                 </a>
               </div>
             </div>
@@ -164,56 +187,64 @@
           <!-- Berichtsheft Hub -->
           <section class="berichte-section">
             <div class="link-card">
-              <div class="berichte-header">
-                <ion-icon name="document-text-outline"></ion-icon>
-                <h2>Berichtsheft</h2>
+              <div class="link-card-inner">
+                <!-- ← NEU -->
+                <div class="berichte-header">
+                  <ion-icon name="document-text-outline"></ion-icon>
+                  <h2>Berichtsheft</h2>
+                </div>
+                <p class="berichte-desc">
+                  Hier findest du die Einträge der letzten Schulwochen
+                </p>
+                <div class="berichte-grid" id="berichte-grid"></div>
               </div>
-              <p class="berichte-desc">
-                Hier findest du die Einträge der letzten Schulwochen
-              </p>
-              <div class="berichte-grid" id="berichte-grid"></div>
+              <!-- ← NEU -->
             </div>
           </section>
 
           <!-- Globus Hub -->
           <section class="globus-hub-section">
             <div class="link-card">
-              <div class="globus-hub-header">
-                <ion-icon name="storefront-outline"></ion-icon>
-                <h2>Globus Hermsdorf</h2>
-              </div>
-              <p class="globus-hub-desc">
-                Hier findest du alle wichtigen Informationen rund um deinen
-                Globus. Von Rabatten bis zu Spritpreisen
-              </p>
-              <a
-                class="globus-hub-link"
-                href="https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/"
-                target="_blank"
-                rel="noopener"
-              >
-                Zu den aktuellen Rabatten →
-              </a>
-              <div class="globus-hub-info">
-                <div>
-                  <strong>Öffnungszeiten:</strong>
-                  <ul>
-                    <li>Montag - Samstag: 08:00 - 20:00 Uhr</li>
-                    <li>Sonntag: geschlossen</li>
-                  </ul>
+              <div class="link-card-inner">
+                <!-- ← NEU -->
+                <div class="globus-hub-header">
+                  <ion-icon name="storefront-outline"></ion-icon>
+                  <h2>Globus Hermsdorf</h2>
                 </div>
-                <div>
-                  <strong>Kontakt:</strong><br />
-                  Am Globus 1, 07629 Hermsdorf<br />
-                  Tel: <a href="tel:+4936601930">+49 36601 930</a><br />
-                  <a
-                    href="https://www.globus.de/hermsdorf/"
-                    target="_blank"
-                    rel="noopener"
-                    >Webseite</a
-                  >
+                <p class="globus-hub-desc">
+                  Hier findest du alle wichtigen Informationen rund um deinen
+                  Globus. Von Rabatten bis zu Spritpreisen
+                </p>
+                <a
+                  class="globus-hub-link"
+                  href="https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Zu den aktuellen Rabatten →
+                </a>
+                <div class="globus-hub-info">
+                  <div>
+                    <strong>Öffnungszeiten:</strong>
+                    <ul>
+                      <li>Montag - Samstag: 08:00 - 20:00 Uhr</li>
+                      <li>Sonntag: geschlossen</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>Kontakt:</strong><br />
+                    Am Globus 1, 07629 Hermsdorf<br />
+                    Tel: <a href="tel:+4936601930">+49 36601 930</a><br />
+                    <a
+                      href="https://www.globus.de/hermsdorf/"
+                      target="_blank"
+                      rel="noopener"
+                      >Webseite</a
+                    >
+                  </div>
                 </div>
               </div>
+              <!-- ← NEU -->
             </div>
           </section>
 

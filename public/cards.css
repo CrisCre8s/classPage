@@ -3,7 +3,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   margin: 0 2rem;
-  gap: 0;
+  gap: 1.5rem 1rem;
 }
 
 @media (max-width: 1125px) {
@@ -11,21 +11,20 @@
     display: flex;
     flex-direction: column;
     margin: 0;
+    gap: 2rem;
   }
 }
 
-/* ===== Link Cards ===== */
+/* ===== Link Cards — Ordner-Form im Retro-Stil ===== */
 .link-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  margin: 1rem;
-  background: #0d0d0d;
-  border-radius: 0;
-  border: 3px solid var(--accent-dim);
-  padding: 1.5rem;
+  display: block;
+  margin: 0.5rem;
   text-decoration: none;
   color: white;
+  position: relative;
+  background: #0d0d0d; /* ← GEÄNDERT: zurück auf dunkel */
+  border: 3px solid var(--accent-dim); /* ← GEÄNDERT: zurück auf lila */
+  border-top: none;
   box-shadow:
     4px 4px 0px var(--accent-dark),
     0 0 20px rgba(200, 162, 255, 0.4),
@@ -36,12 +35,41 @@
     border-color 0.1s steps(2);
 }
 
+/* ── Ordner Tab oben links ── */
+.link-card::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: -3px;
+  width: 42%;
+  height: 15px;
+  background: #0d0d0d; /* ← GEÄNDERT: dunkel wie Körper */
+  border: 3px solid var(--accent-dim); /* ← GEÄNDERT: lila Rand */
+  border-bottom: none;
+}
+
+/* Innerer Padding-Bereich */
+.link-card-inner {
+  padding: 1.2rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
 .link-card:hover {
   transform: translate(-4px, -4px);
   box-shadow:
     8px 8px 0px var(--accent),
     0 0 35px rgba(200, 162, 255, 0.6),
     0 0 80px rgba(123, 47, 255, 0.3);
+  border-color: var(--accent);
+}
+
+.link-card:hover::before {
+  /* Tab mitfärben beim Hover */
   border-color: var(--accent);
 }
 
@@ -95,28 +123,26 @@
 .img-azubiPage,
 .img-useless {
   position: relative;
-  overflow: hidden;
-  z-index: 1;
+  overflow: visible;
 }
 
-.img-schoolWebsite::before,
-.img-schoolPlan::before,
-.img-notePage::before,
-.img-azubiPage::before,
-.img-useless::before {
+.img-schoolWebsite .link-card-inner::after,
+.img-schoolPlan .link-card-inner::after,
+.img-notePage .link-card-inner::after,
+.img-azubiPage .link-card-inner::after,
+.img-useless .link-card-inner::after {
   content: "";
   position: absolute;
   inset: 0;
   opacity: 0;
   transition: opacity 0.2s steps(4);
-  border-radius: 0;
   z-index: 2;
-  border: 6px solid var(--accent);
+  border: 4px solid var(--accent);
   image-rendering: auto;
   filter: brightness(0.95) contrast(1.05);
 }
 
-.img-schoolWebsite::before {
+.img-schoolWebsite .link-card-inner::after {
   background-image: url("/schoolWebsite.png");
   background-size: contain;
   background-position: center;
@@ -124,35 +150,35 @@
   background-color: rgb(246, 249, 212);
 }
 
-.img-schoolPlan::before {
+.img-schoolPlan .link-card-inner::after {
   background-image: url("/schoolPlan.png");
   background-size: cover;
   background-color: black;
 }
 
-.img-notePage::before {
+.img-notePage .link-card-inner::after {
   background-image: url("/notePage.png");
   background-size: cover;
   background-color: black;
 }
 
-.img-azubiPage::before {
+.img-azubiPage .link-card-inner::after {
   background-image: url("/azubiPage.png");
   background-size: cover;
   background-color: black;
 }
 
-.img-useless::before {
+.img-useless .link-card-inner::after {
   background-image: url("/uselessWebsite.png");
   background-size: cover;
   background-position: center;
 }
 
-.img-schoolWebsite:hover::before,
-.img-schoolPlan:hover::before,
-.img-notePage:hover::before,
-.img-azubiPage:hover::before,
-.img-useless:hover::before {
+.img-schoolWebsite:hover .link-card-inner::after,
+.img-schoolPlan:hover .link-card-inner::after,
+.img-notePage:hover .link-card-inner::after,
+.img-azubiPage:hover .link-card-inner::after,
+.img-useless:hover .link-card-inner::after {
   opacity: 1;
 }
 
