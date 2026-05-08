@@ -4,6 +4,29 @@
   width: 620px;
   height: 540px;
   margin: 0 auto;
+  transform-origin: top center;
+}
+
+/* Skalierung fuer kleine Bildschirme */
+@media (max-width: 680px) {
+  .pc {
+    transform: scale(0.72);
+    margin-bottom: -155px; /* Leerraum nach dem Scale-Shrink ausgleichen */
+  }
+}
+
+@media (max-width: 480px) {
+  .pc {
+    transform: scale(0.52);
+    margin-bottom: -255px;
+  }
+}
+
+@media (max-width: 360px) {
+  .pc {
+    transform: scale(0.42);
+    margin-bottom: -310px;
+  }
 }
 
 /* === Monitor === */

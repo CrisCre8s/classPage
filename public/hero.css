@@ -23,9 +23,20 @@
 
 @media (max-width: 650px) {
   .h1-header {
-    font-size: 0.6rem;
-    line-height: 2.2;
+    font-size: 0.55rem;
+    line-height: 2;
     text-shadow: 2px 2px 0px var(--accent);
+    word-break: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .h1-header {
+    font-size: 0.42rem;
+    line-height: 2;
   }
 }
 
@@ -40,7 +51,14 @@
 
 @media (max-width: 650px) {
   .header-text {
-    font-size: 0.45rem;
+    font-size: 0.4rem;
+    padding-top: 0.8rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .header-text {
+    font-size: 0.32rem;
   }
 }
 

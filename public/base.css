@@ -41,6 +41,12 @@ body {
   color: var(--text);
 }
 
+/* Scroll-Lock wenn Intro aktiv */
+body.intro-lock {
+  overflow: hidden;
+  height: 100dvh;
+}
+
 main {
   background: transparent;
 }
@@ -64,9 +70,23 @@ main {
   box-sizing: border-box;
 }
 
+/* Intro-Modus: kein Scroll, zentriert, volle Hoehe */
+.background.intro-active {
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 650px) {
   .background {
     padding: 20px;
+  }
+
+  .background.intro-active {
+    padding: 10px;
   }
 }
 
@@ -99,6 +119,8 @@ main {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  max-width: 680px;
 }
 
 /* ===== Sections ===== */
@@ -119,6 +141,7 @@ section {
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.3;
   }

@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         star.x = canvas.width;
         star.y = Math.random() * canvas.height;
       }
+
       star.brightness += 0.02;
       const alpha = 0.5 + Math.abs(Math.sin(star.brightness)) * 0.5;
       ctx.fillStyle = `rgba(200, 162, 255, ${alpha})`;
@@ -50,12 +51,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   draw();
 
+  // ===== Hilfsfunktionen Scroll-Lock =====
+  function lockScroll() {
+    document.body.classList.add("intro-lock");
+    if (backgroundEl) backgroundEl.classList.add("intro-active");
+  }
+
+  function unlockScroll() {
+    document.body.classList.remove("intro-lock");
+    if (backgroundEl) backgroundEl.classList.remove("intro-active");
+  }
+
   // ===== Intro Page =====
   const sectionHero = document.querySelector(".section-hero");
   const allSections = document.querySelectorAll("section");
   const borderAround = document.querySelector(".border-around");
+  const backgroundEl = document.querySelector(".background");
 
-  // Die PC-Section ist die zweite Section (Index 1)
   const pcSection = allSections[1];
   const scrElement = pcSection.querySelector(".scr");
   const scrImg = pcSection.querySelector(".scr-img");
@@ -63,8 +75,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!scrElement || !borderAround) return;
 
   borderAround.classList.add("intro-mode");
+  lockScroll();
 
-  // Alle Sections ab Index 2 verstecken (Hubs)
+  // Alle Sections ab Index 2 verstecken
   allSections.forEach((sec, i) => {
     if (i >= 2) {
       sec.classList.add("hidden");
@@ -72,11 +85,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== Hubs-Einblend-Animation (Klick auf Bildschirm) =====
+  // ===== Klick auf Bildschirm =====
   scrElement.addEventListener("click", (e) => {
     e.preventDefault();
 
-    // Intro (Hero-Text + PC) ausblenden
     sectionHero.style.transition = "opacity 0.6s ease";
     sectionHero.style.opacity = "0";
     pcSection.style.transition = "opacity 0.6s ease";
@@ -86,25 +98,18 @@ document.addEventListener("DOMContentLoaded", () => {
       sectionHero.style.display = "none";
       pcSection.style.display = "none";
       borderAround.classList.remove("intro-mode");
+      unlockScroll();
 
-      // Alle animierbaren Elemente sammeln
       const items = [];
-
-      // Einzelne Link-Cards aus dem Grid
-      document.querySelectorAll(".link-grid .link-card").forEach((card) => {
-        items.push(card);
-      });
-
-      // Berichtsheft, Globus, Zurueck-Button als ganze Sections
+      document
+        .querySelectorAll(".link-grid .link-card")
+        .forEach((card) => items.push(card));
       document
         .querySelectorAll(
           ".berichte-section, .globus-hub-section, .back-section",
         )
-        .forEach((sec) => {
-          items.push(sec);
-        });
+        .forEach((sec) => items.push(sec));
 
-      // Alle Sections einblenden (Container sichtbar machen)
       allSections.forEach((sec, i) => {
         if (i >= 2) {
           sec.classList.remove("hidden");
@@ -112,7 +117,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // Einzelne Items verstecken und nacheinander einblenden
       items.forEach((item, index) => {
         item.style.opacity = "0";
         item.style.transform = "translateY(-20px)";
@@ -170,7 +174,6 @@ document.addEventListener("DOMContentLoaded", () => {
         )
         .forEach((sec) => items.push(sec));
 
-      // Reihenfolge umkehren (bottom-to-top)
       const reversed = [...items].reverse();
 
       reversed.forEach((item, index) => {
@@ -184,35 +187,32 @@ document.addEventListener("DOMContentLoaded", () => {
       const totalDelay = reversed.length * 150 + 500;
 
       setTimeout(() => {
-        // Sections verstecken
         allSections.forEach((sec, i) => {
-          if (i >= 2) {
-            sec.classList.add("hidden");
-          }
+          if (i >= 2) sec.classList.add("hidden");
         });
 
-        // Inline-Styles zuruecksetzen
         items.forEach((item) => {
           item.style.removeProperty("opacity");
           item.style.removeProperty("transform");
           item.style.removeProperty("transition");
         });
 
-        // Intro wieder einblenden
+        // Intro wieder aufbauen
         sectionHero.style.display = "";
         sectionHero.style.opacity = "0";
         pcSection.style.display = "";
         pcSection.style.opacity = "0";
         borderAround.classList.add("intro-mode");
 
-        // Pulse-Animation auf dem Schulbild neu starten
+        // Scroll SOFORT sperren bevor Fade-In
+        lockScroll();
+
         if (scrImg) {
           scrImg.style.animation = "none";
           void scrImg.offsetWidth;
           scrImg.style.removeProperty("animation");
         }
 
-        // Fade-In des Intros
         setTimeout(() => {
           sectionHero.style.transition = "opacity 0.6s ease";
           sectionHero.style.opacity = "1";
