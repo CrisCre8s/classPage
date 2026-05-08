@@ -86,9 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===== Klick auf Bildschirm =====
-  scrElement.addEventListener("click", (e) => {
-    e.preventDefault();
-
+  function triggerIntroClick() {
     sectionHero.style.transition = "opacity 0.6s ease";
     sectionHero.style.opacity = "0";
     pcSection.style.transition = "opacity 0.6s ease";
@@ -103,12 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const items = [];
       document
         .querySelectorAll(".link-grid .link-card")
-        .forEach((card) => items.push(card));
+        .forEach((c) => items.push(c));
       document
         .querySelectorAll(
           ".berichte-section, .globus-hub-section, .back-section",
         )
-        .forEach((sec) => items.push(sec));
+        .forEach((s) => items.push(s));
 
       allSections.forEach((sec, i) => {
         if (i >= 2) {
@@ -121,17 +119,27 @@ document.addEventListener("DOMContentLoaded", () => {
         item.style.opacity = "0";
         item.style.transform = "translateY(-20px)";
         item.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-
         setTimeout(
           () => {
             item.style.opacity = "1";
             item.style.transform = "translateY(0)";
           },
-          100 + index * 350,
+          100 + index * 200,
         );
       });
     }, 600);
+  }
+
+  scrElement.addEventListener("click", (e) => {
+    e.preventDefault();
+    triggerIntroClick();
   });
+
+  const bdgElement = pcSection.querySelector(".bdg");
+  if (bdgElement) {
+    bdgElement.style.cursor = "pointer";
+    bdgElement.addEventListener("click", triggerIntroClick);
+  }
 
   // ===== Berichtsheft =====
   const berichte = [
@@ -159,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.appendChild(card);
   });
 
-  // ===== Zurueck-Button =====
+  // ===== Zurück-Button =====
   const backBtn = document.getElementById("back-btn");
 
   if (backBtn) {

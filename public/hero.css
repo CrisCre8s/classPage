@@ -7,6 +7,12 @@
   color: white;
 }
 
+@media (max-width: 1125px) {
+  .hero {
+    margin: 0 -10px;
+  }
+}
+
 .h1-header {
   font-family: "Press Start 2P", monospace;
   font-size: 1.6rem;
@@ -114,7 +120,7 @@
 
 /* ===== Section Hero ===== */
 .section-hero {
-  margin: 1rem 3rem;
+  margin: 1rem -3rem;
   border-bottom: 2px solid var(--accent-dim);
   padding-bottom: 1rem;
 }

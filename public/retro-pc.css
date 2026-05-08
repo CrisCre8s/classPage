@@ -109,6 +109,7 @@
   z-index: 1;
   image-rendering: pixelated;
   transition: filter 0.2s;
+  animation: pulse 2.5s infinite;
 }
 
 .scr:hover .scr-img {
