@@ -1,0 +1,176 @@
+/* ===== Link Grid ===== */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 0 2rem;
+  gap: 0;
+}
+
+@media (max-width: 1125px) {
+  .link-grid {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+  }
+}
+
+/* ===== Link Cards ===== */
+.link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 1rem;
+  background: #0d0d0d;
+  border-radius: 0;
+  border: 3px solid var(--accent-dim);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: white;
+  box-shadow:
+    4px 4px 0px var(--accent-dark),
+    0 0 20px rgba(200, 162, 255, 0.4),
+    0 0 50px rgba(123, 47, 255, 0.15);
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2),
+    border-color 0.1s steps(2);
+}
+
+.link-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow:
+    8px 8px 0px var(--accent),
+    0 0 35px rgba(200, 162, 255, 0.6),
+    0 0 80px rgba(123, 47, 255, 0.3);
+  border-color: var(--accent);
+}
+
+.link-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--accent);
+}
+
+.link-card ion-icon {
+  font-size: 1.75rem;
+  color: var(--accent-yellow);
+}
+
+.link-card .card-title {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.75rem;
+  font-weight: normal;
+  line-height: 1.8;
+  color: white;
+  text-shadow: 2px 2px 0px var(--accent-dark);
+}
+
+@media (max-width: 650px) {
+  .link-card .card-title {
+    font-size: 0.55rem;
+  }
+}
+
+.link-card .card-desc {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.55rem;
+  color: var(--accent-yellow);
+  line-height: 2;
+}
+
+@media (max-width: 650px) {
+  .link-card .card-desc {
+    font-size: 0.4rem;
+  }
+}
+
+/* ===== Shift Right ===== */
+.shift-right {
+  grid-column-start: 2;
+}
+
+/* ===== Hover Vorschau-Bilder ===== */
+.img-schoolWebsite,
+.img-schoolPlan,
+.img-notePage,
+.img-azubiPage,
+.img-useless {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.img-schoolWebsite::before,
+.img-schoolPlan::before,
+.img-notePage::before,
+.img-azubiPage::before,
+.img-useless::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s steps(4);
+  border-radius: 0;
+  z-index: 2;
+  border: 6px solid var(--accent);
+  image-rendering: auto;
+  filter: brightness(0.95) contrast(1.05);
+}
+
+.img-schoolWebsite::before {
+  background-image: url("/schoolWebsite.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: rgb(246, 249, 212);
+}
+
+.img-schoolPlan::before {
+  background-image: url("/schoolPlan.png");
+  background-size: cover;
+  background-color: black;
+}
+
+.img-notePage::before {
+  background-image: url("/notePage.png");
+  background-size: cover;
+  background-color: black;
+}
+
+.img-azubiPage::before {
+  background-image: url("/azubiPage.png");
+  background-size: cover;
+  background-color: black;
+}
+
+.img-useless::before {
+  background-image: url("/uselessWebsite.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.img-schoolWebsite:hover::before,
+.img-schoolPlan:hover::before,
+.img-notePage:hover::before,
+.img-azubiPage:hover::before,
+.img-useless:hover::before {
+  opacity: 1;
+}
+
+.img-schoolWebsite:hover .card-title,
+.img-schoolWebsite:hover .card-desc,
+.img-schoolWebsite:hover ion-icon,
+.img-schoolPlan:hover .card-title,
+.img-schoolPlan:hover .card-desc,
+.img-schoolPlan:hover ion-icon,
+.img-notePage:hover .card-title,
+.img-notePage:hover .card-desc,
+.img-notePage:hover ion-icon,
+.img-azubiPage:hover .card-title,
+.img-azubiPage:hover .card-desc,
+.img-azubiPage:hover ion-icon,
+.img-useless:hover .card-title,
+.img-useless:hover .card-desc,
+.img-useless:hover ion-icon {
+  opacity: 0;
+  transition: opacity 0.2s steps(4);
+}

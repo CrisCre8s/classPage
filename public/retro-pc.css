@@ -1,0 +1,316 @@
+/* ===== Retro PC (Intro) ===== */
+.pc {
+  position: relative;
+  width: 620px;
+  height: 540px;
+  margin: 0 auto;
+}
+
+/* === Monitor === */
+.mon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  height: 350px;
+  background: linear-gradient(180deg, #5a5a5a, #4a4a4a, #3e3e3e);
+  border-radius: 12px 12px 6px 6px;
+  border: 3px solid #333;
+  box-shadow:
+    4px 6px 18px rgba(0, 0, 0, 0.6),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.bezel {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  right: 22px;
+  bottom: 52px;
+  background: #111;
+  border-radius: 6px;
+  border: 4px solid #222;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.9);
+}
+
+.scr {
+  position: absolute;
+  inset: 8px;
+  background: #1a1a2e;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* Scanlines */
+.scr::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 6px
+  );
+}
+
+/* Glanzeffekt */
+.scr::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(255, 255, 255, 0.04),
+    transparent 60%
+  );
+}
+
+/* Schulbild auf dem Bildschirm */
+.scr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+  image-rendering: pixelated;
+  transition: filter 0.2s;
+}
+
+.scr:hover .scr-img {
+  filter: brightness(1.2);
+}
+
+.scr-label {
+  position: absolute;
+  bottom: 12px;
+  z-index: 5;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  animation: pulse 2.5s infinite;
+  letter-spacing: 1px;
+}
+
+.scr:hover .scr-label {
+  color: #ffdd44;
+}
+
+/* Monitor-Buttons */
+.mb {
+  position: absolute;
+  bottom: 10px;
+  left: 22px;
+  right: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sb {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #555, #444);
+  border: 1px solid #333;
+}
+
+.setb {
+  width: 38px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #555, #444);
+  border: 1px solid #333;
+  font-size: 6px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #4f4, #090);
+  box-shadow: 0 0 5px #0f0;
+  margin-left: auto;
+}
+
+/* Lueftungsschlitze rechts am Monitor */
+.mv {
+  position: absolute;
+  right: 5px;
+  top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mv span {
+  width: 4px;
+  height: 18px;
+  background: #4a4a4a;
+  border-radius: 1px;
+}
+
+/* === System Unit (Gehaeuse) === */
+.sys {
+  position: absolute;
+  top: 336px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 135px;
+  background: linear-gradient(180deg, #5a5a5a, #4a4a4a, #3e3e3e);
+  border-radius: 4px;
+  border: 3px solid #333;
+  box-shadow:
+    3px 5px 14px rgba(0, 0, 0, 0.4),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.08);
+}
+
+.flp {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  width: 125px;
+  height: 18px;
+  background: linear-gradient(180deg, #666, #555);
+  border: 1px solid #444;
+  border-radius: 2px;
+}
+
+.flp::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 4px;
+  background: #333;
+  border-radius: 1px;
+}
+
+.pled {
+  position: absolute;
+  top: 20px;
+  left: 165px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #5f5, #0a0);
+  box-shadow: 0 0 5px #0f0;
+}
+
+.hled {
+  position: absolute;
+  top: 20px;
+  left: 182px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fa0, #a60);
+  box-shadow: 0 0 4px #fa0;
+}
+
+.pbtn {
+  position: absolute;
+  top: 54px;
+  left: 20px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #666, #444);
+  border: 1px solid #333;
+}
+
+.rbtn {
+  position: absolute;
+  top: 58px;
+  left: 48px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #666, #444);
+  border: 1px solid #333;
+}
+
+.tbtn {
+  position: absolute;
+  top: 55px;
+  left: 72px;
+  width: 34px;
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #666, #444);
+  border: 1px solid #333;
+  font-size: 5px;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl {
+  position: absolute;
+  font-size: 5px;
+  color: #777;
+  letter-spacing: 0.5px;
+}
+
+.slm {
+  bottom: 10px;
+  left: 20px;
+}
+
+.sla {
+  bottom: 10px;
+  left: 90px;
+}
+
+.sv {
+  position: absolute;
+  right: 10px;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sv span {
+  width: 85px;
+  height: 3px;
+  background: #4a4a4a;
+  border-radius: 1px;
+}
+
+.bdg {
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+  width: 46px;
+  height: 30px;
+  background: linear-gradient(135deg, #4a9, #2a6);
+  border-radius: 2px;
+  font-size: 5px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.3;
+}

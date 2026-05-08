@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ===== Canvas Setup =====
   const canvas = document.getElementById("bg-canvas");
-  if (!canvas) return; // Sicherheitscheck
+  if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
   canvas.width = window.innerWidth;
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       star.brightness += 0.02;
       const alpha = 0.5 + Math.abs(Math.sin(star.brightness)) * 0.5;
-      ctx.fillStyle = `rgba(255, 179, 0, ${alpha})`;
+      ctx.fillStyle = `rgba(200, 162, 255, ${alpha})`;
       ctx.fillRect(
         Math.floor(star.x),
         Math.floor(star.y),
@@ -50,17 +50,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   draw();
 
-  // ===== Intro Logic =====
+  // ===== Intro Page =====
   const sectionHero = document.querySelector(".section-hero");
-  const heroWrapper = document.querySelector(".hero-wrapper");
-  const heroImg = document.querySelector(".hero-img");
   const allSections = document.querySelectorAll("section");
   const borderAround = document.querySelector(".border-around");
 
-  if (!heroImg || !borderAround) return; // Sicherheitscheck
+  // Die PC-Section ist die zweite Section (Index 1)
+  const pcSection = allSections[1];
+  const scrElement = pcSection.querySelector(".scr");
+  const scrImg = pcSection.querySelector(".scr-img");
+
+  if (!scrElement || !borderAround) return;
 
   borderAround.classList.add("intro-mode");
 
+  // Alle Sections ab Index 2 verstecken (Hubs)
   allSections.forEach((sec, i) => {
     if (i >= 2) {
       sec.classList.add("hidden");
@@ -68,25 +72,59 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  heroImg.addEventListener("click", () => {
-    heroImg.style.animation = "none";
+  // ===== Hubs-Einblend-Animation (Klick auf Bildschirm) =====
+  scrElement.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    // Intro (Hero-Text + PC) ausblenden
     sectionHero.style.transition = "opacity 0.6s ease";
     sectionHero.style.opacity = "0";
-    heroWrapper.style.transition = "opacity 0.6s ease";
-    heroWrapper.style.opacity = "0";
+    pcSection.style.transition = "opacity 0.6s ease";
+    pcSection.style.opacity = "0";
 
     setTimeout(() => {
       sectionHero.style.display = "none";
-      heroWrapper.style.display = "none";
+      pcSection.style.display = "none";
       borderAround.classList.remove("intro-mode");
 
+      // Alle animierbaren Elemente sammeln
+      const items = [];
+
+      // Einzelne Link-Cards aus dem Grid
+      document.querySelectorAll(".link-grid .link-card").forEach((card) => {
+        items.push(card);
+      });
+
+      // Berichtsheft, Globus, Zurueck-Button als ganze Sections
+      document
+        .querySelectorAll(
+          ".berichte-section, .globus-hub-section, .back-section",
+        )
+        .forEach((sec) => {
+          items.push(sec);
+        });
+
+      // Alle Sections einblenden (Container sichtbar machen)
       allSections.forEach((sec, i) => {
         if (i >= 2) {
           sec.classList.remove("hidden");
-          setTimeout(() => {
-            sec.style.opacity = "1";
-          }, 20);
+          sec.style.opacity = "1";
         }
+      });
+
+      // Einzelne Items verstecken und nacheinander einblenden
+      items.forEach((item, index) => {
+        item.style.opacity = "0";
+        item.style.transform = "translateY(-20px)";
+        item.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+
+        setTimeout(
+          () => {
+            item.style.opacity = "1";
+            item.style.transform = "translateY(0)";
+          },
+          100 + index * 350,
+        );
       });
     }, 600);
   });
@@ -117,40 +155,71 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.appendChild(card);
   });
 
-  // ===== Zurück-Button =====
+  // ===== Zurueck-Button =====
   const backBtn = document.getElementById("back-btn");
 
   if (backBtn) {
     backBtn.addEventListener("click", () => {
-      // Alle Sections ausblenden
-      allSections.forEach((sec, i) => {
-        if (i >= 2) {
-          sec.style.transition = "opacity 0.6s ease";
-          sec.style.opacity = "0";
+      const items = [];
+      document
+        .querySelectorAll(".link-grid .link-card")
+        .forEach((card) => items.push(card));
+      document
+        .querySelectorAll(
+          ".berichte-section, .globus-hub-section, .back-section",
+        )
+        .forEach((sec) => items.push(sec));
 
-          setTimeout(() => {
-            sec.classList.add("hidden");
-          }, 600);
-        }
+      // Reihenfolge umkehren (bottom-to-top)
+      const reversed = [...items].reverse();
+
+      reversed.forEach((item, index) => {
+        item.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        setTimeout(() => {
+          item.style.opacity = "0";
+          item.style.transform = "translateY(-20px)";
+        }, index * 150);
       });
 
+      const totalDelay = reversed.length * 150 + 500;
+
       setTimeout(() => {
-        // Hero + Bild wieder einblenden
+        // Sections verstecken
+        allSections.forEach((sec, i) => {
+          if (i >= 2) {
+            sec.classList.add("hidden");
+          }
+        });
+
+        // Inline-Styles zuruecksetzen
+        items.forEach((item) => {
+          item.style.removeProperty("opacity");
+          item.style.removeProperty("transform");
+          item.style.removeProperty("transition");
+        });
+
+        // Intro wieder einblenden
         sectionHero.style.display = "";
         sectionHero.style.opacity = "0";
-        heroWrapper.style.display = "";
-        heroWrapper.style.opacity = "0";
+        pcSection.style.display = "";
+        pcSection.style.opacity = "0";
         borderAround.classList.add("intro-mode");
 
-        heroImg.style.removeProperty("animation");
+        // Pulse-Animation auf dem Schulbild neu starten
+        if (scrImg) {
+          scrImg.style.animation = "none";
+          void scrImg.offsetWidth;
+          scrImg.style.removeProperty("animation");
+        }
 
+        // Fade-In des Intros
         setTimeout(() => {
           sectionHero.style.transition = "opacity 0.6s ease";
           sectionHero.style.opacity = "1";
-          heroWrapper.style.transition = "opacity 0.6s ease";
-          heroWrapper.style.opacity = "1";
+          pcSection.style.transition = "opacity 0.6s ease";
+          pcSection.style.opacity = "1";
         }, 20);
-      }, 600);
+      }, totalDelay);
     });
   }
 });

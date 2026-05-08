@@ -1,0 +1,276 @@
+/* ===== Berichtsheft ===== */
+.berichte-section .link-card {
+  margin: 1rem 3rem;
+}
+
+@media (max-width: 1125px) {
+  .berichte-section .link-card {
+    margin: 1rem 0;
+  }
+}
+
+.berichte-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--accent-dim);
+  padding-bottom: 0.8rem;
+}
+
+.berichte-header h2 {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: white;
+  text-shadow: 2px 2px 0px var(--accent-dark);
+  line-height: 1.8;
+}
+
+.berichte-header ion-icon {
+  font-size: 1.75rem;
+  color: var(--accent-yellow);
+}
+
+.berichte-desc {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.55rem;
+  color: #cccccc;
+  margin-bottom: 1.2rem;
+  line-height: 2.2;
+}
+
+.berichte-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.bericht-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 0.8rem;
+  background: #0d0d0d;
+  border: 2px solid var(--accent-dim);
+  box-shadow:
+    3px 3px 0px var(--accent-dark),
+    0 0 20px rgba(200, 162, 255, 0.4),
+    0 0 50px rgba(123, 47, 255, 0.15);
+  text-decoration: none;
+  color: white;
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2),
+    border-color 0.1s steps(2);
+}
+
+.bericht-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow:
+    6px 6px 0px var(--accent),
+    0 0 35px rgba(200, 162, 255, 0.6),
+    0 0 80px rgba(123, 47, 255, 0.3);
+  border-color: var(--accent);
+}
+
+.bericht-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--accent);
+}
+
+.bericht-card ion-icon {
+  font-size: 2rem;
+  color: var(--accent-yellow);
+}
+
+.bericht-titel {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.6rem;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.bericht-typ {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.4rem;
+  color: var(--accent-yellow);
+  border: 1px solid var(--accent-dim);
+  padding: 2px 6px;
+}
+
+@media (max-width: 650px) {
+  .berichte-desc {
+    font-size: 0.4rem;
+  }
+  .bericht-titel {
+    font-size: 0.45rem;
+  }
+  .bericht-typ {
+    font-size: 0.35rem;
+  }
+}
+
+/* ===== Globus Hub ===== */
+.globus-hub-section .link-card {
+  margin: 1rem 3rem;
+}
+
+@media (max-width: 1125px) {
+  .globus-hub-section .link-card {
+    margin: 1rem 0;
+  }
+}
+
+.globus-hub-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--accent-dim);
+  padding-bottom: 0.8rem;
+}
+
+.globus-hub-header h2 {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: white;
+  text-shadow: 2px 2px 0px var(--accent-dark);
+  line-height: 1.8;
+}
+
+.globus-hub-header ion-icon {
+  font-size: 1.75rem;
+  color: var(--accent-yellow);
+}
+
+.globus-hub-desc {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.55rem;
+  color: #cccccc;
+  margin-bottom: 1.2rem;
+  line-height: 2.2;
+}
+
+@media (max-width: 650px) {
+  .globus-hub-desc {
+    font-size: 0.4rem;
+  }
+}
+
+.globus-hub-link {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.6rem;
+  color: var(--accent-yellow);
+  text-decoration: none;
+  border: 2px solid var(--accent-yellow);
+  padding: 0.5rem 1rem;
+  box-shadow: 3px 3px 0px var(--accent-dark);
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2);
+}
+
+.globus-hub-link:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 6px 6px 0px var(--accent-dark);
+  color: white;
+}
+
+.globus-hub-info {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.5rem;
+  line-height: 2.4;
+  color: #aaaaaa;
+}
+
+@media (max-width: 650px) {
+  .globus-hub-link {
+    font-size: 0.4rem;
+  }
+  .globus-hub-info {
+    font-size: 0.35rem;
+  }
+}
+
+.globus-hub-info strong {
+  color: var(--accent-yellow);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.globus-hub-info ul {
+  margin: 0.3rem 0 0 0.5rem;
+  padding: 0;
+  list-style: square inside;
+}
+
+.globus-hub-info a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-dim);
+}
+
+.globus-hub-info a:hover {
+  color: white;
+  border-bottom-color: white;
+}
+
+/* ===== Zurueck-Button ===== */
+.back-section {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0 1rem;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.6rem;
+  color: var(--accent-yellow);
+  background: #0d0d0d;
+  border: 2px solid var(--accent);
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  box-shadow:
+    3px 3px 0px var(--accent-dark),
+    0 0 20px rgba(200, 162, 255, 0.4),
+    0 0 50px rgba(123, 47, 255, 0.15);
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2);
+}
+
+.back-btn:hover {
+  transform: translate(-3px, -3px);
+  box-shadow:
+    6px 6px 0px var(--accent),
+    0 0 35px rgba(200, 162, 255, 0.6),
+    0 0 80px rgba(123, 47, 255, 0.3);
+  color: white;
+}
+
+.back-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--accent);
+}
+
+.back-btn ion-icon {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 650px) {
+  .back-btn {
+    font-size: 0.4rem;
+    padding: 0.6rem 1rem;
+  }
+}
