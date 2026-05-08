@@ -25,7 +25,7 @@
   .h1-header {
     font-size: 0.55rem;
     line-height: 2;
-    text-shadow: 2px 2px 0px var(--accent);
+    text-shadow: 1.5px 1.5px 0px var(--accent);
     word-break: break-word;
     hyphens: auto;
     max-width: 100%;
