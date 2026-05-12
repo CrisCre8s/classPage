@@ -22,8 +22,8 @@
   text-decoration: none;
   color: white;
   position: relative;
-  background: #0d0d0d; /* ← GEÄNDERT: zurück auf dunkel */
-  border: 3px solid var(--accent-dim); /* ← GEÄNDERT: zurück auf lila */
+  background: #0d0d0d;
+  border: 3px solid var(--accent-dim);
   border-top: none;
   box-shadow:
     4px 4px 0px var(--accent-dark),
@@ -43,8 +43,8 @@
   left: -3px;
   width: 42%;
   height: 15px;
-  background: #0d0d0d; /* ← GEÄNDERT: dunkel wie Körper */
-  border: 3px solid var(--accent-dim); /* ← GEÄNDERT: lila Rand */
+  background: #0d0d0d;
+  border: 3px solid var(--accent-dim);
   border-bottom: none;
 }
 

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/cards.css" />
     <link rel="stylesheet" href="/sections.css" />
     <link rel="stylesheet" href="/retro-pc.css" />
+    <link rel="stylesheet" href="/LK-section.css" />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
@@ -40,6 +41,7 @@
             </div>
           </section>
 
+          <!-- PC-Section -->
           <section>
             <div class="pc">
               <div class="mon">
@@ -80,11 +82,11 @@
                   <span></span><span></span><span></span><span></span>
                 </div>
                 <div class="bdg">POWER<br />UP</div>
-                <!-- ← GEÄNDERT: war "Start Power" -->
               </div>
             </div>
           </section>
 
+          <!-- Link-Cards -->
           <section>
             <div class="link-grid">
               <div>
@@ -95,14 +97,12 @@
                   rel="noopener"
                 >
                   <div class="link-card-inner">
-                    <!-- ← NEU -->
                     <ion-icon name="home-outline"></ion-icon>
                     <span class="card-title">Schulwebseite</span>
                     <span class="card-desc"
                       >Offizielle Webseite der SBSZ Hermsdorf</span
                     >
                   </div>
-                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -114,7 +114,6 @@
                   rel="noopener"
                 >
                   <div class="link-card-inner">
-                    <!-- ← NEU -->
                     <ion-icon name="calendar-outline"></ion-icon>
                     <span class="card-title"
                       >Stundenplan & Vertretungsplan</span
@@ -123,7 +122,6 @@
                       >Aktueller Stunden- und Vertretungsplan der Klasse</span
                     >
                   </div>
-                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -135,14 +133,12 @@
                   rel="noopener"
                 >
                   <div class="link-card-inner">
-                    <!-- ← NEU -->
                     <ion-icon name="school-outline"></ion-icon>
                     <span class="card-title">Klassenbuch & Noten</span>
                     <span class="card-desc"
                       >Notenübersicht und Klassenbucheintragungen</span
                     >
                   </div>
-                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -154,14 +150,12 @@
                   rel="noopener"
                 >
                   <div class="link-card-inner">
-                    <!-- ← NEU -->
                     <ion-icon name="person-outline"></ion-icon>
                     <span class="card-title">Azubi-Portal</span>
                     <span class="card-desc"
                       >Azubi-Infocenter und AzubiCard prüfen</span
                     >
                   </div>
-                  <!-- ← NEU -->
                 </a>
               </div>
 
@@ -173,13 +167,96 @@
                   rel="noopener"
                 >
                   <div class="link-card-inner">
-                    <!-- ← NEU -->
                     <ion-icon name="happy-outline"></ion-icon>
                     <span class="card-title">Take Me To A Useless Website</span>
                     <span class="card-desc">Für deine Langeweile</span>
                   </div>
-                  <!-- ← NEU -->
                 </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- Leistungskontrollen -->
+          <section class="lk-section">
+            <div class="link-card">
+              <div class="link-card-inner">
+                <div class="lk-header">
+                  <ion-icon name="warning-outline"></ion-icon>
+                  <h2>Leistungskontrollen</h2>
+                </div>
+                <p class="lk-desc">
+                  Anstehende Tests, Klassenarbeiten & Prüfungen
+                </p>
+                <div class="lk-grid">
+                  <!-- Anstehende LKs -->
+
+                  <div>
+                    <span class="lk-fach">
+                      Zurzeit keine anstehenden Leistungskontrollen
+                    </span>
+                  </div>
+
+                  <!-- <div class="lk-entry lk-soon">
+                    <div class="lk-date">
+                      <span class="lk-day">12</span>
+                      <span class="lk-month">MAI</span>
+                    </div>
+                    <div class="lk-info">
+                      <span class="lk-fach">Netzwerktechnik</span>
+                      <span class="lk-typ">► Klassenarbeit</span>
+                      <span class="lk-notiz"
+                        >Kapitel 4–6, OSI-Modell, Subnetting</span
+                      >
+                    </div>
+                    <div class="lk-status lk-status-soon">BALD</div>
+                  </div>
+
+                  <div class="lk-entry">
+                    <div class="lk-date">
+                      <span class="lk-day">19</span>
+                      <span class="lk-month">MAI</span>
+                    </div>
+                    <div class="lk-info">
+                      <span class="lk-fach">Wirtschaft & Soziales</span>
+                      <span class="lk-typ">► Kurztest</span>
+                      <span class="lk-notiz"
+                        >Arbeitsrecht, Kündigungsfristen</span
+                      >
+                    </div>
+                    <div class="lk-status lk-status-open">OFFEN</div>
+                  </div>
+
+                  <div class="lk-entry">
+                    <div class="lk-date">
+                      <span class="lk-day">02</span>
+                      <span class="lk-month">JUN</span>
+                    </div>
+                    <div class="lk-info">
+                      <span class="lk-fach">Programmierung</span>
+                      <span class="lk-typ">► Praktische Prüfung</span>
+                      <span class="lk-notiz"
+                        >Python OOP, Datenbankanbindung</span
+                      >
+                    </div>
+                    <div class="lk-status lk-status-open">OFFEN</div>
+                  </div>
+
+                  <div class="lk-entry lk-done">
+                    <div class="lk-date">
+                      <span class="lk-day">28</span>
+                      <span class="lk-month">APR</span>
+                    </div>
+                    <div class="lk-info">
+                      <span class="lk-fach">Englisch</span>
+                      <span class="lk-typ">► Klassenarbeit</span>
+                      <span class="lk-notiz"
+                        >Business English, Bewerbungsschreiben</span
+                      >
+                    </div>
+                    <div class="lk-status lk-status-done">DONE</div>
+                  </div> -->
+                  <!-- Ende anstehende Lks -->
+                </div>
               </div>
             </div>
           </section>
@@ -188,7 +265,6 @@
           <section class="berichte-section">
             <div class="link-card">
               <div class="link-card-inner">
-                <!-- ← NEU -->
                 <div class="berichte-header">
                   <ion-icon name="document-text-outline"></ion-icon>
                   <h2>Berichtsheft</h2>
@@ -198,7 +274,6 @@
                 </p>
                 <div class="berichte-grid" id="berichte-grid"></div>
               </div>
-              <!-- ← NEU -->
             </div>
           </section>
 
@@ -206,7 +281,6 @@
           <section class="globus-hub-section">
             <div class="link-card">
               <div class="link-card-inner">
-                <!-- ← NEU -->
                 <div class="globus-hub-header">
                   <ion-icon name="storefront-outline"></ion-icon>
                   <h2>Globus Hermsdorf</h2>
@@ -244,7 +318,6 @@
                   </div>
                 </div>
               </div>
-              <!-- ← NEU -->
             </div>
           </section>
 

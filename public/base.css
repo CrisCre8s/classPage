@@ -126,7 +126,7 @@ main {
 /* ===== Sections ===== */
 section {
   background-color: transparent;
-  margin: 2rem 4rem;
+  margin: 4rem 4rem;
 }
 
 @media (max-width: 650px) {

@@ -12,9 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let CX = W / 2;
   let CY = H / 2;
 
-  // ← GEÄNDERT: isMobile + if/else komplett entfernt
-
-  const STAR_COUNT = 180; // ← GEÄNDERT: immer 180, egal ob Mobile oder Desktop
+  const STAR_COUNT = 180;
 
   function randomStar() {
     const angle = Math.random() * Math.PI * 2;
@@ -129,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach((c) => items.push(c));
       document
         .querySelectorAll(
-          ".berichte-section, .globus-hub-section, .back-section",
+          ".lk-section, .berichte-section, .globus-hub-section, .back-section",
         )
         .forEach((s) => items.push(s));
 
@@ -203,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach((card) => items.push(card));
       document
         .querySelectorAll(
-          ".berichte-section, .globus-hub-section, .back-section",
+          ".lk-section, .berichte-section, .globus-hub-section, .back-section",
         )
         .forEach((sec) => items.push(sec));
 

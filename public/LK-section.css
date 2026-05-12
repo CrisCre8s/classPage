@@ -1,0 +1,190 @@
+/* ===== Leistungskontrollen ===== */
+.lk-section {
+  padding: 0 2rem;
+}
+
+@media (max-width: 650px) {
+  .lk-section {
+    padding: 0;
+    margin: 2.5rem 0;
+  }
+}
+
+.lk-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.lk-header ion-icon {
+  font-size: 1.5rem;
+  color: var(--accent-yellow);
+}
+
+.lk-header h2 {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: white;
+  text-shadow: 2px 2px 0px var(--accent-dark);
+  line-height: 1.8;
+}
+
+@media (max-width: 650px) {
+  .lk-header h2 {
+    font-size: 0.55rem;
+  }
+}
+
+.lk-desc {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.45rem;
+  color: var(--accent-yellow);
+  line-height: 2;
+  margin-bottom: 1.2rem;
+}
+
+/* ── Eintrags-Grid ── */
+.lk-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Einzelner Eintrag ── */
+.lk-entry {
+  display: grid;
+  grid-template-columns: 4rem 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--accent-dim);
+  transition: background 0.1s steps(2);
+}
+
+.lk-entry:last-child {
+  border-bottom: none;
+}
+
+.lk-entry:hover {
+  background: rgba(123, 47, 255, 0.08);
+}
+
+/* Erledigte Einträge ausgegraut */
+.lk-done {
+  opacity: 0.45;
+}
+
+.lk-done .lk-fach,
+.lk-done .lk-notiz {
+  text-decoration: line-through;
+}
+
+/* ── Datum-Block ── */
+.lk-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(123, 47, 255, 0.15);
+  border: 2px solid var(--accent-dim);
+  padding: 0.4rem 0.3rem;
+  min-width: 3.5rem;
+}
+
+.lk-soon .lk-date {
+  border-color: #ff6b35;
+  background: rgba(255, 107, 53, 0.15);
+  box-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+}
+
+.lk-day {
+  font-family: "Press Start 2P", monospace;
+  font-size: 1rem;
+  color: white;
+  line-height: 1.4;
+}
+
+.lk-month {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.35rem;
+  color: var(--accent-yellow);
+  letter-spacing: 0.1em;
+}
+
+/* ── Info-Block ── */
+.lk-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lk-fach {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.7rem;
+  color: white;
+  line-height: 1.8;
+}
+
+@media (max-width: 650px) {
+  .lk-fach {
+    font-size: 0.4rem;
+  }
+}
+
+.lk-typ {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.6rem;
+  color: var(--accent);
+  line-height: 1.8;
+}
+
+.lk-notiz {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.5rem;
+  color: white;
+  line-height: 2;
+}
+
+@media (max-width: 650px) {
+  .lk-notiz {
+    display: none; /* auf Mobile weglassen um Platz zu sparen */
+  }
+}
+
+/* ── Status-Badge ── */
+.lk-status {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  border: 2px solid;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.lk-status-soon {
+  color: red;
+  border-color: red;
+  box-shadow: 0 0 8px red;
+  animation: blink-soon 1s steps(2) infinite;
+}
+
+.lk-status-open {
+  color: var(--accent-yellow);
+  border-color: var(--accent-yellow);
+}
+
+.lk-status-done {
+  color: #4aff91;
+  border-color: #4aff91;
+}
+
+@keyframes blink-soon {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
