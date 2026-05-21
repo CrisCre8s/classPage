@@ -109,3 +109,13 @@
     opacity: 0.2;
   }
 }
+
+@media (max-width: 768px) {
+  .void-section {
+    display: none;
+  }
+
+  #void-ui {
+    display: none !important;
+  }
+}
