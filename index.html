@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/sections.css" />
     <link rel="stylesheet" href="/retro-pc.css" />
     <link rel="stylesheet" href="/LK-section.css" />
+    <link rel="stylesheet" href="/void-button.css" />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
@@ -24,7 +25,7 @@
       src="https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.js"
     ></script>
   </head>
-  <body>
+  <body tabindex="-1">
     <canvas id="bg-canvas"></canvas>
     <div class="background">
       <main>
@@ -81,7 +82,7 @@
                   <span></span><span></span><span></span><span></span>
                   <span></span><span></span><span></span><span></span>
                 </div>
-                <div class="bdg">POWER<br />UP</div>
+                <div class="bdg">POWER</div>
               </div>
             </div>
           </section>
@@ -202,7 +203,7 @@
                       <span class="lk-month">MAI</span>
                     </div>
                     <div class="lk-info">
-                      <span class="lk-fach">Löffler DNS</span>
+                      <span class="lk-fach">Löffler - DNS</span>
                       <span class="lk-typ">► Klassenarbeit</span>
                       <span class="lk-notiz">Alles rund um DNS</span>
                     </div>
@@ -215,7 +216,31 @@
                       <span class="lk-month">MAI</span>
                     </div>
                     <div class="lk-info">
-                      <span class="lk-fach">Lieber Lektion 4</span>
+                      <span class="lk-fach">Lieber - Lektion 4</span>
+                      <span class="lk-typ">► Klassenarbeit</span>
+                    </div>
+                    <div class="lk-status lk-status-soon">BALD</div>
+                  </div>
+
+                  <div class="lk-entry lk-soon">
+                    <div class="lk-date">
+                      <span class="lk-day">28</span>
+                      <span class="lk-month">MAI</span>
+                    </div>
+                    <div class="lk-info">
+                      <span class="lk-fach">Scheiding - Lohnsteuerklassen</span>
+                      <span class="lk-typ">► Klassenarbeit</span>
+                    </div>
+                    <div class="lk-status lk-status-soon">BALD</div>
+                  </div>
+
+                  <div class="lk-entry lk-soon">
+                    <div class="lk-date">
+                      <span class="lk-day">28</span>
+                      <span class="lk-month">MAI</span>
+                    </div>
+                    <div class="lk-info">
+                      <span class="lk-fach">Groß M - Usermanagement</span>
                       <span class="lk-typ">► Klassenarbeit</span>
                     </div>
                     <div class="lk-status lk-status-soon">BALD</div>
@@ -333,6 +358,17 @@
             </div>
           </section>
 
+          <!-- Void-Button -->
+          <section class="void-section">
+            <div class="void-btn" id="void-btn">
+              <button>
+                <ion-icon name="eye-off-outline"></ion-icon>
+                <span>Void-Funktion</span>
+              </button>
+              <p class="void-hint">ESC – Zurückkehren</p>
+            </div>
+          </section>
+
           <!-- Zurück-Button -->
           <section class="back-section">
             <button class="back-btn" id="back-btn">
@@ -343,6 +379,15 @@
         </div>
       </main>
     </div>
-    <script src="/script.js"></script>
+    <script type="module" src="/main.js"></script>
+    <div id="void-ui">
+      <p class="void-ui-title">PRESS ENTER TO START</p>
+      <div class="void-ui-hints">
+        <p><ion-icon name="arrow-up-outline"></ion-icon> FASTER</p>
+        <p><ion-icon name="arrow-down-outline"></ion-icon> SLOWER</p>
+        <p>ENTER – RESTART</p>
+        <p>ESC – GO BACK</p>
+      </div>
+    </div>
   </body>
 </html>
