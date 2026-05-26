@@ -315,11 +315,6 @@
   border-radius: 50%;
   background: linear-gradient(180deg, #666, #444);
   border: 1px solid #333;
-  cursor: pointer;
-}
-
-.pbtn:hover {
-  background: linear-gradient(180deg, #888, #666);
 }
 
 .rbtn {

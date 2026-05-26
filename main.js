@@ -21,9 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initIntro(pcSection);
 
   // Power-Buttons
-  const pBtn = pcSection.querySelector(".pbtn");
-  if (pBtn) pBtn.addEventListener("click", togglePower);
-
   const bdgElement = pcSection.querySelector(".bdg");
   if (bdgElement) bdgElement.addEventListener("click", togglePower);
 
