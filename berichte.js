@@ -1,4 +1,5 @@
 const berichte = [
+  { titel: "KW21_26", datei: "/berichte/KW21_26.pdf", typ: "pdf" },
   { titel: "KW20_26", datei: "/berichte/KW20_26.pdf", typ: "pdf" },
   { titel: "KW07_26", datei: "/berichte/SchoolBH_KW07_26.pdf", typ: "pdf" },
   { titel: "KW06_26", datei: "/berichte/SchoolBH_KW06_26.pdf", typ: "pdf" },
