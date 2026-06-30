@@ -1,9 +1,11 @@
 import { startCanvas, stopCanvas } from "./canvas.js";
+
 export function getMonitorOn() {
   return monitorOn;
 }
 
 export let monitorOn = false;
+let isProcessing = false; // ← NEUE Variable zur Kontrolle
 
 let pcSection, scrElement, scrImg;
 
@@ -52,11 +54,21 @@ function powerOff() {
 }
 
 export function togglePower() {
+  // ← NEUE Schutzmaßnahme
+  if (isProcessing) return; // Verhindert mehrfache Klicks
+
+  isProcessing = true;
+
   if (monitorOn) {
     powerOff();
   } else {
     powerOn();
   }
+
+  // Nach der längsten Animation wieder freigeben (600ms für powerOn)
+  setTimeout(() => {
+    isProcessing = false;
+  }, 600);
 }
 
 export function resetMonitorState() {
