@@ -54,7 +54,6 @@ function powerOff() {
 }
 
 export function togglePower() {
-  // ← NEUE Schutzmaßnahme
   if (isProcessing) return; // Verhindert mehrfache Klicks
 
   isProcessing = true;

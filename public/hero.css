@@ -23,25 +23,23 @@
 
 @media (max-width: 1125px) {
   .h1-header {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
   }
 }
 
 @media (max-width: 650px) {
   .h1-header {
-    font-size: 0.55rem;
+    font-size: 1rem;
     line-height: 2;
     text-shadow: 1.5px 1.5px 0px var(--accent);
-    word-break: break-word;
-    hyphens: auto;
     max-width: 100%;
     padding: 0 0.5rem;
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 450px) {
   .h1-header {
-    font-size: 0.47rem;
+    font-size: 0.8rem;
     line-height: 2;
   }
 }
