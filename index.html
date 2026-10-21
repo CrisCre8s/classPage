@@ -20,7 +20,6 @@
         <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="12" r="2" /><path d="M13 10h5M13 14h3" /></symbol>
         <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01" /></symbol>
         <symbol id="i-void" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /><path d="M3 3l18 18" /></symbol>
-        <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9" /><path d="M18.4 6.6a9 9 0 1 1-12.8 0" /></symbol>
         <symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9" /></symbol>
         <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
         <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h6" /></symbol>
@@ -46,7 +45,7 @@
         <a class="off-hide" href="https://sbsz-hsp.com/" target="_blank" rel="noopener" title="Schulwebseite">
           <svg class="i"><use href="#i-globe" /></svg><span class="lbl">Schule</span>
         </a>
-        <a class="off-hide desk" href="https://azubi.gfi.ihk.de/" target="_blank" rel="noopener" title="Azubi-Portal">
+        <a class="off-hide" href="https://azubi.gfi.ihk.de/" target="_blank" rel="noopener" title="Azubi-Portal">
           <svg class="i"><use href="#i-card" /></svg><span class="lbl">Azubi</span>
         </a>
 
@@ -57,18 +56,21 @@
           <button class="off-hide desk void-btn" id="void-btn" type="button" title="Void-Funktion">
             <svg class="i"><use href="#i-void" /></svg><span class="lbl">Void</span>
           </button>
-          <span class="rail-sep off-hide desk" aria-hidden="true"></span>
-          <button class="power" id="power-btn" type="button" aria-pressed="true" title="Seite aus- und einschalten">
-            <svg class="i"><use href="#i-power" /></svg><i class="led" aria-hidden="true"></i><span class="lbl">Power</span>
-          </button>
         </div>
       </nav>
+
+      <!-- POWER oben rechts: schaltet die Seite aus, nur die Sterne bleiben -->
+      <button class="power is-on" id="power-btn" type="button" aria-pressed="true" title="Seite aus- und einschalten">
+        <span class="power-led" aria-hidden="true"></span>
+        <span class="power-label">POWER</span>
+      </button>
 
       <div class="canvas crt">
         <main class="col">
           <header class="title-row">
             <div>
-              <h1>H-FI24-1B</h1>
+              <h1 class="title"><span class="title-text">H-FI24-1B</span><canvas id="title-canvas" aria-hidden="true"></canvas></h1>
+              <p class="hex num" id="title-hex" aria-hidden="true"></p>
               <p class="sub" id="today-line">SBSZ Hermsdorf · Klassen-Hub</p>
             </div>
             <a class="btn" href="https://sbsz-hsp.com/davinci-timetable.html" target="_blank" rel="noopener">
