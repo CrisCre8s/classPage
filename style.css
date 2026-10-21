@@ -193,26 +193,94 @@ svg.i {
   align-items: center;
 }
 
-.rail-sep {
-  width: 20px;
-  height: 1px;
-  background: var(--border);
-  margin: 10px 0;
+/* ===== POWER (Design aus v2) ===== */
+.power {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 13px;
+  font: 11px/1 "Press Start 2P", monospace;
+  color: #fff;
+  /* taste-skill-ignore: Verlauf und Leuchten sind das gewünschte v2-Design des Schalters */
+  background: linear-gradient(135deg, #2f8f74, #1f6a55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 rgba(74, 255, 145, 0);
+  transition: filter 0.15s, box-shadow 0.3s, transform 0.12s var(--ease);
 }
 
-.led {
-  position: absolute;
-  top: 9px;
-  right: 14px;
-  width: 6px;
-  height: 6px;
+.power:hover {
+  filter: brightness(1.15);
+}
+
+.power:active {
+  transform: scale(0.96);
+}
+
+.power.is-on {
+  box-shadow: 0 0 18px -4px rgba(74, 255, 145, 0.6);
+}
+
+.power-led {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #3a3a3e;
-  transition: background-color 0.2s;
+  background: #12261f;
+  transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.power[aria-pressed="true"] .led {
-  background: var(--positive);
+.power.is-on .power-led {
+  background: #6f6;
+  box-shadow: 0 0 6px #0f0;
+}
+
+/* ===== Titel als LED-Matrix ===== */
+.title {
+  font: 400 24px/1.4 "Press Start 2P", monospace;
+}
+
+.title canvas {
+  display: none;
+}
+
+.title.has-matrix canvas {
+  display: block;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.title.has-matrix .title-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.hex {
+  display: flex;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--faint);
+}
+
+/* jedes Byte so breit wie sein Buchstabe darüber (8 LEDs × 4px) */
+.hex span {
+  width: 32px;
+  transition: color 0.15s;
+}
+
+.hex span.on,
+.hex span.flip {
+  color: var(--accent);
 }
 
 /* ===== Canvas ===== */
@@ -256,10 +324,6 @@ svg.i {
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 32px;
-}
-
-h1 {
-  font: 400 24px/1.4 "Press Start 2P", monospace;
 }
 
 .sub {
@@ -783,9 +847,14 @@ body.power-off .rail {
     width: auto;
     height: 1px;
   }
-  .led {
-    top: 12px;
-    right: 20px;
+  .power {
+    top: 22px;
+    height: 32px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+  .hex span {
+    width: 24px;
   }
   .canvas {
     margin-left: 0;
@@ -797,7 +866,7 @@ body.power-off .rail {
     gap: 18px;
     margin-bottom: 24px;
   }
-  h1 {
+  .title {
     font-size: 20px;
   }
   .panel {

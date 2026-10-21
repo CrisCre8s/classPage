@@ -4,6 +4,7 @@ import { initVoid } from "./void.js";
 import { initBerichte } from "./berichte.js";
 import { initLks, naechsteLkSatz } from "./lks.js";
 import { initSprit } from "./sprit.js";
+import { initTitel, bootTitel } from "./title.js";
 
 const TAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
@@ -36,14 +37,17 @@ function initPower() {
   btn.addEventListener("click", () => {
     an = !an;
     btn.setAttribute("aria-pressed", String(an));
+    btn.classList.toggle("is-on", an);
     document.body.classList.toggle("power-off", !an);
     document.body.classList.toggle("power-on", an);
+    if (an) setTimeout(bootTitel, 250); // Titel nach dem Einschalten neu in den Framebuffer schreiben
   });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   const liste = initLks();
   initTitelzeile(liste);
+  initTitel();
   initBerichte();
   initSprit();
   initPower();
