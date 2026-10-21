@@ -93,7 +93,7 @@ function exitVoid() {
 
 export function initVoid() {
   voidBtn = document.getElementById("void-btn");
-  voidTarget = document.querySelector(".border-around");
+  voidTarget = document.querySelector(".page");
   voidUI = document.getElementById("void-ui");
 
   if (voidBtn) voidBtn.addEventListener("click", enterVoid);

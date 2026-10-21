@@ -1,28 +1,19 @@
 {
   "name": "classpage",
   "version": "1.0.0",
-  "description": "Minimalistischer Dark-Mode Link-Hub für die Berufsschulklasse **H-FI24-1B** an der SBSZ Hermsdorf.",
-  "main": "script.js",
-  "dependencies": {
-    "esbuild": "^0.25.12",
-    "fdir": "^6.5.0",
-    "nanoid": "^3.3.11",
-    "picocolors": "^1.1.1",
-    "picomatch": "^4.0.3",
-    "postcss": "^8.5.8",
-    "rollup": "^4.59.1",
-    "source-map-js": "^1.2.1",
-    "tinyglobby": "^0.2.15",
+  "description": "Dark-Mode Link-Hub für die Berufsschulklasse H-FI24-1B an der SBSZ Hermsdorf.",
+  "dependencies": {},
+  "devDependencies": {
     "vite": "^6.4.1"
   },
-  "devDependencies": {},
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "type": "module",
+  "private": true
 }
