@@ -72,18 +72,23 @@ export function draw(ts) {
     canvas.style.opacity = canvasFadeAlpha;
   }
 
-  ctx.fillStyle = "rgba(23, 23, 25, 0.25)"; // = --ground
+  // Jedes Bild komplett neu zeichnen (keine halbtransparente Übermalung mehr,
+  // die hat durch Rundung graue Reststreifen hinterlassen)
+  ctx.fillStyle = "#171719"; // = --ground
   ctx.fillRect(0, 0, W, H);
 
   const speedMult = voidActive ? voidSpeedMultiplier : canvasBoostMultiplier;
+  ctx.lineCap = "round";
 
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
     s.dist += s.speed * speedMult;
     s.size = s.dist * 0.012;
 
-    const x = CX + Math.cos(s.angle) * s.dist;
-    const y = CY + Math.sin(s.angle) * s.dist;
+    const cos = Math.cos(s.angle);
+    const sin = Math.sin(s.angle);
+    const x = CX + cos * s.dist;
+    const y = CY + sin * s.dist;
 
     if (x < 0 || x > W || y < 0 || y > H) {
       Object.assign(stars[i], randomStar());
@@ -91,11 +96,28 @@ export function draw(ts) {
     }
 
     const alpha = Math.min(s.dist / 120, 1);
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = voidActive ? `hsl(${s.hue}, 100%, 70%)` : "#c8a2ff";
-
     const sz = Math.max(s.size * (voidActive ? s.scale : 1), 0.5);
-    ctx.fillRect(x | 0, y | 0, sz, sz);
+    const farbe = voidActive ? `hsla(${s.hue}, 100%, 70%,` : "rgba(200, 162, 255,";
+
+    // kurzer Schweif: wird mit Tempo und Entfernung etwas länger, verblasst nach hinten
+    const schweif = Math.min(s.speed * speedMult * 4 + s.dist * 0.03, 48);
+    const tx = x - cos * schweif;
+    const ty = y - sin * schweif;
+    const g = ctx.createLinearGradient(tx, ty, x, y);
+    g.addColorStop(0, `${farbe} 0)`);
+    g.addColorStop(1, `${farbe} ${alpha * 0.7})`);
+    ctx.strokeStyle = g;
+    ctx.lineWidth = sz;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    // Kopf des Sterns
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = `${farbe} 1)`;
+    ctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
+    ctx.globalAlpha = 1;
   }
 
   ctx.globalAlpha = 1;
