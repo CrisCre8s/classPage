@@ -1,17 +1,12 @@
-// Zeigt die aktuellen Spritpreise der Globus-Tankstelle im Globus-Fenster an.
-// Die Daten kommen von /api/sprit (Vercel-Funktion, siehe api/sprit.js).
+// Aktuelle Spritpreise der Globus-Tankstelle. Daten kommen von /api/sprit (siehe api/sprit.js).
 
-const SORTEN = [
-  ["e5", "super_e5"],
-  ["e10", "super_e10"],
-  ["diesel", "diesel"],
-];
+const SORTEN = ["e5", "e10", "diesel"];
 
 function format(wert) {
-  if (wert == null) return `<span class="c-bool">null</span>`;
+  if (wert == null) return `<span class="faint">–</span>`;
   const [euro, cent] = wert.toFixed(3).split(".");
-  // Typische Tankstellen-Schreibweise: 1,97⁹
-  return `<span class="c-str">"${euro},${cent.slice(0, 2)}<sup>${cent[2]}</sup> €"</span>`;
+  // Tankstellen-Schreibweise: 1,97⁹ €
+  return `${euro},${cent.slice(0, 2)}<sup>${cent[2]}</sup><em>€</em>`;
 }
 
 function uhrzeit(iso) {
@@ -20,22 +15,23 @@ function uhrzeit(iso) {
 }
 
 export async function initSprit() {
-  const el = document.getElementById("sprit");
-  if (!el) return;
+  const list = document.getElementById("sprit");
+  const stamp = document.getElementById("sprit-stamp");
+  if (!list || !stamp) return;
+  const werte = list.querySelectorAll(".v");
 
   try {
     const res = await fetch("/api/sprit");
     const data = await res.json();
     if (!data.ok) throw new Error(data.fehler);
 
-    const zeilen = SORTEN.map(
-      ([key, label]) => `<span class="c-key">${label}</span>:${" ".repeat(11 - label.length)}${format(data.preise[key])}`,
-    ).join("\n");
-
-    el.innerHTML =
-      `<span class="c-dim">// tankstelle · ${data.offen ? "geöffnet" : "geschlossen"} · stand ${uhrzeit(data.stand)}</span>\n` +
-      zeilen;
+    SORTEN.forEach((key, i) => {
+      if (werte[i]) werte[i].innerHTML = format(data.preise[key]);
+    });
+    stamp.classList.toggle("ok", data.offen);
+    stamp.innerHTML = `<i></i>${data.offen ? "geöffnet" : "geschlossen"} · Stand <span class="num">${uhrzeit(data.stand)}</span>`;
   } catch {
-    el.innerHTML = `<span class="c-dim">// tankstelle</span>\n<span class="c-key">spritpreise</span>: <span class="c-bool">null</span> <span class="c-dim">// gerade nicht verfügbar</span>`;
+    stamp.classList.remove("ok");
+    stamp.innerHTML = `<i></i>Preise gerade nicht verfügbar`;
   }
 }

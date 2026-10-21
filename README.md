@@ -69,8 +69,18 @@ steht dort „gerade nicht verfügbar“.
 ├── api/sprit.js    # Vercel-Funktion → Tankerkönig-API
 ├── canvas.js       # Sternenfeld im Hintergrund
 ├── void.js         # Void-Funktion (Easter Egg)
-└── public/         # Bilder, Favicon
+└── public/         # Bilder, Favicon, Schriften (fonts/, selbst gehostet, OFL-Lizenz)
 ```
+
+## Design
+
+Dunkler „Data terminal“-Stil: Icon-Leiste links (auf dem Handy unten), oben die
+nächste Leistungskontrolle als Countdown, daneben die Spritpreise, darunter
+Schnellzugriff und Berichtsheft. Zahlen in JetBrains Mono, Text in Public Sans,
+der Titel in Press Start 2P. Alle drei Schriften liegen in `public/fonts/` und
+werden nicht von Google geladen. Icons sind als SVG direkt in `index.html`.
+
+POWER (unten in der Leiste) schaltet die Seite aus, nur die Sterne bleiben.
 
 ## Lokal starten
 

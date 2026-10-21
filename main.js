@@ -2,11 +2,11 @@ import "./style.css";
 import { initCanvas, startCanvas } from "./canvas.js";
 import { initVoid } from "./void.js";
 import { initBerichte } from "./berichte.js";
-import { initLks } from "./lks.js";
+import { initLks, naechsteLkSatz } from "./lks.js";
 import { initSprit } from "./sprit.js";
 
-const TAGE = ["so", "mo", "di", "mi", "do", "fr", "sa"];
-const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const TAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
 function isoWoche(d) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -16,33 +16,18 @@ function isoWoche(d) {
   return Math.ceil(((t - jahrStart) / 86400000 + 1) / 7);
 }
 
-function initDatum() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  const today = document.getElementById("today");
-  const kw = document.getElementById("sb-kw");
-  if (today) today.textContent = `${TAGE[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
-  if (kw) kw.textContent = `KW ${isoWoche(d)}`;
-}
-
-// Tipp-Effekt im Hero
-function initTyping() {
-  const el = document.getElementById("typed");
+// Zeile unter dem Titel: Datum, KW und die nächste LK als Satz
+function initTitelzeile(liste) {
+  const el = document.getElementById("today-line");
   if (!el) return;
-  const text = "./klassen-hub --schule sbsz-hermsdorf";
-  if (reduziert) {
-    el.textContent = text;
-    return;
-  }
-  let i = 0;
-  const tick = () => {
-    el.textContent = text.slice(0, ++i);
-    if (i < text.length) setTimeout(tick, 35 + Math.random() * 45);
-  };
-  setTimeout(tick, 500);
+  const d = new Date();
+  const datum = `${TAGE[d.getDay()]}, ${d.getDate()}. ${MONATE[d.getMonth()]} · KW ${isoWoche(d)}`;
+  const satz = naechsteLkSatz(liste);
+  el.innerHTML = `${datum} · <strong></strong>`;
+  el.querySelector("strong").textContent = satz;
 }
 
-// POWER: schaltet die Seitenstruktur an/aus — die Sterne laufen immer weiter
+// POWER: schaltet die Seite aus und ein, die Sterne laufen immer weiter
 function initPower() {
   const btn = document.getElementById("power-btn");
   if (!btn) return;
@@ -50,16 +35,15 @@ function initPower() {
 
   btn.addEventListener("click", () => {
     an = !an;
-    btn.classList.toggle("is-on", an);
     btn.setAttribute("aria-pressed", String(an));
     document.body.classList.toggle("power-off", !an);
+    document.body.classList.toggle("power-on", an);
   });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initDatum();
-  initTyping();
-  initLks();
+  const liste = initLks();
+  initTitelzeile(liste);
   initBerichte();
   initSprit();
   initPower();
