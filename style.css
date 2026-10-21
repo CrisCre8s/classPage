@@ -43,7 +43,7 @@
 
   --font: "Public Sans", Inter, system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
-  --rail: 55px;
+  --bar: 68px;
   --gap: 16px;
   --pad: 20px;
   --radius: 6px;
@@ -130,24 +130,24 @@ svg.i {
   z-index: 1;
 }
 
-/* ===== Icon-Rail ===== */
+/* ===== Icon-Leiste oben (Handy: unten) ===== */
 .rail {
   position: fixed;
-  inset: 0 auto 0 0;
+  inset: 0 0 auto 0;
   z-index: 10;
-  width: var(--rail);
+  height: var(--bar);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  padding: 14px 0;
+  padding: 0 16px;
   background: var(--ground);
-  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
 }
 
 .rail-mark {
   image-rendering: pixelated;
-  margin-bottom: 22px;
+  margin-right: 14px;
 }
 
 .rail a,
@@ -155,8 +155,8 @@ svg.i {
   position: relative;
   display: grid;
   place-items: center;
-  width: var(--rail);
-  height: 42px;
+  width: 44px;
+  height: var(--bar);
   color: var(--faint);
   transition: color 0.15s;
 }
@@ -167,13 +167,14 @@ svg.i {
   color: var(--text);
 }
 
+/* aktive Seite: 1px Akzentlinie auf der Unterkante der Leiste */
 .rail [aria-current="page"]::after {
   content: "";
   position: absolute;
-  right: -1px;
-  top: 11px;
-  bottom: 11px;
-  width: 1px;
+  left: 11px;
+  right: 11px;
+  bottom: -1px;
+  height: 1px;
   background: var(--accent);
 }
 
@@ -187,10 +188,23 @@ svg.i {
 }
 
 .rail-bottom {
-  margin-top: auto;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  margin-left: 10px;
+}
+
+/* Trenner zwischen Links und Spielereien */
+.rail-bottom::before {
+  content: "";
+  width: 1px;
+  height: 20px;
+  margin-right: 10px;
+  background: var(--border);
+  transition: opacity 0.3s;
+}
+
+body.power-off .rail-bottom::before {
+  opacity: 0;
 }
 
 /* ===== POWER (Design aus v2) ===== */
@@ -285,8 +299,7 @@ svg.i {
 
 /* ===== Canvas ===== */
 .canvas {
-  margin-left: var(--rail);
-  padding: 64px 32px 48px;
+  padding: calc(var(--bar) + 48px) 32px 48px;
 }
 
 .col {
@@ -813,8 +826,11 @@ body.power-off .rail {
     flex-direction: row;
     justify-content: space-around;
     padding: 0 4px;
-    border-right: 0;
+    border-bottom: 0;
     border-top: 1px solid var(--border);
+  }
+  .rail-bottom::before {
+    content: none;
   }
   .rail-mark,
   .rail .desk {
@@ -844,8 +860,6 @@ body.power-off .rail {
     right: 18px;
     top: -1px;
     bottom: auto;
-    width: auto;
-    height: 1px;
   }
   .power {
     top: 22px;
@@ -857,7 +871,6 @@ body.power-off .rail {
     width: 24px;
   }
   .canvas {
-    margin-left: 0;
     padding: 28px 16px 96px;
   }
   .title-row {
