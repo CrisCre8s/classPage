@@ -72,7 +72,7 @@ export function draw(ts) {
     canvas.style.opacity = canvasFadeAlpha;
   }
 
-  ctx.fillStyle = "rgba(10, 10, 10, 0.25)";
+  ctx.fillStyle = "rgba(23, 23, 25, 0.25)"; // = --ground
   ctx.fillRect(0, 0, W, H);
 
   const speedMult = voidActive ? voidSpeedMultiplier : canvasBoostMultiplier;

@@ -3,163 +3,170 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#08080d" />
+    <meta name="theme-color" content="#171719" />
     <title>H-FI24-1B Klassen-Hub</title>
     <link rel="icon" type="image/png" sizes="48x48" href="/computer-48x48.png" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&display=swap"
-      rel="stylesheet"
-    />
-    <script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>
+    <link rel="preload" href="/fonts/PublicSans.woff" as="font" type="font/woff" crossorigin />
+    <link rel="preload" href="/fonts/JetBrainsMono.woff" as="font" type="font/woff" crossorigin />
   </head>
-  <body tabindex="-1">
-    <canvas id="bg-canvas"></canvas>
-    <div class="glow" aria-hidden="true"></div>
+  <body>
+    <!-- Icon-Sprite (Outline, 1.5px) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></symbol>
+        <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></symbol>
+        <symbol id="i-school" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></symbol>
+        <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="12" r="2" /><path d="M13 10h5M13 14h3" /></symbol>
+        <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01" /></symbol>
+        <symbol id="i-void" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /><path d="M3 3l18 18" /></symbol>
+        <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9" /><path d="M18.4 6.6a9 9 0 1 1-12.8 0" /></symbol>
+        <symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h6" /></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></symbol>
+      </defs>
+    </svg>
+
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
     <div class="page">
-      <!-- Header (sticky) -->
-      <header class="header">
-        <div class="header-left crt">
-          <img src="/computer-48x48.png" alt="" width="28" height="28" class="logo" />
-          <span class="path"><span class="c-user">h-fi24-1b</span><span class="c-dim">@</span><span class="c-host">sbsz</span><span class="c-dim">:</span><span class="c-path">~/hub</span></span>
-        </div>
-        <div class="header-right">
-          <span class="today crt" id="today"></span>
-          <button class="power is-on" id="power-btn" aria-pressed="true" title="Seite an/aus">
-            <span class="power-led" aria-hidden="true"></span>
-            <span class="power-label">POWER</span>
-          </button>
-        </div>
-      </header>
+      <!-- Icon-Rail (Handy: Leiste unten) -->
+      <nav class="rail" aria-label="Navigation">
+        <img class="rail-mark off-hide" src="/computer-48x48.png" alt="" width="28" height="28" />
+        <a class="off-hide" href="/" aria-current="page" title="Hub">
+          <svg class="i"><use href="#i-home" /></svg><span class="lbl">Hub</span>
+        </a>
+        <a class="off-hide" href="https://sbsz-hsp.com/davinci-timetable.html" target="_blank" rel="noopener" title="Stunden- & Vertretungsplan">
+          <svg class="i"><use href="#i-calendar" /></svg><span class="lbl">Plan</span>
+        </a>
+        <a class="off-hide" href="https://sbsz-hsp.com/hip/default.php" target="_blank" rel="noopener" title="Klassenbuch & Noten">
+          <svg class="i"><use href="#i-school" /></svg><span class="lbl">Noten</span>
+        </a>
+        <a class="off-hide" href="https://sbsz-hsp.com/" target="_blank" rel="noopener" title="Schulwebseite">
+          <svg class="i"><use href="#i-globe" /></svg><span class="lbl">Schule</span>
+        </a>
+        <a class="off-hide desk" href="https://azubi.gfi.ihk.de/" target="_blank" rel="noopener" title="Azubi-Portal">
+          <svg class="i"><use href="#i-card" /></svg><span class="lbl">Azubi</span>
+        </a>
 
-      <main class="crt">
-        <!-- Hero -->
-        <section class="hero">
-          <h1 class="hero-title" data-text="H-FI24-1B">H-FI24-1B</h1>
-          <p class="hero-prompt">
-            <span class="c-green">$</span> <span id="typed"></span><span class="cursor" aria-hidden="true"></span>
-          </p>
-        </section>
-
-        <!-- Nächste LK -->
-        <section class="next" id="next-lk" aria-live="polite"></section>
-
-        <!-- Links -->
-        <section aria-labelledby="links-h">
-          <h2 class="comment" id="links-h"><span class="c-dim">//</span> schnellzugriff</h2>
-          <div class="links">
-            <a class="link" href="https://sbsz-hsp.com/davinci-timetable.html" target="_blank" rel="noopener">
-              <div class="link-thumb" style="background-image: url('/schoolPlan.png')"></div>
-              <div class="link-body">
-                <span class="link-idx">01</span>
-                <span class="link-title">Stunden- & Vertretungsplan</span>
-                <span class="link-desc">davinci · aktuelle woche</span>
-                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
-              </div>
-            </a>
-
-            <a class="link" href="https://sbsz-hsp.com/hip/default.php" target="_blank" rel="noopener">
-              <div class="link-thumb" style="background-image: url('/notePage.png')"></div>
-              <div class="link-body">
-                <span class="link-idx">02</span>
-                <span class="link-title">Klassenbuch & Noten</span>
-                <span class="link-desc">noten · einträge</span>
-                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
-              </div>
-            </a>
-
-            <a class="link" href="https://sbsz-hsp.com/" target="_blank" rel="noopener">
-              <div class="link-thumb link-thumb--light" style="background-image: url('/schoolWebsite.png')"></div>
-              <div class="link-body">
-                <span class="link-idx">03</span>
-                <span class="link-title">Schulwebseite</span>
-                <span class="link-desc">sbsz-hsp.com</span>
-                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
-              </div>
-            </a>
-
-            <a class="link" href="https://azubi.gfi.ihk.de/" target="_blank" rel="noopener">
-              <div class="link-thumb" style="background-image: url('/azubiPage.png')"></div>
-              <div class="link-body">
-                <span class="link-idx">04</span>
-                <span class="link-title">Azubi-Portal</span>
-                <span class="link-desc">ihk · azubicard</span>
-                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
-              </div>
-            </a>
-          </div>
-        </section>
-
-        <!-- LKs + Berichte -->
-        <div class="split">
-          <section class="window" aria-labelledby="lk-h">
-            <div class="window-bar">
-              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <h2 id="lk-h" class="window-title">leistungskontrollen<span class="c-dim">.json</span></h2>
-            </div>
-            <ul class="lk-list" id="lk-list"></ul>
-          </section>
-
-          <section class="window" aria-labelledby="bh-h">
-            <div class="window-bar">
-              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <h2 id="bh-h" class="window-title">berichtsheft<span class="c-dim">/</span></h2>
-              <span class="window-count" id="berichte-count"></span>
-            </div>
-            <div class="berichte" id="berichte-grid"></div>
-          </section>
-        </div>
-
-        <!-- Globus -->
-        <section class="window" aria-labelledby="globus-h">
-          <div class="window-bar">
-            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-            <h2 id="globus-h" class="window-title">globus-hermsdorf<span class="c-dim">.config</span></h2>
-          </div>
-          <div class="globus">
-            <pre class="code"><span class="c-key">öffnungszeiten</span>: <span class="c-str">"Mo–Sa 08:00–20:00"</span>
-<span class="c-key">sonntag</span>:        <span class="c-bool">false</span>
-<span class="c-key">adresse</span>:        <span class="c-str">"Am Globus 1, 07629 Hermsdorf"</span>
-<span class="c-key">telefon</span>:        <a class="c-str" href="tel:+4936601930">"+49 36601 930"</a>
-<span class="c-key">web</span>:            <a class="c-str" href="https://www.globus.de/hermsdorf/" target="_blank" rel="noopener">"globus.de/hermsdorf"</a></pre>
-            <div class="sprit-box">
-              <pre class="code" id="sprit"><span class="c-dim">// tankstelle · lade preise …</span></pre>
-              <p class="credit">daten: MTS-K via tankerkönig · CC BY 4.0</p>
-            </div>
-            <a class="btn" href="https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/" target="_blank" rel="noopener">
-              <span class="c-dim">&gt;</span> rabatte öffnen
-            </a>
-          </div>
-        </section>
-      </main>
-
-      <!-- Statusleiste -->
-      <footer class="statusbar crt">
-        <div class="sb-left">
-          <span class="sb-item sb-accent"><ion-icon name="git-branch-outline" aria-hidden="true"></ion-icon> main</span>
-          <span class="sb-item"><span class="sb-dot"></span> online</span>
-          <span class="sb-item" id="sb-kw"></span>
-        </div>
-        <div class="sb-right">
-          <a class="sb-item sb-link" href="https://theuselessweb.com/" target="_blank" rel="noopener">
-            <ion-icon name="happy-outline" aria-hidden="true"></ion-icon> useless
+        <div class="rail-bottom">
+          <a class="off-hide desk" href="https://theuselessweb.com/" target="_blank" rel="noopener" title="Take me to a useless website">
+            <svg class="i"><use href="#i-smile" /></svg><span class="lbl">Useless</span>
           </a>
-          <button class="sb-item sb-link void-btn" id="void-btn">
-            <ion-icon name="eye-off-outline" aria-hidden="true"></ion-icon> void
+          <button class="off-hide desk void-btn" id="void-btn" type="button" title="Void-Funktion">
+            <svg class="i"><use href="#i-void" /></svg><span class="lbl">Void</span>
+          </button>
+          <span class="rail-sep off-hide desk" aria-hidden="true"></span>
+          <button class="power" id="power-btn" type="button" aria-pressed="true" title="Seite aus- und einschalten">
+            <svg class="i"><use href="#i-power" /></svg><i class="led" aria-hidden="true"></i><span class="lbl">Power</span>
           </button>
         </div>
-      </footer>
+      </nav>
+
+      <div class="canvas crt">
+        <main class="col">
+          <header class="title-row">
+            <div>
+              <h1>H-FI24-1B</h1>
+              <p class="sub" id="today-line">SBSZ Hermsdorf · Klassen-Hub</p>
+            </div>
+            <a class="btn" href="https://sbsz-hsp.com/davinci-timetable.html" target="_blank" rel="noopener">
+              Stundenplan öffnen <svg class="i"><use href="#i-out" /></svg>
+            </a>
+          </header>
+
+          <!-- Raster: LK 9 + Tankstelle 3, darunter Schnellzugriff 6 + Berichtsheft 6.
+               Ohne LKs: LK über die volle Breite, darunter 4 + 4 + 4. -->
+          <div class="grid board" id="board">
+            <section class="panel s9 lk-panel" aria-labelledby="lk-h">
+              <div class="panel-head">
+                <h2 id="lk-h">Leistungskontrollen</h2>
+                <span class="chip" id="lk-count"></span>
+                <a class="more" href="https://github.com/CrisCre8s/classPage/edit/main/lks.json" target="_blank" rel="noopener">
+                  <svg class="i"><use href="#i-plus" /></svg>Eintragen
+                </a>
+              </div>
+              <div id="lk-lead"></div>
+              <ul class="rows" id="lk-list"></ul>
+            </section>
+
+            <section class="panel s3 sprit" aria-labelledby="sp-h">
+              <div class="panel-head"><h2 id="sp-h">Globus Tankstelle</h2></div>
+              <p class="stamp" id="sprit-stamp"><i></i>Preise werden geladen</p>
+              <div class="sprit-body">
+                <dl class="prices" id="sprit">
+                  <div class="kv"><dt>Super E5</dt><dd class="v">–</dd></div>
+                  <div class="kv"><dt>Super E10</dt><dd class="v">–</dd></div>
+                  <div class="kv"><dt>Diesel</dt><dd class="v">–</dd></div>
+                </dl>
+                <div class="block">
+                  <h3>Globus Markt</h3>
+                  <p>Mo–Sa <span class="num">08:00–20:00</span>, So geschlossen</p>
+                  <p>Am Globus 1, 07629 Hermsdorf</p>
+                  <p><a href="tel:+4936601930" class="num">036601 930</a> · <a href="https://www.globus.de/hermsdorf/" target="_blank" rel="noopener">globus.de</a></p>
+                </div>
+              </div>
+              <div class="foot">
+                <a class="go" href="https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/" target="_blank" rel="noopener">
+                  Aktuelle Rabatte <svg class="i"><use href="#i-out" /></svg>
+                </a>
+                <p class="credit">Preise: MTS-K via Tankerkönig, CC BY 4.0</p>
+              </div>
+            </section>
+
+            <section class="panel s6 links-panel" aria-labelledby="sz-h">
+              <div class="panel-head"><h2 id="sz-h">Schnellzugriff</h2></div>
+              <ul class="rows">
+                <li>
+                  <a class="row link-row" href="https://sbsz-hsp.com/davinci-timetable.html" target="_blank" rel="noopener">
+                    <span class="thumb" style="background-image: url('/schoolPlan.png')"></span>
+                    <span><span class="t">Stunden- &amp; Vertretungsplan</span><span class="d">DaVinci, aktuelle Woche</span></span>
+                    <svg class="i"><use href="#i-out" /></svg>
+                  </a>
+                </li>
+                <li>
+                  <a class="row link-row" href="https://sbsz-hsp.com/hip/default.php" target="_blank" rel="noopener">
+                    <span class="thumb" style="background-image: url('/notePage.png')"></span>
+                    <span><span class="t">Klassenbuch &amp; Noten</span><span class="d">Notenübersicht und Einträge</span></span>
+                    <svg class="i"><use href="#i-out" /></svg>
+                  </a>
+                </li>
+                <li>
+                  <a class="row link-row" href="https://sbsz-hsp.com/" target="_blank" rel="noopener">
+                    <span class="thumb light" style="background-image: url('/schoolWebsite.png')"></span>
+                    <span><span class="t">Schulwebseite</span><span class="d">sbsz-hsp.com</span></span>
+                    <svg class="i"><use href="#i-out" /></svg>
+                  </a>
+                </li>
+                <li>
+                  <a class="row link-row" href="https://azubi.gfi.ihk.de/" target="_blank" rel="noopener">
+                    <span class="thumb" style="background-image: url('/azubiPage.png')"></span>
+                    <span><span class="t">Azubi-Portal</span><span class="d">IHK Infocenter &amp; AzubiCard</span></span>
+                    <svg class="i"><use href="#i-out" /></svg>
+                  </a>
+                </li>
+              </ul>
+            </section>
+
+            <section class="panel s6 bh-panel" aria-labelledby="bh-h">
+              <div class="panel-head">
+                <h2 id="bh-h">Berichtsheft</h2>
+                <span class="chip" id="berichte-count"></span>
+                <button class="more" id="berichte-toggle" type="button" hidden>Alle anzeigen</button>
+              </div>
+              <ul class="rows" id="berichte-grid"></ul>
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
 
     <div id="void-ui">
       <p class="void-ui-title">PRESS ENTER TO START</p>
       <div class="void-ui-hints">
-        <p><ion-icon name="arrow-up-outline"></ion-icon> FASTER</p>
-        <p><ion-icon name="arrow-down-outline"></ion-icon> SLOWER</p>
+        <p>↑ FASTER</p>
+        <p>↓ SLOWER</p>
         <p>ENTER – RESTART</p>
         <p>ESC – GO BACK</p>
       </div>

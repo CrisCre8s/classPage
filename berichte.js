@@ -8,18 +8,20 @@ const dateien = import.meta.glob("/berichte/*.{pdf,PDF,png,jpg,jpeg}", {
   import: "default",
 });
 
+const SICHTBAR_STANDARD = 4; // so viele Berichte stehen ohne „Alle anzeigen“ da
+
 function parse(pfad, url) {
   const name = pfad.split("/").pop();
   const typ = name.split(".").pop().toLowerCase();
   const m = name.match(/KW[_\s-]?(\d{1,2})[_\s-](\d{2,4})/i);
 
   if (!m) {
-    return { url, typ, titel: name.replace(/\.[^.]+$/, ""), jahr: 0, woche: 0 };
+    return { url, typ, name, titel: name.replace(/\.[^.]+$/, ""), jahr: 0, woche: 0 };
   }
 
   const woche = Number(m[1]);
   const jahr = m[2].length === 2 ? 2000 + Number(m[2]) : Number(m[2]);
-  return { url, typ, titel: `KW ${woche}`, jahr, woche };
+  return { url, typ, name, titel: `KW ${woche} · ${jahr}`, jahr, woche };
 }
 
 export function getBerichte() {
@@ -28,33 +30,52 @@ export function getBerichte() {
     .sort((a, b) => b.jahr - a.jahr || b.woche - a.woche);
 }
 
+function esc(s = "") {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
 export function initBerichte() {
-  const grid = document.getElementById("berichte-grid");
+  const list = document.getElementById("berichte-grid");
   const count = document.getElementById("berichte-count");
-  if (!grid) return;
+  const toggle = document.getElementById("berichte-toggle");
+  if (!list) return;
 
   const berichte = getBerichte();
-  if (count) count.textContent = berichte.length;
+  if (count) count.textContent = berichte.length || "";
+
+  // Im schmalen 4-4-4-Raster (keine LKs) ist Platz für eine Zeile mehr
+  const SICHTBAR = document.getElementById("board")?.classList.contains("lk-leer") ? 5 : SICHTBAR_STANDARD;
 
   if (berichte.length === 0) {
-    grid.innerHTML = `<p class="empty">Noch keine Berichte hochgeladen.</p>`;
+    list.innerHTML = `<li class="empty">Noch keine Berichte. PDF in den Ordner berichte/ legen und pushen.</li>`;
     return;
   }
 
-  berichte.forEach((b, i) => {
-    const a = document.createElement("a");
-    a.href = b.url;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.className = "bericht" + (i === 0 ? " bericht--neu" : "");
+  list.innerHTML = berichte
+    .map((b, i) => {
+      const icon = b.typ === "pdf" ? "i-file" : "i-image";
+      const rechts = i === 0 ? `<span class="pill pos">neu</span>` : `<span class="r">${b.typ.toUpperCase()}</span>`;
+      return `
+      <li${i >= SICHTBAR ? " hidden" : ""}>
+        <a class="row file-row" href="${b.url}" target="_blank" rel="noopener">
+          <svg class="i"><use href="#${icon}" /></svg>
+          <span><span class="t">${esc(b.titel)}</span><span class="d">${esc(b.name)}</span></span>
+          ${rechts}
+        </a>
+      </li>`;
+    })
+    .join("");
 
-    const icon = b.typ === "pdf" ? "document-text-outline" : "image-outline";
-    a.innerHTML = `
-      <ion-icon name="${icon}" aria-hidden="true"></ion-icon>
-      <span class="bericht-titel">${b.titel}</span>
-      <span class="bericht-meta">${b.jahr || ""}.${b.typ}</span>
-      ${i === 0 ? '<span class="tag tag--accent">NEU</span>' : ""}
-    `;
-    grid.appendChild(a);
-  });
+  if (toggle && berichte.length > SICHTBAR) {
+    let offen = false;
+    toggle.hidden = false;
+    toggle.textContent = `Alle ${berichte.length} anzeigen`;
+    toggle.addEventListener("click", () => {
+      offen = !offen;
+      list.querySelectorAll("li").forEach((li, i) => {
+        if (i >= SICHTBAR) li.hidden = !offen;
+      });
+      toggle.textContent = offen ? "Weniger anzeigen" : `Alle ${berichte.length} anzeigen`;
+    });
+  }
 }
