@@ -34,6 +34,27 @@ Datei **`lks.json`** bearbeiten (auf GitHub: Datei öffnen → Stift-Symbol):
   **OFFEN**, **ERLEDIGT** (Datum vorbei, wird 14 Tage ausgegraut angezeigt)
 - Die nächste LK erscheint groß oben auf der Seite
 
+## Spritpreise (Globus-Tankstelle)
+
+Die aktuellen Preise für Super E5, E10 und Diesel kommen live von der
+Markttransparenzstelle für Kraftstoffe (MTS-K) über die
+[Tankerkönig-API](https://creativecommons.tankerkoenig.de) (Lizenz CC BY 4.0,
+deshalb steht klein die Quelle darunter).
+
+Einrichtung, einmalig:
+
+1. Auf [creativecommons.tankerkoenig.de](https://creativecommons.tankerkoenig.de)
+   unter „API-Key“ kostenlos einen Key anfordern
+2. Vercel → Projekt → **Settings → Environment Variables**:
+   `TANKERKOENIG_API_KEY` = dein Key
+3. **Redeploy** auslösen
+
+Die Funktion `api/sprit.js` findet die Globus-Tankstelle in Hermsdorf automatisch
+und speichert die Antwort 10 Minuten zwischen. Falls die falsche Tankstelle
+erscheint, kann man mit `TANKERKOENIG_STATION_ID` eine feste ID setzen.
+Lokal funktioniert `/api/sprit` nur mit `npx vercel dev`, bei `npm run dev`
+steht dort „gerade nicht verfügbar“.
+
 ## Projektstruktur
 
 ```
@@ -44,6 +65,8 @@ Datei **`lks.json`** bearbeiten (auf GitHub: Datei öffnen → Stift-Symbol):
 ├── lks.json        # ← LKs hier eintragen
 ├── berichte.js     # Berichte automatisch aus berichte/
 ├── berichte/       # ← PDFs hier ablegen
+├── sprit.js        # Spritpreise im Globus-Fenster
+├── api/sprit.js    # Vercel-Funktion → Tankerkönig-API
 ├── canvas.js       # Sternenfeld im Hintergrund
 ├── void.js         # Void-Funktion (Easter Egg)
 └── public/         # Bilder, Favicon

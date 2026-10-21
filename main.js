@@ -3,6 +3,7 @@ import { initCanvas, startCanvas } from "./canvas.js";
 import { initVoid } from "./void.js";
 import { initBerichte } from "./berichte.js";
 import { initLks } from "./lks.js";
+import { initSprit } from "./sprit.js";
 
 const TAGE = ["so", "mo", "di", "mi", "do", "fr", "sa"];
 const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -60,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTyping();
   initLks();
   initBerichte();
+  initSprit();
   initPower();
 
   if (initCanvas()) {
