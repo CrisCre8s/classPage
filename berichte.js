@@ -52,7 +52,7 @@ export function initBerichte() {
     a.innerHTML = `
       <ion-icon name="${icon}" aria-hidden="true"></ion-icon>
       <span class="bericht-titel">${b.titel}</span>
-      <span class="bericht-meta">${b.jahr || ""} · ${b.typ.toUpperCase()}</span>
+      <span class="bericht-meta">${b.jahr || ""}.${b.typ}</span>
       ${i === 0 ? '<span class="tag tag--accent">NEU</span>' : ""}
     `;
     grid.appendChild(a);

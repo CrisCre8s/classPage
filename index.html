@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b0b10" />
+    <meta name="theme-color" content="#08080d" />
     <title>H-FI24-1B Klassen-Hub</title>
     <link rel="icon" type="image/png" sizes="48x48" href="/computer-48x48.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Press+Start+2P&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&display=swap"
       rel="stylesheet"
     />
     <script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
@@ -18,75 +18,77 @@
   </head>
   <body tabindex="-1">
     <canvas id="bg-canvas"></canvas>
+    <div class="glow" aria-hidden="true"></div>
 
     <div class="page">
-      <!-- Header -->
+      <!-- Header (sticky) -->
       <header class="header">
-        <div class="brand">
-          <img src="/computer-48x48.png" alt="" width="40" height="40" class="brand-logo" />
-          <div>
-            <p class="brand-title">H-FI24-1B</p>
-            <p class="brand-sub">SBSZ Hermsdorf · Schul-Hub</p>
-          </div>
+        <div class="header-left crt">
+          <img src="/computer-48x48.png" alt="" width="28" height="28" class="logo" />
+          <span class="path"><span class="c-user">h-fi24-1b</span><span class="c-dim">@</span><span class="c-host">sbsz</span><span class="c-dim">:</span><span class="c-path">~/hub</span></span>
         </div>
         <div class="header-right">
-          <span class="today" id="today"></span>
-          <button class="power" id="power-btn" aria-pressed="false" title="Sternenfeld an/aus">
+          <span class="today crt" id="today"></span>
+          <button class="power is-on" id="power-btn" aria-pressed="true" title="Seite an/aus">
             <span class="power-led" aria-hidden="true"></span>
-            POWER
+            <span class="power-label">POWER</span>
           </button>
         </div>
       </header>
 
-      <main>
+      <main class="crt">
+        <!-- Hero -->
+        <section class="hero">
+          <h1 class="hero-title" data-text="H-FI24-1B">H-FI24-1B</h1>
+          <p class="hero-prompt">
+            <span class="c-green">$</span> <span id="typed"></span><span class="cursor" aria-hidden="true"></span>
+          </p>
+        </section>
+
         <!-- Nächste LK -->
         <section class="next" id="next-lk" aria-live="polite"></section>
 
         <!-- Links -->
         <section aria-labelledby="links-h">
-          <h2 class="section-title" id="links-h">Schnellzugriff</h2>
+          <h2 class="comment" id="links-h"><span class="c-dim">//</span> schnellzugriff</h2>
           <div class="links">
             <a class="link" href="https://sbsz-hsp.com/davinci-timetable.html" target="_blank" rel="noopener">
               <div class="link-thumb" style="background-image: url('/schoolPlan.png')"></div>
               <div class="link-body">
-                <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
-                <div>
-                  <span class="link-title">Stunden- & Vertretungsplan</span>
-                  <span class="link-desc">DaVinci, aktuelle Woche</span>
-                </div>
+                <span class="link-idx">01</span>
+                <span class="link-title">Stunden- & Vertretungsplan</span>
+                <span class="link-desc">davinci · aktuelle woche</span>
+                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
               </div>
             </a>
 
             <a class="link" href="https://sbsz-hsp.com/hip/default.php" target="_blank" rel="noopener">
               <div class="link-thumb" style="background-image: url('/notePage.png')"></div>
               <div class="link-body">
-                <ion-icon name="school-outline" aria-hidden="true"></ion-icon>
-                <div>
-                  <span class="link-title">Klassenbuch & Noten</span>
-                  <span class="link-desc">Notenübersicht und Einträge</span>
-                </div>
+                <span class="link-idx">02</span>
+                <span class="link-title">Klassenbuch & Noten</span>
+                <span class="link-desc">noten · einträge</span>
+                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
               </div>
             </a>
 
             <a class="link" href="https://sbsz-hsp.com/" target="_blank" rel="noopener">
               <div class="link-thumb link-thumb--light" style="background-image: url('/schoolWebsite.png')"></div>
               <div class="link-body">
-                <ion-icon name="home-outline" aria-hidden="true"></ion-icon>
-                <div>
-                  <span class="link-title">Schulwebseite</span>
-                  <span class="link-desc">Offizielle Seite der SBSZ</span>
-                </div>
+                <span class="link-idx">03</span>
+                <span class="link-title">Schulwebseite</span>
+                <span class="link-desc">sbsz-hsp.com</span>
+                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
               </div>
             </a>
 
             <a class="link" href="https://azubi.gfi.ihk.de/" target="_blank" rel="noopener">
               <div class="link-thumb" style="background-image: url('/azubiPage.png')"></div>
               <div class="link-body">
-                <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
-                <div>
-                  <span class="link-title">Azubi-Portal</span>
-                  <span class="link-desc">Infocenter & AzubiCard</span>
-                </div>
+                <span class="link-idx">04</span>
+                <span class="link-title">Azubi-Portal</span>
+                <span class="link-desc">ihk · azubicard</span>
+                <ion-icon class="link-arrow" name="arrow-up-outline" aria-hidden="true"></ion-icon>
               </div>
             </a>
           </div>
@@ -94,56 +96,58 @@
 
         <!-- LKs + Berichte -->
         <div class="split">
-          <section class="panel" aria-labelledby="lk-h">
-            <div class="panel-head">
-              <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
-              <h2 id="lk-h">Leistungskontrollen</h2>
+          <section class="window" aria-labelledby="lk-h">
+            <div class="window-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <h2 id="lk-h" class="window-title">leistungskontrollen<span class="c-dim">.json</span></h2>
             </div>
             <ul class="lk-list" id="lk-list"></ul>
           </section>
 
-          <section class="panel" aria-labelledby="bh-h">
-            <div class="panel-head">
-              <ion-icon name="document-text-outline" aria-hidden="true"></ion-icon>
-              <h2 id="bh-h">Berichtsheft</h2>
-              <span class="panel-count" id="berichte-count"></span>
+          <section class="window" aria-labelledby="bh-h">
+            <div class="window-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <h2 id="bh-h" class="window-title">berichtsheft<span class="c-dim">/</span></h2>
+              <span class="window-count" id="berichte-count"></span>
             </div>
             <div class="berichte" id="berichte-grid"></div>
           </section>
         </div>
 
         <!-- Globus -->
-        <section class="panel globus" aria-labelledby="globus-h">
-          <div class="panel-head">
-            <ion-icon name="storefront-outline" aria-hidden="true"></ion-icon>
-            <h2 id="globus-h">Globus Hermsdorf</h2>
+        <section class="window" aria-labelledby="globus-h">
+          <div class="window-bar">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <h2 id="globus-h" class="window-title">globus-hermsdorf<span class="c-dim">.config</span></h2>
           </div>
-          <div class="globus-grid">
-            <div>
-              <p class="label">Öffnungszeiten</p>
-              <p>Mo – Sa · 08:00 – 20:00</p>
-              <p class="muted">Sonntag geschlossen</p>
-            </div>
-            <div>
-              <p class="label">Kontakt</p>
-              <p>Am Globus 1, 07629 Hermsdorf</p>
-              <p><a href="tel:+4936601930">+49 36601 930</a> · <a href="https://www.globus.de/hermsdorf/" target="_blank" rel="noopener">Webseite</a></p>
-            </div>
+          <div class="globus">
+            <pre class="code"><span class="c-key">öffnungszeiten</span>: <span class="c-str">"Mo–Sa 08:00–20:00"</span>
+<span class="c-key">sonntag</span>:        <span class="c-bool">false</span>
+<span class="c-key">adresse</span>:        <span class="c-str">"Am Globus 1, 07629 Hermsdorf"</span>
+<span class="c-key">telefon</span>:        <a class="c-str" href="tel:+4936601930">"+49 36601 930"</a>
+<span class="c-key">web</span>:            <a class="c-str" href="https://www.globus.de/hermsdorf/" target="_blank" rel="noopener">"globus.de/hermsdorf"</a></pre>
             <a class="btn" href="https://produkte.globus.de/hermsdorf/mein-globus-preise-rabatte/" target="_blank" rel="noopener">
-              Aktuelle Rabatte <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon>
+              <span class="c-dim">&gt;</span> rabatte öffnen
             </a>
           </div>
         </section>
       </main>
 
-      <!-- Footer -->
-      <footer class="footer">
-        <a class="footer-link" href="https://theuselessweb.com/" target="_blank" rel="noopener">
-          <ion-icon name="happy-outline" aria-hidden="true"></ion-icon> Useless Website
-        </a>
-        <button class="footer-link void-btn" id="void-btn">
-          <ion-icon name="eye-off-outline" aria-hidden="true"></ion-icon> Void-Funktion
-        </button>
+      <!-- Statusleiste -->
+      <footer class="statusbar crt">
+        <div class="sb-left">
+          <span class="sb-item sb-accent"><ion-icon name="git-branch-outline" aria-hidden="true"></ion-icon> main</span>
+          <span class="sb-item"><span class="sb-dot"></span> online</span>
+          <span class="sb-item" id="sb-kw"></span>
+        </div>
+        <div class="sb-right">
+          <a class="sb-item sb-link" href="https://theuselessweb.com/" target="_blank" rel="noopener">
+            <ion-icon name="happy-outline" aria-hidden="true"></ion-icon> useless
+          </a>
+          <button class="sb-item sb-link void-btn" id="void-btn">
+            <ion-icon name="eye-off-outline" aria-hidden="true"></ion-icon> void
+          </button>
+        </div>
       </footer>
     </div>
 
