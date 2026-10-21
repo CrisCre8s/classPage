@@ -1,11 +1,11 @@
 import "./style.css";
-import { initCanvas, startCanvas, stopCanvas } from "./canvas.js";
+import { initCanvas, startCanvas } from "./canvas.js";
 import { initVoid } from "./void.js";
 import { initBerichte } from "./berichte.js";
 import { initLks } from "./lks.js";
 
-const TAGE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-const MONATE = ["Jan", "Feb", "März", "Apr", "Mai", "Juni", "Juli", "Aug", "Sep", "Okt", "Nov", "Dez"];
+const TAGE = ["so", "mo", "di", "mi", "do", "fr", "sa"];
+const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function isoWoche(d) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -16,46 +16,54 @@ function isoWoche(d) {
 }
 
 function initDatum() {
-  const el = document.getElementById("today");
-  if (!el) return;
   const d = new Date();
-  el.textContent = `${TAGE[d.getDay()]}, ${d.getDate()}. ${MONATE[d.getMonth()]} · KW ${isoWoche(d)}`;
+  const pad = (n) => String(n).padStart(2, "0");
+  const today = document.getElementById("today");
+  const kw = document.getElementById("sb-kw");
+  if (today) today.textContent = `${TAGE[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+  if (kw) kw.textContent = `KW ${isoWoche(d)}`;
 }
 
-// Sternenfeld im Hintergrund — Ein/Aus über den Power-Button im Header
+// Tipp-Effekt im Hero
+function initTyping() {
+  const el = document.getElementById("typed");
+  if (!el) return;
+  const text = "./klassen-hub --schule sbsz-hermsdorf";
+  if (reduziert) {
+    el.textContent = text;
+    return;
+  }
+  let i = 0;
+  const tick = () => {
+    el.textContent = text.slice(0, ++i);
+    if (i < text.length) setTimeout(tick, 35 + Math.random() * 45);
+  };
+  setTimeout(tick, 500);
+}
+
+// POWER: schaltet die Seitenstruktur an/aus — die Sterne laufen immer weiter
 function initPower() {
   const btn = document.getElementById("power-btn");
   if (!btn) return;
+  let an = true;
 
-  let an = false;
-  try {
-    an = localStorage.getItem("sterne") === "an";
-  } catch {}
-
-  const setze = (wert) => {
-    an = wert;
-    btn.setAttribute("aria-pressed", String(an));
+  btn.addEventListener("click", () => {
+    an = !an;
     btn.classList.toggle("is-on", an);
-    if (an) startCanvas();
-    else stopCanvas();
-    try {
-      localStorage.setItem("sterne", an ? "an" : "aus");
-    } catch {}
-  };
-
-  btn.addEventListener("click", () => setze(!an));
-
-  const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (an && !reduziert) setze(true);
+    btn.setAttribute("aria-pressed", String(an));
+    document.body.classList.toggle("power-off", !an);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   initDatum();
+  initTyping();
   initLks();
   initBerichte();
+  initPower();
 
   if (initCanvas()) {
-    initPower();
+    startCanvas();
     initVoid();
   }
 });

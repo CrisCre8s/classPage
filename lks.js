@@ -64,9 +64,9 @@ function renderNaechste(lks) {
     el.classList.add("next--leer");
     el.innerHTML = `
       <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
-      <div>
-        <p class="next-label">Nächste Leistungskontrolle</p>
-        <p class="next-titel">Nichts angekündigt. Entspannt bleiben.</p>
+      <div class="next-body">
+        <p class="next-label"><span class="c-dim">&gt;</span> nächste leistungskontrolle</p>
+        <p class="next-titel">null <span class="next-art">nichts angekündigt, entspannt bleiben</span></p>
       </div>`;
     return;
   }
@@ -78,10 +78,10 @@ function renderNaechste(lks) {
       <span class="next-zahl">${next.tage === 0 ? "!" : next.tage}</span>
       <span class="next-einheit">${next.tage === 0 ? "HEUTE" : next.tage === 1 ? "TAG" : "TAGE"}</span>
     </div>
-    <div>
-      <p class="next-label">Nächste Leistungskontrolle · ${relativ(next.tage)}</p>
-      <p class="next-titel">${esc(next.fach)}${next.art ? ` <span class="muted">· ${esc(next.art)}</span>` : ""}</p>
-      ${next.thema ? `<p class="next-thema">${esc(next.thema)}</p>` : ""}
+    <div class="next-body">
+      <p class="next-label"><span class="c-dim">&gt;</span> nächste leistungskontrolle <span class="c-dim">·</span> <span class="next-rel">${relativ(next.tage)}</span></p>
+      <p class="next-titel">${esc(next.fach)}${next.art ? ` <span class="next-art">${esc(next.art)}</span>` : ""}</p>
+      ${next.thema ? `<p class="next-thema"><span class="c-dim">#</span> ${esc(next.thema)}</p>` : ""}
     </div>`;
 }
 
@@ -90,7 +90,7 @@ function renderListe(lks) {
   if (!list) return;
 
   if (lks.length === 0) {
-    list.innerHTML = `<p class="empty">Zurzeit keine anstehenden Leistungskontrollen.</p>`;
+    list.innerHTML = `<li class="empty"><span class="c-dim">[]</span> // zurzeit keine anstehenden leistungskontrollen</li>`;
     return;
   }
 
