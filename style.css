@@ -43,9 +43,9 @@
 
   --font: "Public Sans", Inter, system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
-  --rail: 55px;
-  --gap: 16px;
-  --pad: 20px;
+  --bar: 76px;
+  --gap: 20px;
+  --pad: 28px;
   --radius: 6px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -65,7 +65,7 @@ html {
 body {
   background: var(--ground);
   color: var(--text);
-  font: 14px/20px var(--font);
+  font: 16px/24px var(--font);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -107,8 +107,8 @@ ul {
 }
 
 svg.i {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   flex: none;
   fill: none;
   stroke: currentColor;
@@ -130,24 +130,26 @@ svg.i {
   z-index: 1;
 }
 
-/* ===== Icon-Rail ===== */
+/* ===== Icon-Leiste oben (Handy: unten) ===== */
 .rail {
   position: fixed;
-  inset: 0 auto 0 0;
+  inset: 0 0 auto 0;
   z-index: 10;
-  width: var(--rail);
+  height: var(--bar);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  padding: 14px 0;
+  padding: 0 16px;
   background: var(--ground);
-  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
 }
 
 .rail-mark {
   image-rendering: pixelated;
-  margin-bottom: 22px;
+  margin-right: 16px;
+  width: 34px;
+  height: 34px;
 }
 
 .rail a,
@@ -155,8 +157,8 @@ svg.i {
   position: relative;
   display: grid;
   place-items: center;
-  width: var(--rail);
-  height: 42px;
+  width: 54px;
+  height: var(--bar);
   color: var(--faint);
   transition: color 0.15s;
 }
@@ -167,13 +169,14 @@ svg.i {
   color: var(--text);
 }
 
+/* aktive Seite: 1px Akzentlinie auf der Unterkante der Leiste */
 .rail [aria-current="page"]::after {
   content: "";
   position: absolute;
-  right: -1px;
-  top: 11px;
-  bottom: 11px;
-  width: 1px;
+  left: 11px;
+  right: 11px;
+  bottom: -1px;
+  height: 1px;
   background: var(--accent);
 }
 
@@ -187,24 +190,37 @@ svg.i {
 }
 
 .rail-bottom {
-  margin-top: auto;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  margin-left: 10px;
+}
+
+/* Trenner zwischen Links und Spielereien */
+.rail-bottom::before {
+  content: "";
+  width: 1px;
+  height: 20px;
+  margin-right: 10px;
+  background: var(--border);
+  transition: opacity 0.3s;
+}
+
+body.power-off .rail-bottom::before {
+  opacity: 0;
 }
 
 /* ===== POWER (Design aus v2) ===== */
 .power {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 18px;
+  right: 20px;
   z-index: 20;
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  height: 36px;
-  padding: 0 13px;
-  font: 11px/1 "Press Start 2P", monospace;
+  gap: 10px;
+  height: 40px;
+  padding: 0 15px;
+  font: 12px/1 "Press Start 2P", monospace;
   color: #fff;
   /* taste-skill-ignore: Verlauf und Leuchten sind das gewünschte v2-Design des Schalters */
   background: linear-gradient(135deg, #2f8f74, #1f6a55);
@@ -242,7 +258,7 @@ svg.i {
 
 /* ===== Titel als LED-Matrix ===== */
 .title {
-  font: 400 24px/1.4 "Press Start 2P", monospace;
+  font: 400 32px/1.4 "Press Start 2P", monospace;
 }
 
 .title canvas {
@@ -266,15 +282,15 @@ svg.i {
 
 .hex {
   display: flex;
-  margin-top: 10px;
-  font-size: 12px;
-  line-height: 16px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 18px;
   color: var(--faint);
 }
 
 /* jedes Byte so breit wie sein Buchstabe darüber (8 LEDs × 4px) */
 .hex span {
-  width: 32px;
+  width: 48px;
   transition: color 0.15s;
 }
 
@@ -285,12 +301,11 @@ svg.i {
 
 /* ===== Canvas ===== */
 .canvas {
-  margin-left: var(--rail);
-  padding: 64px 32px 48px;
+  padding: calc(var(--bar) + 56px) 40px 64px;
 }
 
 .col {
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
 }
 
@@ -323,13 +338,13 @@ svg.i {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .sub {
-  margin-top: 12px;
-  font-size: 15px;
-  line-height: 22px;
+  margin-top: 16px;
+  font-size: 18px;
+  line-height: 26px;
   color: var(--muted);
 }
 
@@ -341,9 +356,10 @@ svg.i {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 16px;
+  gap: 10px;
+  height: 44px;
+  padding: 0 22px;
+  font-size: 16px;
   border-radius: 999px;
   background: #fff;
   color: #000;
@@ -361,8 +377,8 @@ svg.i {
 }
 
 .btn svg.i {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 /* ===== Panels ===== */
@@ -376,19 +392,19 @@ svg.i {
 .panel-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  min-height: 24px;
+  gap: 12px;
+  margin-bottom: 20px;
+  min-height: 28px;
 }
 
 .panel-head h2 {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
 }
 
 .chip {
-  font: 500 12px/20px var(--mono);
-  padding: 0 7px;
+  font: 500 14px/24px var(--mono);
+  padding: 0 8px;
   border-radius: 4px;
   background: var(--pill-neu-bg);
   color: var(--pill-neu-ink);
@@ -403,7 +419,7 @@ svg.i {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--muted);
   transition: color 0.15s;
 }
@@ -413,15 +429,15 @@ svg.i {
 }
 
 .more svg.i {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 .pill {
   flex: none;
   white-space: nowrap;
-  font: 500 12px/22px var(--font);
-  padding: 0 8px;
+  font: 500 14px/26px var(--font);
+  padding: 0 10px;
   border-radius: 4px;
 }
 
@@ -439,9 +455,9 @@ svg.i {
 .row {
   display: grid;
   align-items: center;
-  gap: 16px;
-  min-height: 63px;
-  padding: 10px 16px;
+  gap: 20px;
+  min-height: 78px;
+  padding: 14px 20px;
   background: var(--raised);
   border: 1px solid var(--raised-edge);
   border-radius: var(--radius);
@@ -463,13 +479,13 @@ a.row:active {
 
 .row .d {
   display: block;
-  margin-top: 2px;
-  font-size: 13px;
+  margin-top: 3px;
+  font-size: 15px;
   color: var(--muted);
 }
 
 .row .r {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--muted);
   text-align: right;
   white-space: nowrap;
@@ -485,10 +501,10 @@ a.row:active {
 /* Nächste LK */
 .lead {
   display: grid;
-  grid-template-columns: 150px 1fr auto;
+  grid-template-columns: 190px 1fr auto;
   align-items: center;
-  gap: 20px;
-  padding: 18px 20px;
+  gap: 24px;
+  padding: 24px 26px;
   margin-bottom: 8px;
   background: var(--raised);
   border: 1px solid var(--raised-edge);
@@ -496,25 +512,25 @@ a.row:active {
 }
 
 .lead-count {
-  font: 400 40px/1 var(--mono);
+  font: 400 46px/1 var(--mono);
 }
 
 .lead-count small {
-  margin-left: 6px;
-  font-size: 16px;
+  margin-left: 8px;
+  font-size: 19px;
   color: var(--muted);
 }
 
 .lead-when {
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: 10px;
+  font-size: 15px;
   color: var(--muted);
 }
 
 .lead-what {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 600;
-  line-height: 28px;
+  line-height: 34px;
 }
 
 .lead-detail {
@@ -523,16 +539,16 @@ a.row:active {
 }
 
 .lk-row {
-  grid-template-columns: 64px minmax(0, 1fr) auto;
+  grid-template-columns: 78px minmax(0, 1fr) auto;
 }
 
 .lk-date {
-  font: 400 15px/20px var(--mono);
+  font: 400 18px/24px var(--mono);
 }
 
 .lk-date span {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--faint);
 }
 
@@ -547,12 +563,12 @@ a.row:active {
 
 /* Links */
 .link-row {
-  grid-template-columns: 72px minmax(0, 1fr) 18px;
+  grid-template-columns: 100px minmax(0, 1fr) 22px;
 }
 
 .thumb {
-  width: 72px;
-  height: 42px;
+  width: 100px;
+  height: 58px;
   border-radius: 3px;
   background: #000 center top / cover no-repeat;
 }
@@ -575,7 +591,7 @@ a.row:active {
 
 /* Berichte */
 .file-row {
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
 }
 
 .file-row > svg.i {
@@ -584,7 +600,7 @@ a.row:active {
 
 .file-row .d {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -600,8 +616,8 @@ a.row:active {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: -6px 0 10px;
-  font-size: 13px;
+  margin: -6px 0 12px;
+  font-size: 15px;
   color: var(--muted);
 }
 
@@ -620,8 +636,8 @@ a.row:active {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  height: 36px;
-  padding-top: 8px;
+  height: 46px;
+  padding-top: 10px;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -634,19 +650,19 @@ a.row:active {
 }
 
 .kv .v {
-  font: 500 17px var(--mono);
+  font: 500 21px var(--mono);
   font-variant-numeric: tabular-nums;
 }
 
 .kv .v sup {
-  font-size: 11px;
-  vertical-align: 6px;
+  font-size: 13px;
+  vertical-align: 8px;
 }
 
 .kv .v em {
   margin-left: 4px;
   font-style: normal;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--faint);
 }
 
@@ -654,13 +670,14 @@ a.row:active {
   margin-top: 18px;
   padding-top: 14px;
   border-top: 1px solid var(--rule);
-  font-size: 13px;
+  font-size: 15px;
+  line-height: 23px;
   color: var(--muted);
 }
 
 .block h3 {
-  margin-bottom: 6px;
-  font-size: 14px;
+  margin-bottom: 8px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text);
 }
@@ -686,8 +703,8 @@ a.row:active {
 }
 
 .go svg.i {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   color: var(--accent);
   transition: transform 0.15s var(--ease);
 }
@@ -697,9 +714,9 @@ a.row:active {
 }
 
 .credit {
-  margin-top: 12px;
-  font-size: 11px;
-  line-height: 16px;
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 17px;
   color: var(--faint);
 }
 
@@ -813,8 +830,11 @@ body.power-off .rail {
     flex-direction: row;
     justify-content: space-around;
     padding: 0 4px;
-    border-right: 0;
+    border-bottom: 0;
     border-top: 1px solid var(--border);
+  }
+  .rail-bottom::before {
+    content: none;
   }
   .rail-mark,
   .rail .desk {
@@ -837,17 +857,17 @@ body.power-off .rail {
     width: auto;
     height: auto;
     clip: auto;
-    font-size: 11px;
+    font-size: 12px;
   }
   .rail [aria-current="page"]::after {
     left: 18px;
     right: 18px;
     top: -1px;
     bottom: auto;
-    width: auto;
-    height: 1px;
   }
+  /* auf dem Handy scrollt der Knopf mit weg, statt über den Karten zu schweben */
   .power {
+    position: absolute;
     top: 22px;
     height: 32px;
     padding: 0 11px;
@@ -857,7 +877,6 @@ body.power-off .rail {
     width: 24px;
   }
   .canvas {
-    margin-left: 0;
     padding: 28px 16px 96px;
   }
   .title-row {
@@ -870,7 +889,24 @@ body.power-off .rail {
     font-size: 20px;
   }
   .panel {
-    padding: 16px;
+    padding: 20px;
+  }
+  .panel-head {
+    flex-wrap: wrap;
+  }
+  .panel-head h2 {
+    font-size: 18px;
+  }
+  .link-row {
+    grid-template-columns: 76px minmax(0, 1fr) 22px;
+    gap: 16px;
+  }
+  .thumb {
+    width: 76px;
+    height: 46px;
+  }
+  .row {
+    padding: 14px 16px;
   }
   .lead {
     grid-template-columns: 1fr auto;
@@ -881,10 +917,10 @@ body.power-off .rail {
     grid-row: 2;
   }
   .lead-count {
-    font-size: 34px;
+    font-size: 40px;
   }
   .lk-row {
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: 66px minmax(0, 1fr);
   }
   .lk-row > :last-child {
     grid-column: 2;

@@ -38,7 +38,7 @@ function leseBits() {
 }
 
 function groesse() {
-  zelle = window.matchMedia("(max-width: 760px)").matches ? 3 : 4;
+  zelle = window.matchMedia("(max-width: 760px)").matches ? 3 : 6;
   punkt = zelle - 1; // 1px Lücke zwischen den LEDs
   const dpr = window.devicePixelRatio || 1;
   const w = TEXT.length * 8 * zelle;

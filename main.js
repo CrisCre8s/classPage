@@ -41,6 +41,7 @@ function initPower() {
     document.body.classList.toggle("power-off", !an);
     document.body.classList.toggle("power-on", an);
     if (an) setTimeout(bootTitel, 250); // Titel nach dem Einschalten neu in den Framebuffer schreiben
+    else window.scrollTo({ top: 0, behavior: "smooth" }); // Schalter bleibt erreichbar (Handy)
   });
 }
 
