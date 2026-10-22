@@ -666,18 +666,6 @@ a.row:active {
   color: var(--faint);
 }
 
-.kv .note {
-  font-size: 15px;
-  color: var(--faint);
-}
-
-.hint {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--faint);
-}
-
 .block {
   margin-top: 18px;
   padding-top: 14px;
