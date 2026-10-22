@@ -33,6 +33,7 @@
   --muted: #9a9ca2;
   --faint: #8a8c92;
   --accent: #f5d97a;
+  --brand-line: #d4b8ff; /* helles Markenlila für die Linie unter den Icons */
   --positive: #44a282;
   --pill-pos-bg: #1b2828;
   --pill-pos-ink: #5fc39c;
@@ -170,14 +171,36 @@ svg.i {
 }
 
 /* aktive Seite: 1px Akzentlinie auf der Unterkante der Leiste */
-.rail [aria-current="page"]::after {
+/* Markierungslinie unter den Icons: lila, sitzt unter der aktiven Seite
+   und wandert beim Hover unter das Icon, auf dem die Maus ist */
+.rail a::after,
+.rail button::after {
   content: "";
   position: absolute;
-  left: 11px;
-  right: 11px;
+  left: 13px;
+  right: 13px;
   bottom: -1px;
-  height: 1px;
-  background: var(--accent);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand-line);
+  opacity: 0;
+  transform: scaleX(0.3);
+  transition: opacity 0.18s, transform 0.22s var(--ease);
+}
+
+.rail [aria-current="page"]::after,
+.rail a:hover::after,
+.rail button:hover::after,
+.rail a:focus-visible::after,
+.rail button:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* fährt die Maus über ein anderes Icon, gibt die aktive Seite ihre Linie ab */
+.rail:has(a:hover, button:hover) [aria-current="page"]:not(:hover)::after {
+  opacity: 0;
+  transform: scaleX(0.3);
 }
 
 .rail .lbl {
@@ -859,7 +882,8 @@ body.power-off .rail {
     clip: auto;
     font-size: 12px;
   }
-  .rail [aria-current="page"]::after {
+  .rail a::after,
+  .rail button::after {
     left: 18px;
     right: 18px;
     top: -1px;
