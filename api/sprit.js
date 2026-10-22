@@ -10,10 +10,10 @@
 
 const BASE = "https://creativecommons.tankerkoenig.de/json";
 
-// Mittelpunkt Hermsdorf (Thüringen) für die Umkreissuche
-const LAT = 50.8975;
-const LNG = 11.8565;
-const RADIUS_KM = 5;
+// Standort der Globus-Tankstelle (Rodaer Str. 72, Hermsdorf) für die Umkreissuche
+const LAT = 50.887;
+const LNG = 11.8482;
+const RADIUS_KM = 2;
 
 // Antwort 10 Minuten im Vercel-CDN zwischenspeichern → höchstens eine
 // Anfrage an Tankerkönig alle 10 Minuten, egal wie viele Leute die Seite öffnen.
