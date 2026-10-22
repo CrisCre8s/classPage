@@ -53,6 +53,13 @@ export function getLks() {
 export function naechsteLkSatz(liste = getLks()) {
   const next = liste.find((lk) => lk.tage >= 0);
   if (!next) return "Keine Leistungskontrolle angekündigt";
+  // mehrere LKs am selben Tag: alle Fächer nennen
+  const gleicherTag = liste.filter((lk) => lk.tage === next.tage);
+  if (gleicherTag.length > 1) {
+    const faecher = gleicherTag.map((lk) => lk.fach);
+    const aufzaehlung = faecher.slice(0, -1).join(", ") + " und " + faecher.at(-1);
+    return `${aufzaehlung} ${relativ(next.tage)}`;
+  }
   const was = next.art ? `${next.art} in ${next.fach}` : next.fach;
   return `${was} ${relativ(next.tage)}`;
 }
