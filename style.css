@@ -869,7 +869,8 @@ body.power-off .rail {
   }
   .rail a,
   .rail button {
-    width: 64px;
+    flex: 1 1 0;
+    width: auto;
     height: 64px;
     grid-template-rows: 22px 16px;
     align-content: center;
@@ -963,6 +964,205 @@ body.power-off .rail {
   #void-ui {
     display: none !important;
   }
+}
+
+/* ===== Spiele-Seite ===== */
+.page-title {
+  font: 400 32px/1.4 "Press Start 2P", monospace;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--control);
+}
+
+.btn-ghost:hover {
+  background: var(--raised);
+}
+
+.s4 {
+  grid-column: span 4;
+}
+
+.games {
+  align-items: stretch;
+}
+
+/* „hidden“ muss auch gegen display: grid/flex gewinnen */
+[hidden] {
+  display: none !important;
+}
+
+/* beim Hinscrollen nicht unter der festen Leiste verschwinden */
+.stage {
+  scroll-margin-top: calc(var(--bar) + 16px);
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.game-card h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.game-desc {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.game-keys {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--faint);
+}
+
+.seg {
+  display: flex;
+  margin-top: 20px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+}
+
+.seg button {
+  flex: 1 1 0;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 15px;
+  color: var(--muted);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.seg button:hover {
+  color: var(--text);
+}
+
+.seg button[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--brand-line);
+}
+
+.game-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.best {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.best .num {
+  margin-left: 6px;
+  color: var(--text);
+}
+
+/* Spielfläche */
+.stage .stage-status {
+  margin-left: auto;
+  font-size: 18px;
+}
+
+.stage .more {
+  margin-left: 16px;
+}
+
+.stage-body {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #0f0e13;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  max-height: calc(100vh - var(--bar) - 220px);
+  object-fit: contain;
+  image-rendering: pixelated;
+  outline: none;
+}
+
+.stage[data-game="schach"] #game-canvas {
+  width: min(100%, calc(100vh - var(--bar) - 220px));
+}
+
+.stage-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(15, 14, 19, 0.8);
+  cursor: pointer;
+}
+
+.stage-msg[hidden] {
+  display: none;
+}
+
+.stage-msg .big {
+  font: 24px/1.4 "Press Start 2P", monospace;
+}
+
+.stage-msg .small {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.stage-msg button {
+  margin-top: 6px;
+}
+
+.stage-help {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--faint);
+}
+
+@media (max-width: 1100px) {
+  .s4 { grid-column: 1 / -1; }
+  .game-art { max-width: 480px; }
+}
+
+@media (max-width: 760px) {
+  .stage .more { margin-left: auto; }
+  .stage .stage-status {
+    order: 3;
+    width: 100%;
+    margin: 2px 0 0;
+    font-size: 15px;
+  }
+  .page-title { font-size: 22px; }
+  .title-row .btn-ghost { display: none; }
+  .stage-msg .big { font-size: 18px; }
+  #game-canvas { max-height: none; }
+  .stage[data-game="schach"] #game-canvas { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

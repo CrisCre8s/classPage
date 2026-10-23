@@ -1,6 +1,5 @@
 import "./style.css";
-import { initCanvas, startCanvas } from "./canvas.js";
-import { initVoid } from "./void.js";
+import { initShell, onPower } from "./shell.js";
 import { initBerichte } from "./berichte.js";
 import { initLks, naechsteLkSatz } from "./lks.js";
 import { initSprit } from "./sprit.js";
@@ -28,33 +27,14 @@ function initTitelzeile(liste) {
   el.querySelector("strong").textContent = satz;
 }
 
-// POWER: schaltet die Seite aus und ein, die Sterne laufen immer weiter
-function initPower() {
-  const btn = document.getElementById("power-btn");
-  if (!btn) return;
-  let an = true;
-
-  btn.addEventListener("click", () => {
-    an = !an;
-    btn.setAttribute("aria-pressed", String(an));
-    btn.classList.toggle("is-on", an);
-    document.body.classList.toggle("power-off", !an);
-    document.body.classList.toggle("power-on", an);
-    if (an) setTimeout(bootTitel, 250); // Titel nach dem Einschalten neu in den Framebuffer schreiben
-    else window.scrollTo({ top: 0, behavior: "smooth" }); // Schalter bleibt erreichbar (Handy)
-  });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const liste = initLks();
   initTitelzeile(liste);
   initTitel();
   initBerichte();
   initSprit();
-  initPower();
-
-  if (initCanvas()) {
-    startCanvas();
-    initVoid();
-  }
+  initShell();
+  onPower((an) => {
+    if (an) setTimeout(bootTitel, 250); // Titel nach dem Einschalten neu in den Framebuffer schreiben
+  });
 });
