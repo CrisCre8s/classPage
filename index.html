@@ -167,37 +167,13 @@
             <section class="panel arcade" id="arcade" aria-labelledby="arcade-h">
               <div class="panel-head">
                 <h2 id="arcade-h">Spiele</h2>
-                <span class="chip">3</span>
+                <span class="chip" id="arcade-count"></span>
                 <a class="more" href="/spiele.html">Zur Spieleseite <svg class="i"><use href="#i-out" /></svg></a>
                 <button class="more arcade-toggle" id="arcade-close" type="button" hidden>Schließen</button>
               </div>
               <div class="arcade-stage">
-                <ul class="arcade-games" id="arcade-games">
-                <li>
-                  <a class="arcade-game" href="/spiele.html#pong">
-                    <canvas class="arcade-art" data-art="pong" aria-hidden="true"></canvas>
-                    <span class="arcade-name">Ping-Pong</span>
-                    <span class="arcade-text">Schläger gegen Schläger, bis 7</span>
-                    <span class="arcade-go">Spielen <svg class="i"><use href="#i-out" /></svg></span>
-                  </a>
-                </li>
-                <li>
-                  <a class="arcade-game" href="/spiele.html#schach">
-                    <canvas class="arcade-art" data-art="schach" aria-hidden="true"></canvas>
-                    <span class="arcade-name">Schach</span>
-                    <span class="arcade-text">Du spielst Weiß gegen den Computer</span>
-                    <span class="arcade-go">Spielen <svg class="i"><use href="#i-out" /></svg></span>
-                  </a>
-                </li>
-                <li>
-                  <a class="arcade-game" href="/spiele.html#bits">
-                    <canvas class="arcade-art" data-art="bits" aria-hidden="true"></canvas>
-                    <span class="arcade-name">Bits &amp; Bugs</span>
-                    <span class="arcade-text">Bits sammeln, Bugs ausweichen</span>
-                    <span class="arcade-go">Spielen <svg class="i"><use href="#i-out" /></svg></span>
-                  </a>
-                </li>
-                </ul>
+                <!-- Kacheln kommen aus games/katalog.js (arcade.js) -->
+                <ul class="arcade-games" id="arcade-games"></ul>
                 <div class="door door-l" aria-hidden="true"><span class="door-sign">SPIELE</span><span class="door-handle"></span></div>
                 <div class="door door-r" aria-hidden="true"><span class="door-sign">SPIELE</span><span class="door-handle"></span></div>
                 <button class="arcade-open" id="arcade-open" type="button" aria-expanded="false" aria-controls="arcade-games">

@@ -1,6 +1,7 @@
 // Spiele auf dem Hub: zwei Schiebetüren, die sich öffnen und wieder schließen lassen.
 // Ein Klick auf ein Spiel zeigt zuerst die Schwierigkeitsauswahl.
 import { zeichneVorschau } from "./games/vorschau.js";
+import { KATALOG } from "./games/katalog.js";
 
 const STUFEN = [
   ["leicht", "Leicht"],
@@ -23,7 +24,24 @@ export function initArcade() {
   const liste = document.getElementById("arcade-games");
   if (!abteil || !oeffnen || !liste) return;
 
-  abteil.querySelectorAll("[data-art]").forEach((c) => zeichneVorschau(c, c.dataset.art));
+  // Kacheln aus dem Katalog
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  liste.innerHTML = KATALOG.map(
+    (s, i) => `
+    <li style="--i: ${i}">
+      <a class="arcade-game" href="/spiele.html#${s.id}">
+        <canvas class="arcade-art" data-art="${s.id}" aria-hidden="true"></canvas>
+        <span class="arcade-name">${esc(s.name)}${s.kat === "lernen" ? ' <span class="arcade-tag">Lernen</span>' : ""}</span>
+        <span class="arcade-text">${esc(s.kurz)}</span>
+        <span class="arcade-go">Spielen <svg class="i"><use href="#i-out" /></svg></span>
+      </a>
+    </li>`,
+  ).join("");
+  const zaehler = document.getElementById("arcade-count");
+  if (zaehler) zaehler.textContent = KATALOG.length;
+  const vorschau = () => abteil.querySelectorAll("[data-art]").forEach((c) => zeichneVorschau(c, c.dataset.art));
+  vorschau();
+  document.fonts?.load('16px "Press Start 2P"').then(vorschau); // Texte in den Vorschauen brauchen die Pixelschrift
   liste.inert = true; // hinter geschlossenen Türen nicht per Tab erreichbar
 
   // ---------- Schwierigkeitsauswahl pro Spiel ----------
@@ -38,7 +56,7 @@ export function initArcade() {
   liste.querySelectorAll(".arcade-game").forEach((karte) => {
     const li = karte.closest("li");
     const spiel = karte.getAttribute("href").split("#")[1];
-    const name = karte.querySelector(".arcade-name").textContent;
+    const name = KATALOG.find((s) => s.id === spiel)?.name || "";
     const auswahl = document.createElement("div");
     auswahl.className = "arcade-pick";
     auswahl.hidden = true;

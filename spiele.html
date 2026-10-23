@@ -74,7 +74,7 @@
           <header class="title-row">
             <div>
               <h1 class="page-title">Spiele</h1>
-              <p class="sub">Gegen den Computer · <strong>Leicht, Mittel oder Schwer</strong></p>
+              <p class="sub">12 Spiele · <strong>Leicht, Mittel oder Schwer</strong></p>
             </div>
             <a class="btn btn-ghost" href="/">Zurück zum Hub</a>
           </header>
@@ -82,65 +82,21 @@
           <!-- Spielfläche (sichtbar, sobald ein Spiel läuft) -->
           <section class="panel stage" id="stage" hidden aria-labelledby="stage-title">
             <div class="panel-head">
-              <h2 id="stage-title"></h2>
+              <h1 id="stage-title"></h1>
               <span class="chip" id="stage-level"></span>
               <span class="stage-status num" id="stage-status" aria-live="polite"></span>
               <button class="more" type="button" id="stage-close">Beenden</button>
             </div>
             <div class="stage-body" id="stage-body">
               <canvas id="game-canvas" tabindex="0" aria-label="Spielfeld"></canvas>
+              <div class="game-dom" id="game-dom" hidden></div>
               <div class="stage-msg" id="stage-msg" hidden></div>
             </div>
             <p class="stage-help" id="stage-help"></p>
           </section>
 
-          <div class="grid games" id="games">
-            <section class="panel s4 game-card" data-game="pong" aria-labelledby="g-pong">
-              <canvas class="game-art" data-art="pong" aria-hidden="true"></canvas>
-              <h2 id="g-pong">Ping-Pong</h2>
-              <p class="game-desc">Der Klassiker: Schläger gegen Schläger. Wer zuerst 7 Punkte hat, gewinnt.</p>
-              <p class="game-keys">Maus, Finger, W/S oder ↑/↓</p>
-              <div class="seg" role="radiogroup" aria-label="Schwierigkeit für Ping-Pong">
-                <button type="button" role="radio" aria-checked="false" data-level="leicht">Leicht</button>
-                <button type="button" role="radio" aria-checked="true" data-level="mittel">Mittel</button>
-                <button type="button" role="radio" aria-checked="false" data-level="schwer">Schwer</button>
-              </div>
-              <div class="game-foot">
-                <p class="best">Siege <span class="num" data-best>0</span></p>
-                <button class="btn play" type="button">Spielen</button>
-              </div>
-            </section>
-            <section class="panel s4 game-card" data-game="schach" aria-labelledby="g-schach">
-              <canvas class="game-art" data-art="schach" aria-hidden="true"></canvas>
-              <h2 id="g-schach">Schach</h2>
-              <p class="game-desc">Du spielst Weiß gegen den Computer. Rochade, en passant und Umwandlung inklusive.</p>
-              <p class="game-keys">Figur antippen, dann Zielfeld</p>
-              <div class="seg" role="radiogroup" aria-label="Schwierigkeit für Schach">
-                <button type="button" role="radio" aria-checked="false" data-level="leicht">Leicht</button>
-                <button type="button" role="radio" aria-checked="true" data-level="mittel">Mittel</button>
-                <button type="button" role="radio" aria-checked="false" data-level="schwer">Schwer</button>
-              </div>
-              <div class="game-foot">
-                <p class="best">Siege <span class="num" data-best>0</span></p>
-                <button class="btn play" type="button">Spielen</button>
-              </div>
-            </section>
-            <section class="panel s4 game-card" data-game="bits" aria-labelledby="g-bits">
-              <canvas class="game-art" data-art="bits" aria-hidden="true"></canvas>
-              <h2 id="g-bits">Bits &amp; Bugs</h2>
-              <p class="game-desc">Sammle als Pixel-Computer alle Bits ein. Mit dem Debugger jagst du die Bugs.</p>
-              <p class="game-keys">Pfeiltasten, WASD oder Wischen</p>
-              <div class="seg" role="radiogroup" aria-label="Schwierigkeit für Bits &amp; Bugs">
-                <button type="button" role="radio" aria-checked="false" data-level="leicht">Leicht</button>
-                <button type="button" role="radio" aria-checked="true" data-level="mittel">Mittel</button>
-                <button type="button" role="radio" aria-checked="false" data-level="schwer">Schwer</button>
-              </div>
-              <div class="game-foot">
-                <p class="best">Siege <span class="num" data-best>0</span></p>
-                <button class="btn play" type="button">Spielen</button>
-              </div>
-            </section>
-          </div>
+          <!-- Karten werden aus games/katalog.js erzeugt (spiele.js) -->
+          <div class="games" id="games"></div>
         </main>
       </div>
     </div>
