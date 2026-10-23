@@ -983,6 +983,9 @@ body.power-off .rail {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap);
   list-style: none;
+  /* Luft nach oben: die Karten heben sich beim Hover um 3 px und werden
+     sonst vom overflow: hidden der Bühne (wegen der Türen) abgeschnitten */
+  padding-top: 6px;
 }
 
 .arcade-game {
