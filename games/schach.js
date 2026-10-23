@@ -27,30 +27,13 @@ const PALETTE = {
   b: { "#": "#b48ef0", "*": "#dcc8ff", "+": "#7656b8", rand: "#0b0b0e" },
 };
 
-// Katzen (eigene Zeichnung): Bauer = Kätzchen, Turm = Katze im Karton, Läufer = Zauberhut,
-// Springer = Katze im Profil, Dame = Diadem, König = Krone. o Augen · p Nase · g Schmuck · k/K Karton
-const KATZEN = {
-  P: ["................", "................", "................", "................", "....#......#....", "....##....##....", "....########....", "...##########...", "...##o####o##...", "...####pp####...", "....########....", ".....######.....", "....##+##+##....", "...##########...", "...##+####+##...", "..############.."],
-  R: ["................", "................", "....#......#....", "....##....##....", "....########....", "...##o####o##...", "...####pp####...", "...##########...", ".kk.########.kk.", "..kkkkkkkkkkkk..", "..kkkKKKKKKkkk..", "..kkkkkkkkkkkk..", "..kkkkkkkkkkkk..", "..kkkkkkkkkkkk..", "..KKKKKKKKKKKK..", "..KKKKKKKKKKKK.."],
-  N: ["................", "......#...#.....", "......##.##.....", ".....#######....", "....##o#####....", "...##########...", "..p#########....", "...####.#####...", "........#####...", ".......######...", "......#######...", ".....#*######.#.", ".....########.#.", "....##+##+####..", "...###########..", "...###########.."],
-  B: [".......gg.......", "......gggg......", "......g*gg......", ".....gggggg.....", ".....gg+ggg.....", "....#gggggg#....", "....########....", "...##o####o##...", "...####pp####...", "....########....", ".....######.....", "......####......", ".....######.....", "....##+##+##....", "...##########...", "...##########..."],
-  Q: ["................", "....g..gg..g....", "....gggggggg....", "...#gggggggg#...", "...##########...", "..###o####o###..", "..#####pp#####..", "...##########...", "....########....", ".....######.....", "....########....", "...##+####+##...", "...##########...", "..##+######+##..", "..############..", "..############.."],
-  K: [".......gg.......", "......gggg......", ".......gg.......", "...g..gggg..g...", "...gggggggggg...", "..#gg*ggggggg#..", "..############..", ".###o######o###.", ".######pp######.", "..############..", "...##########...", "....########....", "...##+####+##...", "..############..", "..##+######+##..", ".##############."],
-};
-const KATZEN_PALETTE = {
-  w: {"#": "#f4dcb5", "*": "#fff6e6", "+": "#d49a5a", "o": "#2f9e5f", "p": "#ef8aa0", "g": "#f2b632", "k": "#d9b07a", "K": "#b8864e", "rand": "#2a1a10"},
-  b: {"#": "#3a3346", "*": "#6a5f7e", "+": "#1f1a27", "o": "#f5d23a", "p": "#e77a95", "g": "#c9ccd6", "k": "#6e6479", "K": "#4c4456", "rand": "#0b0b0e"},
-};
-
-// selbst gezeichnete Pixel-Sätze (Muster + Farben je Seite)
-const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE }, katzen: { muster: KATZEN, palette: KATZEN_PALETTE } };
+const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE } };
 
 // Brettfarben: dunkel für die Pixelfiguren, heller für die Lichess-Figuren
 // (schwarze Figuren wären auf dunklen Feldern kaum zu sehen)
 const BRETT = {
   dunkel: { hell: "#34323b", dunkel: "#1f1d25", koord: "rgba(255,255,255,0.28)" },
   hell: { hell: "#e4def0", dunkel: "#9a87c2", koord: "rgba(20,16,30,0.45)" },
-  katze: { hell: "#f3e6d3", dunkel: "#c99b74", koord: "rgba(60,36,20,0.5)" },
 };
 const FARBEN = {
   auswahl: "rgba(212, 184, 255, 0.45)",
@@ -70,7 +53,6 @@ export const STILE = [
   { id: "celtic", name: "Keltisch", brett: "hell" },
   { id: "chessnut", name: "Chessnut", brett: "hell" },
   { id: "rhosgfx", name: "Holz", brett: "hell" },
-  { id: "katzen", name: "Katzen", brett: "katze" },
 ];
 const STIL_KEY = "schach:figuren";
 const EFFEKT_KEY = "schach:effekt";
