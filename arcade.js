@@ -1,5 +1,20 @@
-// Spiele auf dem Hub: zwei Schiebetüren, die sich öffnen und wieder schließen lassen
+// Spiele auf dem Hub: zwei Schiebetüren, die sich öffnen und wieder schließen lassen.
+// Ein Klick auf ein Spiel zeigt zuerst die Schwierigkeitsauswahl.
 import { zeichneVorschau } from "./games/vorschau.js";
+
+const STUFEN = [
+  ["leicht", "Leicht"],
+  ["mittel", "Mittel"],
+  ["schwer", "Schwer"],
+];
+
+function gemerkteStufe(spiel) {
+  try {
+    return JSON.parse(localStorage.getItem("spiele:stufe:" + spiel)) || "mittel";
+  } catch {
+    return "mittel";
+  }
+}
 
 export function initArcade() {
   const abteil = document.getElementById("arcade");
@@ -10,6 +25,57 @@ export function initArcade() {
 
   abteil.querySelectorAll("[data-art]").forEach((c) => zeichneVorschau(c, c.dataset.art));
   liste.inert = true; // hinter geschlossenen Türen nicht per Tab erreichbar
+
+  // ---------- Schwierigkeitsauswahl pro Spiel ----------
+  const schliesseAuswahl = (ausser) =>
+    liste.querySelectorAll("li.picking").forEach((li) => {
+      if (li === ausser) return;
+      li.classList.remove("picking");
+      li.querySelector(".arcade-pick").hidden = true;
+      li.querySelector(".arcade-game").inert = false;
+    });
+
+  liste.querySelectorAll(".arcade-game").forEach((karte) => {
+    const li = karte.closest("li");
+    const spiel = karte.getAttribute("href").split("#")[1];
+    const name = karte.querySelector(".arcade-name").textContent;
+    const auswahl = document.createElement("div");
+    auswahl.className = "arcade-pick";
+    auswahl.hidden = true;
+    auswahl.setAttribute("role", "group");
+    auswahl.setAttribute("aria-label", `Schwierigkeit für ${name}`);
+    auswahl.innerHTML = `
+      <p class="arcade-pick-title">${name}</p>
+      <p class="arcade-pick-sub">Wähle die Schwierigkeit</p>
+      <div class="arcade-pick-list">
+        ${STUFEN.map(([id, label]) => `<a class="arcade-pick-btn" data-level="${id}" href="/spiele.html?stufe=${id}#${spiel}">${label}</a>`).join("")}
+      </div>
+      <button class="more arcade-pick-back" type="button">Zurück</button>`;
+    li.appendChild(auswahl);
+
+    karte.addEventListener("click", (e) => {
+      e.preventDefault();
+      schliesseAuswahl(li);
+      const zuletzt = gemerkteStufe(spiel);
+      auswahl.querySelectorAll(".arcade-pick-btn").forEach((b) => b.classList.toggle("is-last", b.dataset.level === zuletzt));
+      auswahl.hidden = false;
+      li.classList.add("picking");
+      karte.inert = true;
+      auswahl.querySelector(`[data-level="${zuletzt}"]`)?.focus({ preventScroll: true });
+    });
+    auswahl.querySelector(".arcade-pick-back").addEventListener("click", () => {
+      schliesseAuswahl();
+      karte.focus({ preventScroll: true });
+    });
+    auswahl.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        schliesseAuswahl();
+        karte.focus({ preventScroll: true });
+      }
+    });
+  });
+
+  // ---------- Türen ----------
   let timer = [];
   const spaeter = (fn, ms) => timer.push(setTimeout(fn, ms));
   const abbrechen = () => {
@@ -39,6 +105,7 @@ export function initArcade() {
     spaeter(() => {
       abteil.classList.remove("open", "opening");
       oeffnen.setAttribute("aria-expanded", "false");
+      schliesseAuswahl();
     }, 220);
     spaeter(() => {
       abteil.classList.remove("closing");
