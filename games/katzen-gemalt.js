@@ -427,11 +427,12 @@ export function zeichneGemalteKatze(ctx, p, x, y, Z, t, seed) {
       ctx.ellipse(ax, ay, 4.6, 5, 0, 0, Math.PI * 2);
     };
     ell(ctx, 50 + s * 12.5, 46.5, 3.6, 2, "#f2a0a4", 0, 0.45); // rosige Bäckchen
-    if (froh) {
-      // zufrieden zugekniffen (wie beim Schnurren)
+    if (froh || lid > 0.45) {
+      // zufrieden zugekniffen (wie beim Schnurren) bzw. mitten im Blinzeln: nur ein Bogen
       linie(ctx, LINIE, 1.5, () => {
         ctx.moveTo(ax - 4.2, ay + 1);
-        ctx.quadraticCurveTo(ax, ay - 3.4, ax + 4.2, ay + 1);
+        if (froh) ctx.quadraticCurveTo(ax, ay - 3.4, ax + 4.2, ay + 1);
+        else ctx.quadraticCurveTo(ax, ay + 2.6, ax + 4.2, ay + 1);
       });
       return;
     }
