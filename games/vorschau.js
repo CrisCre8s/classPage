@@ -147,7 +147,7 @@ export function zeichneVorschau(canvas, spiel) {
   };
   if (spiel === "binaer") textBild("DEZ → BIN", "1011 0110", "= 182");
   if (spiel === "subnetz") textBild("NETZADRESSE?", "10.4.77.9/26", "10.4.77.0");
-  if (spiel === "befehle") textBild("LINUX · WELCHER BEFEHL?", "Pfad ausgeben", "pwd");
+  if (spiel === "befehle") textBild("WELCHER BEFEHL?", "Pfad ausgeben", "pwd");
   if (spiel === "ports") textBild("WELCHER DIENST?", "PORT 22", "SSH");
 }
 
