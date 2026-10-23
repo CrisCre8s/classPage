@@ -1,5 +1,6 @@
 // Schach gegen den Computer. Du spielst Weiß.
 import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe } from "./schach-engine.js";
+import { EFFEKTE, erzeuge as erzeugeEffekt, zeichne as zeichneEffekt, wackeln, bewegung } from "./schach-effekte.js";
 
 export const HILFE = "Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
 
@@ -26,11 +27,30 @@ const PALETTE = {
   b: { "#": "#b48ef0", "*": "#dcc8ff", "+": "#7656b8", rand: "#0b0b0e" },
 };
 
+// Katzen (eigene Zeichnung): Bauer = Kätzchen, Turm = Katze im Karton, Läufer = Zauberhut,
+// Springer = Katze im Profil, Dame = Diadem, König = Krone. o Augen · p Nase · g Schmuck · k/K Karton
+const KATZEN = {
+  P: ["................", "................", "................", "................", "....#......#....", "....##....##....", "....########....", "...##########...", "...##o####o##...", "...####pp####...", "....########....", ".....######.....", "....##+##+##....", "...##########...", "...##+####+##...", "..############.."],
+  R: ["................", "................", "....#......#....", "....##....##....", "....########....", "...##o####o##...", "...####pp####...", "...##########...", ".kk.########.kk.", "..kkkkkkkkkkkk..", "..kkkKKKKKKkkk..", "..kkkkkkkkkkkk..", "..kkkkkkkkkkkk..", "..kkkkkkkkkkkk..", "..KKKKKKKKKKKK..", "..KKKKKKKKKKKK.."],
+  N: ["................", "......#...#.....", "......##.##.....", ".....#######....", "....##o#####....", "...##########...", "..p#########....", "...####.#####...", "........#####...", ".......######...", "......#######...", ".....#*######.#.", ".....########.#.", "....##+##+####..", "...###########..", "...###########.."],
+  B: [".......gg.......", "......gggg......", "......g*gg......", ".....gggggg.....", ".....gg+ggg.....", "....#gggggg#....", "....########....", "...##o####o##...", "...####pp####...", "....########....", ".....######.....", "......####......", ".....######.....", "....##+##+##....", "...##########...", "...##########..."],
+  Q: ["................", "....g..gg..g....", "....gggggggg....", "...#gggggggg#...", "...##########...", "..###o####o###..", "..#####pp#####..", "...##########...", "....########....", ".....######.....", "....########....", "...##+####+##...", "...##########...", "..##+######+##..", "..############..", "..############.."],
+  K: [".......gg.......", "......gggg......", ".......gg.......", "...g..gggg..g...", "...gggggggggg...", "..#gg*ggggggg#..", "..############..", ".###o######o###.", ".######pp######.", "..############..", "...##########...", "....########....", "...##+####+##...", "..############..", "..##+######+##..", ".##############."],
+};
+const KATZEN_PALETTE = {
+  w: {"#": "#f4dcb5", "*": "#fff6e6", "+": "#d49a5a", "o": "#2f9e5f", "p": "#ef8aa0", "g": "#f2b632", "k": "#d9b07a", "K": "#b8864e", "rand": "#2a1a10"},
+  b: {"#": "#3a3346", "*": "#6a5f7e", "+": "#1f1a27", "o": "#f5d23a", "p": "#e77a95", "g": "#c9ccd6", "k": "#6e6479", "K": "#4c4456", "rand": "#0b0b0e"},
+};
+
+// selbst gezeichnete Pixel-Sätze (Muster + Farben je Seite)
+const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE }, katzen: { muster: KATZEN, palette: KATZEN_PALETTE } };
+
 // Brettfarben: dunkel für die Pixelfiguren, heller für die Lichess-Figuren
 // (schwarze Figuren wären auf dunklen Feldern kaum zu sehen)
 const BRETT = {
   dunkel: { hell: "#34323b", dunkel: "#1f1d25", koord: "rgba(255,255,255,0.28)" },
   hell: { hell: "#e4def0", dunkel: "#9a87c2", koord: "rgba(20,16,30,0.45)" },
+  katze: { hell: "#f3e6d3", dunkel: "#c99b74", koord: "rgba(60,36,20,0.5)" },
 };
 const FARBEN = {
   auswahl: "rgba(212, 184, 255, 0.45)",
@@ -50,8 +70,18 @@ export const STILE = [
   { id: "celtic", name: "Keltisch", brett: "hell" },
   { id: "chessnut", name: "Chessnut", brett: "hell" },
   { id: "rhosgfx", name: "Holz", brett: "hell" },
+  { id: "katzen", name: "Katzen", brett: "katze" },
 ];
 const STIL_KEY = "schach:figuren";
+const EFFEKT_KEY = "schach:effekt";
+function gemerkterEffekt() {
+  try {
+    const s = localStorage.getItem(EFFEKT_KEY);
+    return EFFEKTE.some((x) => x.id === s) ? s : "passend";
+  } catch {
+    return "passend";
+  }
+}
 function gemerkterStil() {
   try {
     const s = localStorage.getItem(STIL_KEY);
@@ -64,7 +94,7 @@ function gemerkterStil() {
 // SVG-Figuren einmal laden; gerastert wird passend zur echten Bildschirmgröße (siehe raster)
 const svgCache = {};
 function ladeStil(id) {
-  if (id === "pixel") return Promise.resolve();
+  if (PIXEL_SAETZE[id]) return Promise.resolve();
   if (svgCache[id]) return svgCache[id].bereit;
   const imgs = {};
   const bereit = Promise.all(
@@ -105,10 +135,11 @@ function raster(id, p, px) {
 
 // Figuren einmal vorrendern (schneller beim Animieren)
 const cache = {};
-function figurBild(p) {
-  if (cache[p]) return cache[p];
-  const muster = FIGUREN[p.toUpperCase()];
-  const pal = PALETTE[farbe(p)];
+function figurBild(p, satz = "pixel") {
+  const key = satz + p;
+  if (cache[key]) return cache[key];
+  const muster = PIXEL_SAETZE[satz].muster[p.toUpperCase()];
+  const pal = PIXEL_SAETZE[satz].palette[farbe(p)];
   const c = document.createElement("canvas");
   c.width = c.height = 18 * PX;
   const g = c.getContext("2d");
@@ -123,7 +154,7 @@ function figurBild(p) {
       g.fillRect((x + 1) * PX, (y + 1) * PX, PX, PX);
     }),
   );
-  cache[p] = c;
+  cache[key] = c;
   return c;
 }
 
@@ -191,6 +222,9 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   // Verlauf: jede Stellung nach einem Zug, zum Nachspielen mit den Pfeiltasten
   let stellungen = [{ pos: klon(pos), zug: null }];
   let ansicht = null; // null = aktuelle Partie, sonst Index in stellungen
+  let effekt = gemerkterEffekt();
+  let effekte = []; // laufende Schlag-Effekte
+  let fxRaf = 0;
   let tastaturAktiv = false; // Rahmen fürs Tastatur-Spiel erst zeigen, wenn WASD benutzt wird
   let druck = null; // gedrückte eigene Figur: { sq, x, y, warAusgewaehlt, id }
   let ziehen = false; // wird sie gerade gezogen?
@@ -202,7 +236,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   const sichtKey = () => (ansicht === null ? "live" : ansicht);
 
   function zeichneFigur(p, x, y, gross = 1) {
-    if (stil !== "pixel") {
+    if (!PIXEL_SAETZE[stil]) {
       const g = Z * 0.9 * gross;
       const bild = raster(stil, p, Math.round(g * skala));
       if (bild) {
@@ -211,7 +245,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       }
     }
     // Pixelfiguren: ohne Glätten skalieren, dann bleiben die Pixelkanten scharf
-    const bild = figurBild(p);
+    const bild = figurBild(p, PIXEL_SAETZE[stil] ? stil : "pixel");
     const w = bild.width * gross;
     ctx.drawImage(bild, x + (Z - w) / 2, y + (Z - w) / 2 + 2, w, w);
   }
@@ -230,7 +264,22 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     ctx.fillRect((sq % 8) * Z + Z / 2 - 7, Math.floor(sq / 8) * Z + Z / 2 - 7, 14, 14);
   };
 
+  // Ein Bild zeichnen: Brett (evtl. wackelnd), dann die Effekte darüber
   function zeichne(t = performance.now()) {
+    const versatz = wackeln(effekte, t);
+    if (versatz) {
+      ctx.fillStyle = "#0f0e13";
+      ctx.fillRect(0, 0, N, N);
+      ctx.save();
+      ctx.translate(versatz[0], versatz[1]);
+    }
+    zeichneBrett(t);
+    const key = sichtKey();
+    for (const e of effekte) if (e.fuer === key) zeichneEffekt(ctx, e, t, zeichneFigur, Z, "oben");
+    if (versatz) ctx.restore();
+  }
+
+  function zeichneBrett(t) {
     const { pos: p, zug } = sicht();
     const live = ansicht === null;
     const brett = BRETT[STILE.find((s) => s.id === stil).brett];
@@ -272,13 +321,15 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     // Figuren; die gerade gleitenden werden zuletzt obendrauf gezeichnet
     const ziehendeZiele = new Set(meineAnims.map((a) => a.to));
     if (meineAnims.length && geschlagen) zeichneFigur(geschlagen.p, (geschlagen.sq % 8) * Z, Math.floor(geschlagen.sq / 8) * Z);
+    for (const e of effekte) if (e.fuer === sichtKey()) zeichneEffekt(ctx, e, t, zeichneFigur, Z, "unten");
     const gezogen = live && ziehen && druck ? druck.sq : -1;
     for (let sq = 0; sq < 64; sq++) if (p.b[sq] && !ziehendeZiele.has(sq) && sq !== gezogen) zeichneFigur(p.b[sq], (sq % 8) * Z, Math.floor(sq / 8) * Z);
     for (const a of meineAnims) {
-      const k = ease(Math.min(1, (t - a.start) / ANIM_MS));
+      const roh = Math.max(0, Math.min(1, (t - a.start) / ANIM_MS));
+      const k = (a.ease || ease)(roh);
       const x = ((a.from % 8) + ((a.to % 8) - (a.from % 8)) * k) * Z;
       const y = (Math.floor(a.from / 8) + (Math.floor(a.to / 8) - Math.floor(a.from / 8)) * k) * Z;
-      zeichneFigur(a.p, x, y - Math.sin(k * Math.PI) * 7); // kleiner „Hüpfer“
+      zeichneFigur(a.p, x, y - Math.sin(roh * Math.PI) * (a.hop ?? 7)); // kleiner „Hüpfer“
     }
 
     if (live) {
@@ -308,8 +359,11 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     const p = nachher.b[m.to];
     const opferFeld = m.ep ? m.to + (farbe(p) === "w" ? 8 : -8) : m.to;
     geschlagen = vorher.b[opferFeld] ? { p: vorher.b[opferFeld], sq: opferFeld } : null;
+    const opfer = geschlagen;
     const start = performance.now();
-    anims = [{ p, from: m.from, to: m.to, start }];
+    // beim Schlagen bewegt sich die Figur bei „passend“ auf ihre eigene Art
+    const art = opfer ? bewegung(effekt, p.toUpperCase()) : null;
+    anims = [{ p, from: m.from, to: m.to, start, ...(art || {}) }];
     animFuer = fuer;
     const turm = { K: [63, 61], Q: [56, 59], k: [7, 5], q: [0, 3] }[m.rochade];
     if (turm) anims.push({ p: nachher.b[turm[1]], from: turm[0], to: turm[1], start });
@@ -319,6 +373,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
         anims = [];
         animFuer = null;
         geschlagen = null;
+        if (opfer && effekt !== "aus") starteEffekt(m, p, opfer, fuer, t);
         zeichne(t);
         fertig?.();
         return;
@@ -349,6 +404,23 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       raf = requestAnimationFrame(schritt);
     };
     raf = requestAnimationFrame(schritt);
+  }
+
+  // Schlag-Effekt starten und so lange Bilder zeichnen, bis er vorbei ist
+  function starteEffekt(m, angreifer, opfer, fuer, t) {
+    const fx = m.to % 8 - (m.from % 8);
+    const fy = Math.floor(m.to / 8) - Math.floor(m.from / 8);
+    const len = Math.hypot(fx, fy) || 1;
+    const e = erzeugeEffekt({ art: effekt, angreifer, opfer: opfer.p, sq: opfer.sq, dir: [fx / len, fy / len], start: t, Z });
+    e.fuer = fuer;
+    effekte.push(e);
+    if (!fxRaf) fxRaf = requestAnimationFrame(fxSchritt);
+  }
+  function fxSchritt(t) {
+    effekte = effekte.filter((e) => t - e.start < e.dauer);
+    if (!anims.length) zeichne(t); // während einer Zug-Animation zeichnet die schon
+    fxRaf = effekte.length ? requestAnimationFrame(fxSchritt) : 0;
+    if (!effekte.length && !anims.length) zeichne(t);
   }
 
   // Zug in der Partie ausführen; ruft danach `fertig` auf
@@ -549,6 +621,9 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     <label class="tools-feld"><span>Figuren</span>
       <select class="tools-select">${STILE.map((s) => `<option value="${s.id}"${s.id === stil ? " selected" : ""}>${s.name}</option>`).join("")}</select>
     </label>
+    <label class="tools-feld"><span>Schlagen</span>
+      <select class="tools-select tools-effekt">${EFFEKTE.map((s) => `<option value="${s.id}"${s.id === effekt ? " selected" : ""}>${s.name}</option>`).join("")}</select>
+    </label>
     <div class="tools-verlauf" role="group" aria-label="Züge nachspielen">
       <button type="button" class="tools-btn" data-v="anfang" aria-label="Zum Anfang">⏮</button>
       <button type="button" class="tools-btn" data-v="zurueck" aria-label="Zug zurück">◀</button>
@@ -568,7 +643,13 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   const schritt = { anfang: () => zuAnsicht(0), zurueck: () => zuAnsicht((ansicht ?? stellungen.length - 1) - 1), vor: () => ansicht !== null && zuAnsicht(ansicht + 1), ende: () => zuAnsicht(null) };
   tools.querySelectorAll("[data-v]").forEach((b) => b.addEventListener("click", () => schritt[b.dataset.v]()));
   tools.querySelector(".tools-neu").addEventListener("click", () => neuePartie());
-  tools.querySelector(".tools-select").addEventListener("change", (e) => {
+  tools.querySelector(".tools-effekt").addEventListener("change", (e) => {
+    effekt = e.target.value;
+    try {
+      localStorage.setItem(EFFEKT_KEY, effekt);
+    } catch {}
+  });
+  tools.querySelector(".tools-select:not(.tools-effekt)").addEventListener("change", (e) => {
     stil = e.target.value;
     try {
       localStorage.setItem(STIL_KEY, stil);
@@ -717,6 +798,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     stop() {
       vorbei = true;
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(fxRaf);
       worker.terminate();
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
