@@ -2,8 +2,8 @@
 // wertung: "siege" (zählt Siege), "punkte" (Highscore), "zeit" (schnellste Zeit, weniger ist besser)
 
 export const KATEGORIEN = [
+  { id: "lernen", name: "Lernen", text: "Prüfungsstoff für Fachinformatiker. Unter „So geht's“ steht erst alles zum Nachlesen, dann wird gespielt." },
   { id: "klassiker", name: "Klassiker", text: "Gegen den Computer oder auf Highscore" },
-  { id: "lernen", name: "Lernen", text: "Prüfungsstoff für Fachinformatiker, auf Zeit" },
 ];
 
 export const KATALOG = [

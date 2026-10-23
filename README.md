@@ -81,8 +81,9 @@ steht dort „gerade nicht verfügbar“.
 
 Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 12 Spiele, jeweils in
 **Leicht, Mittel und Schwer**. Name, Beschreibung und Kategorie stehen zentral in
-`games/katalog.js`; daraus entstehen die Karten auf der Spieleseite und die Kacheln
-im Hub.
+`games/katalog.js`. Auf der Spieleseite stehen die Lernspiele oben, die Klassiker
+darunter. Der Hub zeigt nur drei Lernspiele als Vorschau, die ganze Fläche führt zur
+Spieleseite.
 
 **Klassiker**
 
@@ -97,7 +98,9 @@ im Hub.
 - **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker)
 - **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
 
-**Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`)
+**Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`).
+Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabellen aus
+`games/lernhilfe.js` (Befehle und Ports kommen direkt aus den Spieldaten).
 
 - **Binär-Blitz** (`games/binaer.js`): Binär, Dezimal und Hex umrechnen
 - **Subnetz-Sprint** (`games/subnetz.js`): Netz, Broadcast, Maske, Hosts berechnen

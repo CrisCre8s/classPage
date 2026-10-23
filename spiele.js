@@ -54,6 +54,7 @@ function karteHtml(s) {
       <h3 id="g-${s.id}">${esc(s.name)}</h3>
       <p class="game-desc">${esc(s.text)}</p>
       <p class="game-keys">${esc(s.tasten)}</p>
+      ${s.kat === "lernen" ? `<button class="lern-toggle" type="button" aria-expanded="false" aria-controls="lern-${s.id}"><span>So geht's</span><svg class="i" aria-hidden="true"><use href="#i-chev" /></svg></button>` : ""}
       <div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
         ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
       </div>
@@ -203,6 +204,54 @@ async function starten(spiel) {
   if (!modul.DOM) canvas.focus({ preventScroll: true });
 }
 
+// ---------- Lernhilfe: aufklappbare Erklärung unter einer Lernspiel-Karte ----------
+let lernhilfe = null;
+async function lernhilfeUmschalten(spiel, knopf) {
+  const offen = document.querySelector(".lern-panel");
+  const warOffen = offen?.dataset.game === spiel;
+  if (offen) {
+    offen.remove();
+    document.querySelectorAll(".lern-toggle").forEach((b) => b.setAttribute("aria-expanded", "false"));
+  }
+  if (warOffen) return;
+  lernhilfe ||= (await import("./games/lernhilfe.js")).LERNHILFE;
+  const hilfe = lernhilfe[spiel];
+  const info = NACH_ID[spiel];
+  const panel = document.createElement("section");
+  panel.className = "lern-panel";
+  panel.id = `lern-${spiel}`;
+  panel.dataset.game = spiel;
+  panel.setAttribute("aria-label", `${info.name}: ${hilfe.titel}`);
+  panel.innerHTML = `
+    <div class="lern-head">
+      <div>
+        <p class="lern-kicker">${esc(info.name)}</p>
+        <h3>${esc(hilfe.titel)}</h3>
+      </div>
+      <button class="more lern-zu" type="button">Zuklappen</button>
+    </div>
+    <div class="lh">${hilfe.inhalt()}</div>
+    <div class="lern-foot">
+      <p>Verstanden? Dann los:</p>
+      <div class="lern-start">
+        ${Object.entries(STUFEN).map(([id, l]) => `<button class="btn${id === stufeVon(spiel) ? "" : " btn-ghost"}" type="button" data-level="${id}">${l}</button>`).join("")}
+      </div>
+    </div>`;
+  karte(spiel).after(panel);
+  knopf.setAttribute("aria-expanded", "true");
+  panel.querySelector(".lern-zu").addEventListener("click", () => {
+    lernhilfeUmschalten(spiel, knopf);
+    knopf.focus({ preventScroll: true });
+  });
+  panel.querySelectorAll("[data-level]").forEach((b) =>
+    b.addEventListener("click", () => {
+      karte(spiel).querySelector(`.seg [data-level="${b.dataset.level}"]`).click();
+      starten(spiel);
+    }),
+  );
+  panel.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+}
+
 function initKarten() {
   baueKarten();
   document.querySelectorAll(".game-card").forEach((k) => {
@@ -233,6 +282,8 @@ function initKarten() {
     waehle(radios.find((r) => r.dataset.level === gemerkt) || radios[1]);
 
     k.querySelector(".play").addEventListener("click", () => starten(spiel));
+    const lern = k.querySelector(".lern-toggle");
+    lern?.addEventListener("click", () => lernhilfeUmschalten(spiel, lern));
   });
 
   document.getElementById("stage-close").addEventListener("click", () => {
