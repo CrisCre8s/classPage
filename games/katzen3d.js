@@ -3,8 +3,8 @@
 // 100 × 100 großen Feld und dann auf die echte Feldgröße skaliert.
 
 const FARBEN = {
-  w: { hell: "#ffe2b8", mitte: "#f2ad66", dunkel: "#c2702c", brust: "#fff4e6", streifen: "rgba(196, 104, 40, 0.55)", auge: "#5cc46e", augeDunkel: "#1d4a24", rand: "rgba(90, 44, 14, 0.55)", glanz: "rgba(255,255,255,0.0)" },
-  b: { hell: "#6b6380", mitte: "#2f2a39", dunkel: "#131118", brust: "#3b3548", streifen: null, auge: "#ffd447", augeDunkel: "#8a5a00", rand: "rgba(0,0,0,0.6)", glanz: "rgba(190, 176, 230, 0.55)" },
+  w: { hell: "#fff0d9", mitte: "#ffc485", dunkel: "#e38d48", brust: "#fffaf2", streifen: "rgba(222, 128, 60, 0.45)", auge: "#7fd88e", augeDunkel: "#1f6b34", rand: "rgba(90, 44, 14, 0.55)", glanz: "rgba(255,255,255,0.0)", mund: "rgba(120, 60, 30, 0.75)", barthaar: "rgba(255,255,255,0.9)" },
+  b: { hell: "#7f7896", mitte: "#3e3850", dunkel: "#1b1823", brust: "#4a4459", streifen: null, auge: "#ffd65c", augeDunkel: "#9a6200", rand: "rgba(0,0,0,0.6)", glanz: "rgba(200, 188, 240, 0.55)", mund: "rgba(230, 220, 250, 0.6)", barthaar: "rgba(230, 224, 245, 0.55)" },
 };
 const GROESSE = { K: 1, Q: 0.97, R: 0.94, B: 0.93, N: 0.93, P: 0.8 };
 
@@ -39,8 +39,9 @@ function randlicht(ctx, x, y, rx, ry, f) {
 
 function ohr(ctx, seite, f, zucken) {
   ctx.save();
-  ctx.translate(50 + seite * 13, 30);
-  ctx.rotate(seite * (0.12 + zucken));
+  ctx.translate(50 + seite * 15, 31);
+  ctx.rotate(seite * (0.22 + zucken));
+  ctx.scale(0.95, 0.85);
   const g = ctx.createLinearGradient(0, -20, 0, 6);
   g.addColorStop(0, f.hell);
   g.addColorStop(1, f.dunkel);
@@ -63,25 +64,26 @@ function ohr(ctx, seite, f, zucken) {
 
 function auge(ctx, x, y, f, zu, gross) {
   if (zu) {
+    // zufrieden zugekniffen: kleiner Bogen nach oben
     ctx.beginPath();
-    ctx.moveTo(x - 5, y);
-    ctx.quadraticCurveTo(x, y + 3, x + 5, y);
+    ctx.moveTo(x - 5.5, y + 1.5);
+    ctx.quadraticCurveTo(x, y - 4, x + 5.5, y + 1.5);
     ctx.strokeStyle = "#1a1410";
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 2.2;
     ctx.lineCap = "round";
     ctx.stroke();
     return;
   }
-  const rx = 5.2 * gross;
-  const ry = 6 * gross;
-  const g = ctx.createRadialGradient(x - 1.5, y - 2, 0.5, x, y, ry);
-  g.addColorStop(0, "#ffffff");
-  g.addColorStop(0.25, f.auge);
+  const rx = 6.4 * gross;
+  const ry = 7.4 * gross;
+  const g = ctx.createRadialGradient(x, y + ry * 0.4, 0.5, x, y, ry);
+  g.addColorStop(0, f.auge);
   g.addColorStop(1, f.augeDunkel);
-  ellipse(ctx, x, y, rx + 1, ry + 1, "#120e0c");
+  ellipse(ctx, x, y, rx + 1.1, ry + 1.1, "#140f0c");
   ellipse(ctx, x, y, rx, ry, g);
-  ellipse(ctx, x, y + 0.5, 1.6 * gross, 4.6 * gross, "#0b0907");
-  ellipse(ctx, x - 1.8 * gross, y - 2.4 * gross, 1.5 * gross, 1.5 * gross, "rgba(255,255,255,0.95)");
+  ellipse(ctx, x, y + 0.6, 4.1 * gross, 5.2 * gross, "#120d0b");
+  ellipse(ctx, x - 2.1 * gross, y - 2.8 * gross, 2.5 * gross, 2.5 * gross, "#ffffff");
+  ellipse(ctx, x + 2.3 * gross, y + 2.5 * gross, 1.1 * gross, 1.1 * gross, "rgba(255,255,255,0.9)");
 }
 
 function schwanz(ctx, f, winkel) {
@@ -273,12 +275,12 @@ function kartonVorne(ctx) {
 
 function halsband(ctx) {
   ctx.beginPath();
-  ctx.ellipse(50, 60, 14, 4, 0, 0, Math.PI);
+  ctx.ellipse(50, 66.5, 13, 3.6, 0, 0, Math.PI);
   ctx.strokeStyle = "#e23b52";
   ctx.lineWidth = 3;
   ctx.stroke();
-  ellipse(ctx, 50, 65, 3.2, 3.2, gold(ctx, 62, 68));
-  ellipse(ctx, 49, 64, 1, 1, "rgba(255,255,255,0.9)");
+  ellipse(ctx, 50, 71, 3.4, 3.4, gold(ctx, 68, 74));
+  ellipse(ctx, 48.9, 69.9, 1.1, 1.1, "rgba(255,255,255,0.9)");
 }
 
 // ---------- Katze ----------
@@ -304,84 +306,89 @@ export function zeichneKatze(ctx, p, x, y, Z, t, seed) {
   ctx.scale(g, g);
   ctx.translate(-50, -96);
 
-  if (typ === "R") kartonHinten(ctx);
+  // Karton etwas flacher, damit das runde Kinn herausschaut
+  const karton = (fn) => {
+    ctx.save();
+    ctx.translate(50, 96);
+    ctx.scale(1, 0.84);
+    ctx.translate(-50, -96);
+    fn(ctx);
+    ctx.restore();
+  };
+  if (typ === "R") karton(kartonHinten);
   if (typ !== "R") schwanz(ctx, f, schwanzWinkel);
 
-  // Körper (atmet)
+  // Körper (atmet) – klein und rund
   ctx.save();
   ctx.translate(50, 94);
   ctx.scale(1, atem);
   ctx.translate(-50, -94);
-  ellipse(ctx, 50, 72, 24, 22, kugel(ctx, 50, 72, 24, f, 22));
-  ellipse(ctx, 50, 75, 12, 15, f.brust);
-  if (f.streifen) {
-    ctx.strokeStyle = f.streifen;
-    ctx.lineWidth = 2.6;
-    ctx.lineCap = "round";
-    [[30, 66, 36, 72], [70, 66, 64, 72], [29, 76, 35, 80], [71, 76, 65, 80]].forEach(([a, b, c, d]) => {
-      ctx.beginPath();
-      ctx.moveTo(a, b);
-      ctx.lineTo(c, d);
-      ctx.stroke();
-    });
-  }
-  randlicht(ctx, 50, 72, 24, 22, f);
-  // Pfoten
-  ellipse(ctx, 40, 91, 7.5, 4.8, kugel(ctx, 40, 91, 7.5, { ...f, hell: f.brust }, 4.8));
-  ellipse(ctx, 60, 91, 7.5, 4.8, kugel(ctx, 60, 91, 7.5, { ...f, hell: f.brust }, 4.8));
+  ellipse(ctx, 50, 79, 20, 16, kugel(ctx, 50, 79, 20, f, 16));
+  ellipse(ctx, 50, 81, 10, 11, f.brust);
+  randlicht(ctx, 50, 79, 20, 16, f);
+  // Pfötchen mit rosa Ballen
+  [41, 59].forEach((px) => {
+    ellipse(ctx, px, 92, 6.5, 4.6, kugel(ctx, px, 92, 6.5, { ...f, hell: f.brust }, 4.6));
+    ellipse(ctx, px, 93, 2, 1.4, "rgba(245, 150, 170, 0.9)");
+    [-2.8, 0, 2.8].forEach((d) => ellipse(ctx, px + d, 90.6, 0.9, 0.8, "rgba(245, 150, 170, 0.9)"));
+  });
   ctx.restore();
 
-  // Kopf (leicht geneigt, bewegt sich mit dem Atmen)
-  const kopfY = 94 - (94 - 42) * atem;
+  // Kopf: groß, rund, leicht geneigt, bewegt sich mit dem Atmen
+  const kopfY = 94 - (94 - 44) * atem;
   ctx.save();
-  ctx.translate(50, kopfY + 22);
+  ctx.translate(50, kopfY + 24);
   ctx.rotate(neigen);
-  ctx.translate(-50, -(42 + 22));
+  ctx.translate(-50, -(44 + 24));
   ohr(ctx, -1, f, zucken);
   ohr(ctx, 1, f, 0);
-  ellipse(ctx, 50, 42, 23, 21, kugel(ctx, 50, 42, 23, f, 21));
-  ellipse(ctx, 50, 51, 12, 8, f.brust);
+  ellipse(ctx, 50, 45, 27, 23.5, kugel(ctx, 50, 45, 27, f, 23.5));
+  // helle Schnauze und Bäckchen
+  ellipse(ctx, 50, 56, 10, 6.5, f.brust);
   if (f.streifen) {
     ctx.strokeStyle = f.streifen;
-    ctx.lineWidth = 2.4;
+    ctx.lineWidth = 2.2;
     ctx.lineCap = "round";
-    [[44, 24, 45, 31], [50, 22, 50, 30], [56, 24, 55, 31]].forEach(([a, b, c, d]) => {
+    [[45, 25, 46, 30], [50, 23.5, 50, 29], [55, 25, 54, 30]].forEach(([a, b, c, d]) => {
       ctx.beginPath();
       ctx.moveTo(a, b);
       ctx.lineTo(c, d);
       ctx.stroke();
     });
   }
-  randlicht(ctx, 50, 42, 23, 21, f);
-  const augeGross = typ === "P" ? 1.15 : 1;
-  auge(ctx, 41, 42, f, blinzeln, augeGross);
-  auge(ctx, 59, 42, f, blinzeln, augeGross);
-  // Nase, Mund, Schnurrhaare
+  randlicht(ctx, 50, 45, 27, 23.5, f);
+  ellipse(ctx, 32, 56, 5, 3.2, "rgba(255, 120, 150, 0.38)");
+  ellipse(ctx, 68, 56, 5, 3.2, "rgba(255, 120, 150, 0.38)");
+  const augeGross = typ === "P" ? 1.12 : 1;
+  auge(ctx, 39.5, 47, f, blinzeln, augeGross);
+  auge(ctx, 60.5, 47, f, blinzeln, augeGross);
+  // kleine Herz-Nase und „w“-Mündchen
   ctx.beginPath();
-  ctx.moveTo(47.5, 48.5);
-  ctx.lineTo(52.5, 48.5);
-  ctx.lineTo(50, 51.5);
-  ctx.closePath();
-  ctx.fillStyle = "#ef7f98";
+  ctx.moveTo(50, 55.6);
+  ctx.bezierCurveTo(47, 53.5, 47.4, 51.8, 48.8, 52);
+  ctx.quadraticCurveTo(50, 52.3, 50, 53.2);
+  ctx.quadraticCurveTo(50, 52.3, 51.2, 52);
+  ctx.bezierCurveTo(52.6, 51.8, 53, 53.5, 50, 55.6);
+  ctx.fillStyle = "#f2869e";
   ctx.fill();
-  ctx.strokeStyle = weiss ? "rgba(90, 44, 14, 0.7)" : "rgba(220, 210, 240, 0.5)";
-  ctx.lineWidth = 1.1;
+  ctx.strokeStyle = f.mund;
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(50, 51.5);
-  ctx.quadraticCurveTo(47, 55, 44.5, 53);
-  ctx.moveTo(50, 51.5);
-  ctx.quadraticCurveTo(53, 55, 55.5, 53);
+  ctx.moveTo(50, 55.6);
+  ctx.quadraticCurveTo(48.4, 58.6, 46.4, 57);
+  ctx.moveTo(50, 55.6);
+  ctx.quadraticCurveTo(51.6, 58.6, 53.6, 57);
   ctx.stroke();
-  ctx.strokeStyle = weiss ? "rgba(255,255,255,0.85)" : "rgba(230, 224, 245, 0.55)";
-  ctx.lineWidth = 0.8;
+  // nur zwei kurze Schnurrhaare je Seite
+  ctx.strokeStyle = f.barthaar;
+  ctx.lineWidth = 0.9;
   ctx.beginPath();
   [-1, 1].forEach((s) => {
-    ctx.moveTo(50 + s * 8, 50);
-    ctx.lineTo(50 + s * 24, 47);
-    ctx.moveTo(50 + s * 8, 52);
-    ctx.lineTo(50 + s * 24, 53);
-    ctx.moveTo(50 + s * 8, 54);
-    ctx.lineTo(50 + s * 22, 58);
+    ctx.moveTo(50 + s * 13, 54);
+    ctx.lineTo(50 + s * 25, 52);
+    ctx.moveTo(50 + s * 13, 56.5);
+    ctx.lineTo(50 + s * 24, 58);
   });
   ctx.stroke();
   // Kopfschmuck
@@ -391,7 +398,7 @@ export function zeichneKatze(ctx, p, x, y, Z, t, seed) {
   else if (typ === "N") helm(ctx, hutWackeln);
   ctx.restore();
 
-  if (typ === "R") kartonVorne(ctx);
+  if (typ === "R") karton(kartonVorne);
   if (typ === "P") halsband(ctx);
   ctx.restore();
 }
