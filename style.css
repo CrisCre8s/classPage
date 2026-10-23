@@ -420,7 +420,8 @@ body.power-off .rail-bottom::before {
   min-height: 28px;
 }
 
-.panel-head h2 {
+.panel-head h2,
+.panel-head h1 {
   font-size: 20px;
   font-weight: 600;
 }
@@ -929,7 +930,8 @@ body.power-off .rail {
   .panel-head {
     flex-wrap: wrap;
   }
-  .panel-head h2 {
+  .panel-head h2,
+  .panel-head h1 {
     font-size: 18px;
   }
   .link-row {
@@ -990,7 +992,7 @@ body.power-off .rail {
 
 .arcade-games {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--gap);
   list-style: none;
   /* Luft nach oben: die Karten heben sich beim Hover um 3 px und werden
@@ -1265,9 +1267,19 @@ body.power-off .rail {
   animation: rein 0.55s var(--ease) both;
 }
 
-.arcade.open .arcade-games li:nth-child(1) { animation-delay: 0.45s; }
-.arcade.open .arcade-games li:nth-child(2) { animation-delay: 0.55s; }
-.arcade.open .arcade-games li:nth-child(3) { animation-delay: 0.65s; }
+/* nacheinander, jede Kachel 45 ms nach der vorigen (--i kommt aus arcade.js) */
+.arcade.open .arcade-games li { animation-delay: calc(0.42s + var(--i, 0) * 45ms); }
+
+.arcade-tag {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  vertical-align: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--pill-pos-bg);
+  color: var(--pill-pos-ink);
+}
 
 .arcade.closing .arcade-games li {
   animation: raus 0.22s ease-in both;
@@ -1287,7 +1299,18 @@ body.power-off .rail {
 }
 
 @media (max-width: 760px) {
-  .arcade-games { grid-template-columns: 1fr; }
+  .arcade-games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .arcade-game { padding: 10px; }
+  .arcade-text, .arcade-go { display: none; }
+  .arcade-name { font-size: 15px; line-height: 20px; }
+  .arcade-tag { display: block; width: fit-content; margin: 4px 0 0; }
+  .arcade-games li.picking { min-height: 216px; }
+  .arcade-pick { padding: 12px; gap: 4px; }
+  .arcade-pick-sub { display: none; }
+  .arcade-pick-title { font-size: 15px; }
+  .arcade-pick-list { margin-top: 6px; gap: 6px; }
+  .arcade-pick-btn { height: 38px; padding: 0 12px; font-size: 15px; }
+  .arcade-pick-back { margin-top: 4px; }
   /* offen: „Schließen“ statt „Zur Spieleseite“ (die ist unten in der Leiste) */
   .arcade.open .panel-head .more:not(.arcade-toggle) { display: none; }
   .arcade .arcade-toggle { margin-left: auto; }
@@ -1341,7 +1364,38 @@ body.power-off .rail {
   image-rendering: pixelated;
 }
 
-.game-card h2 {
+.games {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.kat-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 20px;
+}
+
+.kat-head h2 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.kat-text {
+  flex-basis: 100%;
+  color: var(--muted);
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+.game-card h3 {
   font-size: 20px;
   font-weight: 600;
 }
@@ -1495,6 +1549,8 @@ body.game-on .stage-help {
 
 @media (max-width: 1100px) {
   .s4 { grid-column: 1 / -1; }
+  .games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .arcade-games { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .game-art { max-width: 480px; }
 }
 
@@ -1507,6 +1563,9 @@ body.game-on .stage-help {
     font-size: 15px;
   }
   .page-title { font-size: 22px; }
+  .games-grid { grid-template-columns: 1fr; }
+  .arcade-games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kat-head h2 { font-size: 20px; }
   .title-row .btn-ghost { display: none; }
   .stage-msg .big { font-size: 18px; }
   /* Handy: oben Platz für POWER, unten für die Leiste */
@@ -1521,6 +1580,301 @@ body.game-on .stage-help {
   body.game-on .stage-help {
     display: none;
   }
+}
+
+/* ===== Lernspiele (HTML statt Canvas) ===== */
+.game-dom {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+  min-height: 100%;
+  margin: 0 auto;
+}
+
+.quiz-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.quiz-zeit {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--raised);
+  overflow: hidden;
+}
+
+.quiz-zeit span {
+  display: block;
+  height: 100%;
+  background: var(--brand-line);
+  transform-origin: left;
+}
+
+.quiz-zeit span.knapp {
+  background: var(--pill-neg-ink);
+}
+
+.quiz-serie {
+  min-width: 90px;
+  text-align: right;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.quiz-frage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 16px;
+  text-align: center;
+  background: var(--raised);
+  border: 1px solid var(--raised-edge);
+  border-radius: var(--radius);
+}
+
+.quiz-label {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.quiz-wert {
+  font-size: clamp(26px, 5vw, 40px);
+  font-weight: 600;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.quiz-unter {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.quiz-form {
+  display: flex;
+  gap: 10px;
+}
+
+.quiz-input {
+  flex: 1;
+  min-width: 0;
+  height: 50px;
+  padding: 0 16px;
+  font-size: 22px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.quiz-input:focus {
+  border-color: var(--brand-line);
+}
+
+.quiz-form .btn {
+  height: 50px;
+}
+
+.quiz-optionen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 17px;
+  background: var(--surface);
+  border: 1px solid var(--raised-edge);
+  border-radius: var(--radius);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.quiz-option .num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--raised);
+}
+
+.quiz-option:hover,
+.quiz-option:focus-visible {
+  border-color: var(--brand-line);
+  outline: none;
+}
+
+.quiz-option.ok {
+  border-color: var(--pill-pos-ink);
+  background: var(--pill-pos-bg);
+}
+
+.quiz-option.falsch {
+  border-color: var(--pill-neg-ink);
+  background: var(--pill-neg-bg);
+}
+
+.quiz-feedback {
+  min-height: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.quiz-feedback.ok {
+  color: var(--pill-pos-ink);
+}
+
+.quiz-feedback.falsch {
+  color: var(--pill-neg-ink);
+}
+
+.quiz-feedback strong {
+  color: var(--text);
+}
+
+.quiz-erkl {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.quiz-pad {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quiz-pad[data-art="bin"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.quiz-pad[data-art="dez"],
+.quiz-pad[data-art="ip"] {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.quiz-taste {
+  height: 46px;
+  border-radius: var(--radius);
+  font-size: 18px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+  transition: box-shadow 0.12s, transform 0.08s;
+}
+
+.quiz-taste:hover {
+  box-shadow: inset 0 0 0 1px var(--brand-line);
+}
+
+.quiz-taste:active {
+  transform: scale(0.95);
+}
+
+.quiz-ok {
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+}
+
+.quiz-skip {
+  align-self: center;
+  margin: 0;
+}
+
+.quiz-auswertung {
+  width: min(560px, 100%);
+  text-align: left;
+}
+
+.quiz-auswertung ul {
+  list-style: none;
+  margin-top: 8px;
+  max-height: 32vh;
+  overflow-y: auto;
+}
+
+.quiz-auswertung li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.quiz-auswertung-frage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--text);
+}
+
+.quiz-auswertung-frage .quiz-wert {
+  font-size: 15px;
+}
+
+.quiz-auswertung-frage .quiz-erkl,
+.quiz-auswertung-frage .quiz-unter {
+  display: none;
+}
+
+/* Befehle tippen */
+.tippen-befehl {
+  display: block;
+  font: 500 clamp(20px, 3.6vw, 30px) / 1.5 var(--mono);
+  overflow-wrap: anywhere;
+  color: var(--faint);
+}
+
+.tippen-befehl .tw { white-space: nowrap; }
+.tippen-befehl .ok {
+  color: var(--pill-pos-ink);
+}
+
+.tippen-befehl .falsch {
+  color: #fff;
+  background: var(--pill-neg-bg);
+  box-shadow: inset 0 -2px 0 var(--pill-neg-ink);
+}
+
+.tippen-befehl .cursor {
+  box-shadow: inset 0 -3px 0 var(--accent);
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .game-dom { padding: 10px 2px; }
+  .quiz { gap: 12px; }
+  .quiz-frage { padding: 18px 12px; }
+  .quiz-optionen { grid-template-columns: 1fr; }
+  .quiz-pad[data-art="hex"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .quiz-pad[data-art="dez"],
+  .quiz-pad[data-art="ip"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .quiz-taste { height: 44px; }
+  .quiz-form .btn { padding: 0 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

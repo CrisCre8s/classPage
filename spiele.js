@@ -1,12 +1,22 @@
 import "./style.css";
 import { initShell, onPower } from "./shell.js";
 import { passeCanvas, zeichneVorschau } from "./games/vorschau.js";
+import { KATALOG, KATEGORIEN, NACH_ID } from "./games/katalog.js";
 
 // Spiele werden erst geladen, wenn man sie startet (der Hub bleibt schnell)
-const SPIELE = {
-  pong: { name: "Ping-Pong", laden: () => import("./games/pong.js"), wertung: "siege" },
-  schach: { name: "Schach", laden: () => import("./games/schach.js"), wertung: "siege" },
-  bits: { name: "Bits & Bugs", laden: () => import("./games/bits.js"), wertung: "punkte" },
+const LADER = {
+  pong: () => import("./games/pong.js"),
+  schach: () => import("./games/schach.js"),
+  bits: () => import("./games/bits.js"),
+  snake: () => import("./games/snake.js"),
+  minen: () => import("./games/minen.js"),
+  z2048: () => import("./games/z2048.js"),
+  vier: () => import("./games/vier.js"),
+  mauer: () => import("./games/mauer.js"),
+  binaer: () => import("./games/binaer.js"),
+  subnetz: () => import("./games/subnetz.js"),
+  tippen: () => import("./games/tippen.js"),
+  ports: () => import("./games/ports.js"),
 };
 const STUFEN = { leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
 
@@ -26,6 +36,50 @@ function schreibe(key, wert) {
 }
 const bestKey = (spiel, stufe) => `spiele:${spiel}:${stufe}`;
 
+export function formatZeit(sek) {
+  const m = Math.floor(sek / 60);
+  const s = Math.floor(sek % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// ---------- Karten erzeugen ----------
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+}
+
+function karteHtml(s) {
+  return `
+    <section class="panel game-card" data-game="${s.id}" aria-labelledby="g-${s.id}">
+      <canvas class="game-art" data-art="${s.id}" aria-hidden="true"></canvas>
+      <h3 id="g-${s.id}">${esc(s.name)}</h3>
+      <p class="game-desc">${esc(s.text)}</p>
+      <p class="game-keys">${esc(s.tasten)}</p>
+      <div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
+        ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
+      </div>
+      <div class="game-foot">
+        <p class="best"></p>
+        <button class="btn play" type="button">Spielen</button>
+      </div>
+    </section>`;
+}
+
+function baueKarten() {
+  const ziel = document.getElementById("games");
+  ziel.innerHTML = KATEGORIEN.map((k) => {
+    const spiele = KATALOG.filter((s) => s.kat === k.id);
+    return `
+      <section class="kat" aria-labelledby="kat-${k.id}">
+        <div class="kat-head">
+          <h2 id="kat-${k.id}">${k.name}</h2>
+          <span class="chip">${spiele.length}</span>
+          <p class="kat-text">${k.text}</p>
+        </div>
+        <div class="games-grid">${spiele.map(karteHtml).join("")}</div>
+      </section>`;
+  }).join("");
+}
+
 // ---------- Seite ----------
 let laufendes = null; // { spiel, stufe, inst }
 
@@ -40,10 +94,11 @@ function stufeVon(spiel) {
 function zeigeBest(spiel) {
   const k = karte(spiel);
   const stufe = stufeVon(spiel);
-  const best = lese(bestKey(spiel, stufe), 0);
-  const p = k.querySelector(".best");
-  const label = SPIELE[spiel].wertung === "siege" ? "Siege" : "Highscore";
-  p.innerHTML = `${label} (${STUFEN[stufe]}) <span class="num">${best}</span>`;
+  const w = NACH_ID[spiel].wertung;
+  const best = lese(bestKey(spiel, stufe), w === "zeit" ? null : 0);
+  const label = w === "siege" ? "Siege" : w === "zeit" ? "Bestzeit" : "Highscore";
+  const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : best;
+  k.querySelector(".best").innerHTML = `${label} (${STUFEN[stufe]}) <span class="num">${wert}</span>`;
 }
 
 function nachricht(html) {
@@ -64,6 +119,7 @@ function status(text) {
 // Spielfeld so groß wie möglich, aber ganz sichtbar (ohne Scrollen)
 function einpassen() {
   const canvas = document.getElementById("game-canvas");
+  if (canvas.hidden) return;
   const box = document.getElementById("stage-body").getBoundingClientRect();
   if (!canvas.width || !box.width || !box.height) return;
   const verhaeltnis = canvas.width / canvas.height;
@@ -83,16 +139,21 @@ function beenden() {
   document.getElementById("stage").hidden = true;
   document.getElementById("games").hidden = false;
   document.body.classList.remove("game-on");
+  const dom = document.getElementById("game-dom");
+  dom.innerHTML = "";
+  dom.hidden = true;
+  document.getElementById("game-canvas").hidden = false;
   nachricht(null);
 }
 
 async function starten(spiel) {
   beenden();
+  const info = NACH_ID[spiel];
   const stufe = stufeVon(spiel);
   schreibe("spiele:stufe:" + spiel, stufe);
 
   const stage = document.getElementById("stage");
-  document.getElementById("stage-title").textContent = SPIELE[spiel].name;
+  document.getElementById("stage-title").textContent = info.name;
   document.getElementById("stage-level").textContent = STUFEN[stufe];
   document.getElementById("games").hidden = true;
   stage.hidden = false;
@@ -100,38 +161,55 @@ async function starten(spiel) {
   document.body.classList.add("game-on");
   status("lädt …");
 
-  const modul = await SPIELE[spiel].laden();
+  const modul = await LADER[spiel]();
   const canvas = document.getElementById("game-canvas");
-  canvas.setAttribute("aria-label", `${SPIELE[spiel].name} – Spielfeld`);
+  const dom = document.getElementById("game-dom");
+  // Lernspiele arbeiten mit normalem HTML statt mit dem Canvas
+  canvas.hidden = !!modul.DOM;
+  dom.hidden = !modul.DOM;
+  canvas.setAttribute("aria-label", `${info.name} – Spielfeld`);
   canvas.style.touchAction = "none";
   document.getElementById("stage-help").textContent = modul.HILFE || "";
   window.scrollTo({ top: 0 });
 
   const inst = modul.start({
     canvas,
+    dom,
     stufe,
     passeCanvas,
     status,
     nachricht,
-    // Ergebnis melden: bei Siegen +1, bei Punkten nur, wenn neuer Highscore
-    ergebnis({ gewonnen, punkte }) {
+    einpassen,
+    // Ergebnis melden. Rückgabe: true, wenn es ein neuer Bestwert ist
+    ergebnis({ gewonnen, punkte, zeit }) {
       const key = bestKey(spiel, stufe);
-      const alt = lese(key, 0);
-      if (SPIELE[spiel].wertung === "siege" && gewonnen) schreibe(key, alt + 1);
-      if (SPIELE[spiel].wertung === "punkte" && punkte > alt) schreibe(key, punkte);
+      let neu = false;
+      if (info.wertung === "siege" && gewonnen) schreibe(key, lese(key, 0) + 1);
+      if (info.wertung === "punkte") {
+        neu = punkte > lese(key, 0);
+        if (neu) schreibe(key, punkte);
+      }
+      if (info.wertung === "zeit" && gewonnen) {
+        const alt = lese(key, null);
+        neu = alt == null || zeit < alt;
+        if (neu) schreibe(key, Math.round(zeit));
+      }
       zeigeBest(spiel);
-      return SPIELE[spiel].wertung === "punkte" && punkte > alt;
+      return neu;
     },
   });
   laufendes = { spiel, stufe, inst };
   einpassen();
-  canvas.focus({ preventScroll: true });
+  if (!modul.DOM) canvas.focus({ preventScroll: true });
 }
 
 function initKarten() {
+  baueKarten();
   document.querySelectorAll(".game-card").forEach((k) => {
     const spiel = k.dataset.game;
-    zeichneVorschau(k.querySelector(".game-art"), spiel);
+    const art = k.querySelector(".game-art");
+    zeichneVorschau(art, spiel);
+    document.fonts?.load('16px "Press Start 2P"').then(() => zeichneVorschau(art, spiel));
 
     // zuletzt gewählte Stufe merken
     const gemerkt = lese("spiele:stufe:" + spiel, "mittel");
@@ -159,7 +237,7 @@ function initKarten() {
 
   document.getElementById("stage-close").addEventListener("click", () => {
     beenden();
-    if (location.hash) history.replaceState(null, "", location.pathname);
+    if (location.hash || location.search) history.replaceState(null, "", location.pathname);
   });
   new ResizeObserver(einpassen).observe(document.getElementById("stage-body"));
 
@@ -167,7 +245,7 @@ function initKarten() {
   // mit der dort gewählten Schwierigkeit
   const vomHub = () => {
     const spiel = location.hash.slice(1);
-    if (!SPIELE[spiel]) return;
+    if (!LADER[spiel]) return;
     const stufe = new URLSearchParams(location.search).get("stufe");
     if (STUFEN[stufe]) karte(spiel)?.querySelector(`[data-level="${stufe}"]`)?.click();
     starten(spiel);

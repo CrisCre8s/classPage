@@ -63,7 +63,7 @@ steht dort „gerade nicht verfügbar“.
 ├── main.js         # Einstieg Hub
 ├── spiele.html     # Spiele-Seite
 ├── spiele.js       # Einstieg Spiele
-├── games/          # die drei Spiele
+├── games/          # die 12 Spiele (Liste in games/katalog.js)
 ├── shell.js        # gemeinsam: Sterne, POWER, Void
 ├── vite.config.js  # baut beide Seiten
 ├── lks.js          # Leistungskontrollen aus lks.json
@@ -79,16 +79,35 @@ steht dort „gerade nicht verfügbar“.
 
 ## Spiele
 
-Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es drei Spiele gegen den
-Computer, jeweils in **Leicht, Mittel und Schwer**:
+Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 12 Spiele, jeweils in
+**Leicht, Mittel und Schwer**. Name, Beschreibung und Kategorie stehen zentral in
+`games/katalog.js`; daraus entstehen die Karten auf der Spieleseite und die Kacheln
+im Hub.
+
+**Klassiker**
 
 - **Ping-Pong** (`games/pong.js`): erster bei 7 Punkten gewinnt
 - **Schach** (`games/schach.js`, Regeln + KI in `games/schach-engine.js`): eigene
   Zuggenerierung inkl. Rochade, en passant, Umwandlung; der Computer rechnet je nach
   Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`)
 - **Bits & Bugs** (`games/bits.js`): eigenes Labyrinth, Bits sammeln, Bugs ausweichen
+- **Snake** (`games/snake.js`): Leicht ohne Wände, Schwer mit Hindernissen
+- **Bug-Sucher** (`games/minen.js`): Minesweeper-Prinzip, 9×9 / 16×16 / 30×16, erster Klick ist sicher
+- **2048** (`games/z2048.js`): 5×5, 4×4 oder 3×3 Felder
+- **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker)
+- **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
 
-Siege bzw. Highscores speichert jeder Browser für sich (localStorage).
+**Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`)
+
+- **Binär-Blitz** (`games/binaer.js`): Binär, Dezimal und Hex umrechnen
+- **Subnetz-Sprint** (`games/subnetz.js`): Netz, Broadcast, Maske, Hosts berechnen
+- **Befehle tippen** (`games/tippen.js`): Linux-, Git-, Windows- und Netzwerkbefehle mit Erklärung
+- **Port-Quiz** (`games/ports.js`): Standard-Ports und Dienste
+
+Neues Spiel: Eintrag in `games/katalog.js`, Modul mit `start()` in `games/`,
+Lader in `spiele.js` und eine Vorschau in `games/vorschau.js`.
+
+Siege, Highscores bzw. Bestzeiten speichert jeder Browser für sich (localStorage).
 
 ## Design
 
