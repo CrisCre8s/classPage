@@ -58,7 +58,7 @@ function glanz(ctx, x, y, rx, ry, rot = 0, alpha = 0.9, farbe = "#ffffff") {
   ctx.fill();
   ctx.restore();
 }
-function funkeln(ctx, x, y, r, farbe = "#ffffff") {
+export function funkeln(ctx, x, y, r, farbe = "#ffffff") {
   if (r <= 0.05) return;
   ctx.beginPath();
   ctx.moveTo(x, y - r);
@@ -192,7 +192,7 @@ function gesicht(ctx, P, weiss, zu, nya, gr, t, seed) {
 // ---------- Zubehör ----------
 const GOLD = { basis: "#ffd23f", schatten: "#e39a17", licht: "#fff6b8", linie: "#6b4300" };
 
-function krone(ctx) {
+export function krone(ctx) {
   const zacken = poly([[33, 27], [31, 10], [40.5, 18], [50, 3], [59.5, 18], [69, 10], [67, 27]]);
   const kreuzV = poly([[48.4, -5], [51.6, -5], [51.6, 5], [48.4, 5]]);
   const kreuzH = poly([[45.5, -1.6], [54.5, -1.6], [54.5, 1.4], [45.5, 1.4]]);
@@ -211,7 +211,7 @@ function krone(ctx) {
   });
 }
 
-function diadem(ctx) {
+export function diadem(ctx) {
   const band = (c) => {
     c.beginPath();
     c.moveTo(34, 26);
@@ -237,7 +237,7 @@ function diadem(ctx) {
   glanz(ctx, 48.5, 21.6, 0.9, 0.9, 0, 1);
 }
 
-function schleife(ctx, wackeln) {
+export function schleife(ctx, wackeln) {
   // kleine Schleife am Ohr der Dame
   ctx.save();
   ctx.translate(68, 26);
@@ -252,7 +252,7 @@ function schleife(ctx, wackeln) {
   ctx.restore();
 }
 
-function zauberhut(ctx, wackeln) {
+export function zauberhut(ctx, wackeln) {
   ctx.save();
   ctx.translate(50, 27);
   ctx.rotate(wackeln * 0.6);
@@ -278,7 +278,7 @@ function zauberhut(ctx, wackeln) {
   ctx.restore();
 }
 
-function helm(ctx, wackeln) {
+export function helm(ctx, wackeln) {
   ctx.save();
   ctx.translate(55, 9);
   ctx.rotate(wackeln * 0.7);
@@ -311,7 +311,7 @@ function helm(ctx, wackeln) {
   });
 }
 
-function karton(ctx, teil, P, atem) {
+export function karton(ctx, teil, P, atem) {
   ctx.save();
   ctx.translate(50, 96);
   ctx.scale(1, 0.84);
