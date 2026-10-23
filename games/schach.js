@@ -329,6 +329,28 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     raf = requestAnimationFrame(schritt);
   }
 
+  // Zug rückwärts zeigen: Figur gleitet vom Ziel- zurück aufs Startfeld.
+  // vorher = Stellung vor dem Zug (dort steht auch eine geschlagene Figur wieder)
+  function gleiteZurueck(m, vorher, fuer) {
+    const start = performance.now();
+    anims = [{ p: vorher.b[m.from], from: m.to, to: m.from, start }];
+    const turm = { K: [63, 61], Q: [56, 59], k: [7, 5], q: [0, 3] }[m.rochade];
+    if (turm) anims.push({ p: vorher.b[turm[0]], from: turm[1], to: turm[0], start });
+    animFuer = fuer;
+    geschlagen = null;
+    const schritt = (t) => {
+      if (t - start >= ANIM_MS) {
+        anims = [];
+        animFuer = null;
+        zeichne(t);
+        return;
+      }
+      zeichne(t);
+      raf = requestAnimationFrame(schritt);
+    };
+    raf = requestAnimationFrame(schritt);
+  }
+
   // Zug in der Partie ausführen; ruft danach `fertig` auf
   function animiereZug(m, fertig) {
     const vorher = klon(pos);
@@ -502,15 +524,21 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     const neu = i === null ? letzteNr : i;
     zeigeVerlauf();
     zeigeStatus();
-    if (neu === alt + 1 && !anims.length) {
-      // einen Zug vor: Figur gleiten lassen
+    // Eine laufende Animation der echten Partie nicht abbrechen (danach zieht der Computer)
+    const liveLaeuft = animFuer === "live";
+    if (!liveLaeuft) {
+      cancelAnimationFrame(raf);
+      anims = [];
+      animFuer = null;
+      geschlagen = null;
+    }
+    if (!liveLaeuft && neu === alt + 1) {
+      // einen Zug vor: Figur gleitet vom Start- aufs Zielfeld
       gleite(stellungen[neu].zug, stellungen[alt].pos, stellungen[neu].pos, sichtKey());
+    } else if (!liveLaeuft && neu === alt - 1) {
+      // einen Zug zurück: dieselbe Bewegung rückwärts
+      gleiteZurueck(stellungen[alt].zug, stellungen[neu].pos, sichtKey());
     } else {
-      if (animFuer !== null && animFuer !== "live") {
-        cancelAnimationFrame(raf);
-        anims = [];
-        animFuer = null;
-      }
       zeichne();
     }
   }
