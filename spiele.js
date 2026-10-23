@@ -163,13 +163,17 @@ function initKarten() {
   });
   new ResizeObserver(einpassen).observe(document.getElementById("stage-body"));
 
-  // Link vom Hub (z. B. spiele.html#schach) startet das Spiel direkt
-  const ausLink = location.hash.slice(1);
-  if (SPIELE[ausLink]) starten(ausLink);
-  window.addEventListener("hashchange", () => {
+  // Link vom Hub (z. B. spiele.html?stufe=schwer#schach) startet das Spiel direkt,
+  // mit der dort gewählten Schwierigkeit
+  const vomHub = () => {
     const spiel = location.hash.slice(1);
-    if (SPIELE[spiel]) starten(spiel);
-  });
+    if (!SPIELE[spiel]) return;
+    const stufe = new URLSearchParams(location.search).get("stufe");
+    if (STUFEN[stufe]) karte(spiel)?.querySelector(`[data-level="${stufe}"]`)?.click();
+    starten(spiel);
+  };
+  vomHub();
+  window.addEventListener("hashchange", vomHub);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) laufendes?.inst?.pause?.();
   });

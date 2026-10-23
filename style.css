@@ -1055,6 +1055,104 @@ body.power-off .rail {
   transform: translate(2px, -2px);
 }
 
+/* Schwierigkeitsauswahl auf einer Spielkarte */
+.arcade-games li {
+  position: relative;
+}
+
+.arcade-game {
+  transition: border-color 0.15s, transform 0.2s var(--ease), opacity 0.2s;
+}
+
+.arcade-games li.picking .arcade-game {
+  opacity: 0;
+}
+
+.arcade-pick {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 20px;
+  background: var(--raised);
+  border: 1px solid var(--brand-line);
+  border-radius: var(--radius);
+  animation: pick-rein 0.24s var(--ease) both;
+}
+
+.arcade-pick[hidden] {
+  display: none;
+}
+
+.arcade-pick-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.arcade-pick-sub {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.arcade-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.arcade-pick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 46px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+  font-weight: 500;
+  transition: box-shadow 0.15s, background-color 0.15s, transform 0.12s var(--ease);
+}
+
+.arcade-pick-btn::after {
+  content: "▸";
+  color: var(--faint);
+  transition: color 0.15s, transform 0.15s var(--ease);
+}
+
+.arcade-pick-btn:hover,
+.arcade-pick-btn:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--brand-line);
+  outline: none;
+}
+
+.arcade-pick-btn:hover::after,
+.arcade-pick-btn:focus-visible::after {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+.arcade-pick-btn:active {
+  transform: scale(0.98);
+}
+
+/* zuletzt gespielte Stufe */
+.arcade-pick-btn.is-last {
+  box-shadow: inset 0 -2px 0 var(--brand-line), inset 0 0 0 1px var(--raised-edge);
+}
+
+.arcade-pick-back {
+  align-self: flex-start;
+  margin: 8px 0 0;
+}
+
+@keyframes pick-rein {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
 /* Türen */
 .door {
   position: absolute;
@@ -1190,6 +1288,9 @@ body.power-off .rail {
 
 @media (max-width: 760px) {
   .arcade-games { grid-template-columns: 1fr; }
+  /* offen: „Schließen“ statt „Zur Spieleseite“ (die ist unten in der Leiste) */
+  .arcade.open .panel-head .more:not(.arcade-toggle) { display: none; }
+  .arcade .arcade-toggle { margin-left: auto; }
   .door-sign { font-size: 30px; --ls: 4px; }
 }
 
