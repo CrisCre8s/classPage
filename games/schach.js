@@ -3,6 +3,7 @@ import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe } from "./schach
 import { zeichneKatze } from "./katzen3d.js";
 import { zeichneAnimeKatze } from "./katzen-anime.js";
 import { zeichneMochiKatze } from "./katzen-mochi.js";
+import { zeichneGemalteKatze, zeichneWind, zeichneBrettStruktur } from "./katzen-gemalt.js";
 import { EFFEKTE, erzeuge as erzeugeEffekt, zeichne as zeichneEffekt, wackeln, bewegung } from "./schach-effekte.js";
 
 export const HILFE = "Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
@@ -48,7 +49,7 @@ const KATZEN_PALETTE = {
 // selbst gezeichnete Pixel-Sätze (Muster + Farben je Seite)
 const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE }, "katzen-pixel": { muster: KATZEN, palette: KATZEN_PALETTE } };
 // gezeichnete (nicht gerasterte) Sätze mit Bewegung, siehe katzen3d.js
-const LEBENDIG = { katzen: zeichneKatze, "katzen-anime": zeichneAnimeKatze, "katzen-mochi": zeichneMochiKatze };
+const LEBENDIG = { katzen: zeichneKatze, "katzen-anime": zeichneAnimeKatze, "katzen-mochi": zeichneMochiKatze, "katzen-gemalt": zeichneGemalteKatze };
 
 // Brettfarben: dunkel für die Pixelfiguren, heller für die Lichess-Figuren
 // (schwarze Figuren wären auf dunklen Feldern kaum zu sehen)
@@ -56,6 +57,7 @@ const BRETT = {
   dunkel: { hell: "#34323b", dunkel: "#1f1d25", koord: "rgba(255,255,255,0.28)" },
   hell: { hell: "#e4def0", dunkel: "#9a87c2", koord: "rgba(20,16,30,0.45)" },
   katze: { hell: "#f3e6d3", dunkel: "#c99b74", koord: "rgba(60,36,20,0.5)" },
+  wiese: { hell: "#efe4c8", dunkel: "#a7b88a", koord: "rgba(74,52,38,0.55)" },
 };
 const FARBEN = {
   auswahl: "rgba(212, 184, 255, 0.45)",
@@ -75,6 +77,7 @@ export const STILE = [
   { id: "celtic", name: "Keltisch", brett: "hell" },
   { id: "chessnut", name: "Chessnut", brett: "hell" },
   { id: "rhosgfx", name: "Holz", brett: "hell" },
+  { id: "katzen-gemalt", name: "Gemalte Katzen", brett: "wiese", animiert: true, struktur: zeichneBrettStruktur, wind: zeichneWind },
   { id: "katzen-mochi", name: "Mochi-Katzen", brett: "katze", animiert: true },
   { id: "katzen-anime", name: "Anime-Katzen", brett: "katze", animiert: true },
   { id: "katzen", name: "Katzen", brett: "katze", animiert: true },
@@ -295,6 +298,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     zeichneBrett(t);
     const key = sichtKey();
     for (const e of effekte) if (e.fuer === key) zeichneEffekt(ctx, e, t, zeichneFigur, Z, "oben");
+    STILE.find((s) => s.id === stil).wind?.(ctx, t, N);
     if (versatz) ctx.restore();
   }
 
@@ -321,6 +325,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
         ctx.fillRect(c * Z, r * Z, Z, Z);
       }
     }
+    STILE.find((s) => s.id === stil).struktur?.(ctx, N);
     if (!meineAnims.length && imSchach(p)) {
       const k = p.koenig[p.zug];
       ctx.fillStyle = FARBEN.schach;

@@ -93,7 +93,7 @@ Spieleseite.
   Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`).
   Die Elo-Angaben (ca. 400 / 900 / 1400) sind grobe Schätzungen.
   Premoves (schon ziehen, während der Computer denkt), Nachspielen mit den Pfeiltasten
-  und zehn Figurenstile: „Pixel“, „Mochi-Katzen“ (kugelrund, Knopfaugen, wabbelig, `games/katzen-mochi.js`), „Anime-Katzen“ (Cel-Shading, hüpfen und „Nya!“, `games/katzen-anime.js`), „Katzen“ (plastisch gezeichnet und bewegt, `games/katzen3d.js`) und „Katzen (Pixel)“ sind selbst gezeichnet, die übrigen Sätze stammen von
+  und elf Figurenstile: „Pixel“, „Gemalte Katzen“ (Aquarell-Look, Wind und Blätter, `games/katzen-gemalt.js`), „Mochi-Katzen“ (kugelrund, Knopfaugen, wabbelig, `games/katzen-mochi.js`), „Anime-Katzen“ (Cel-Shading, hüpfen und „Nya!“, `games/katzen-anime.js`), „Katzen“ (plastisch gezeichnet und bewegt, `games/katzen3d.js`) und „Katzen (Pixel)“ sind selbst gezeichnet, die übrigen Sätze stammen von
   Lichess und liegen mit Lizenzangaben in `public/pieces/` (siehe `public/pieces/LICENSE.md`).
   Effekte beim Schlagen (`games/schach-effekte.js`): Explosion oder passend zur Figur
   (Bauer sticht, Springer stampft, Läufer schneidet, Turm rammt, Dame blitzt, König drückt platt)
