@@ -163,12 +163,13 @@
               <ul class="rows" id="berichte-grid"></ul>
             </section>
 
-            <!-- Spieleabteil: zwei Schiebetüren, dahinter die Spiele -->
+            <!-- Spiele: zwei Schiebetüren, dahinter die Spiele -->
             <section class="panel arcade" id="arcade" aria-labelledby="arcade-h">
               <div class="panel-head">
-                <h2 id="arcade-h">Spieleabteil</h2>
-                <span class="chip">3 Spiele</span>
+                <h2 id="arcade-h">Spiele</h2>
+                <span class="chip">3</span>
                 <a class="more" href="/spiele.html">Zur Spieleseite <svg class="i"><use href="#i-out" /></svg></a>
+                <button class="more arcade-toggle" id="arcade-close" type="button" hidden>Schließen</button>
               </div>
               <div class="arcade-stage">
                 <ul class="arcade-games" id="arcade-games">
@@ -200,7 +201,7 @@
                 <div class="door door-l" aria-hidden="true"><span class="door-sign">SPIELE</span><span class="door-handle"></span></div>
                 <div class="door door-r" aria-hidden="true"><span class="door-sign">SPIELE</span><span class="door-handle"></span></div>
                 <button class="arcade-open" id="arcade-open" type="button" aria-expanded="false" aria-controls="arcade-games">
-                  <span class="arcade-open-label">Abteil öffnen</span>
+                  <span class="arcade-open-label">Spiele öffnen</span>
                 </button>
               </div>
             </section>
