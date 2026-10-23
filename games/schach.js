@@ -1,7 +1,7 @@
 // Schach gegen den Computer. Du spielst Weiß.
 import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe } from "./schach-engine.js";
 
-export const HILFE = "Figur antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
+export const HILFE = "Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
 
 const Z = 80; // Feldgröße
 const N = Z * 8;
@@ -61,37 +61,46 @@ function gemerkterStil() {
   }
 }
 
-// SVG-Figuren laden und auf Feldgröße vorrendern (scharf auf hochauflösenden Displays)
+// SVG-Figuren einmal laden; gerastert wird passend zur echten Bildschirmgröße (siehe raster)
 const svgCache = {};
 function ladeStil(id) {
   if (id === "pixel") return Promise.resolve();
   if (svgCache[id]) return svgCache[id].bereit;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const groesse = Math.round(Z * 0.9 * dpr);
-  const bilder = {};
+  const imgs = {};
   const bereit = Promise.all(
     ["K", "Q", "R", "B", "N", "P"].flatMap((t) =>
       ["w", "b"].map(
         (f) =>
           new Promise((ok) => {
             const img = new Image();
-            img.onload = () => {
-              const c = document.createElement("canvas");
-              c.width = c.height = groesse;
-              const g = c.getContext("2d");
-              g.imageSmoothingEnabled = true;
-              g.drawImage(img, 0, 0, groesse, groesse);
-              bilder[f === "w" ? t : t.toLowerCase()] = c;
-              ok();
-            };
-            img.onerror = ok;
+            img.onload = img.onerror = ok;
             img.src = `/pieces/${id}/${f}${t}.svg`;
+            imgs[f === "w" ? t : t.toLowerCase()] = img;
           }),
       ),
     ),
   );
-  svgCache[id] = { bilder, bereit };
+  svgCache[id] = { imgs, bereit, raster: {} };
   return bereit;
+}
+
+// Figur als Bitmap in genau der Pixelgröße, in der sie gezeichnet wird (gestochen scharf)
+function raster(id, p, px) {
+  const c = svgCache[id];
+  const img = c?.imgs[p];
+  if (!img?.complete || !img.naturalWidth) return null;
+  const key = `${px}`;
+  c.raster[key] ||= {};
+  if (!c.raster[key][p]) {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = px;
+    const g = cv.getContext("2d");
+    g.imageSmoothingEnabled = true;
+    g.imageSmoothingQuality = "high";
+    g.drawImage(img, 0, 0, px, px);
+    c.raster[key][p] = cv;
+  }
+  return c.raster[key][p];
 }
 
 // Figuren einmal vorrendern (schneller beim Animieren)
@@ -149,6 +158,21 @@ function premoveZiele(p, sq) {
 
 export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, ergebnis }) {
   const ctx = passeCanvas(canvas, N, N);
+  // Auflösung an die echte Anzeigegröße anpassen: das Brett wird groß dargestellt,
+  // die Zeichenfläche hat deshalb so viele Pixel wie auf dem Bildschirm (× Pixeldichte)
+  let skala = 1; // Bildschirmpixel pro Brett-Einheit
+  function passeAufloesung() {
+    const breite = canvas.getBoundingClientRect().width;
+    if (!breite) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const px = Math.max(N, Math.round(breite * dpr));
+    if (canvas.width !== px) canvas.width = canvas.height = px;
+    skala = px / N;
+    ctx.setTransform(skala, 0, 0, skala, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    zeichne();
+  }
+  const aufloesungRO = new ResizeObserver(passeAufloesung);
   let pos = ausFen(START);
   let stil = gemerkterStil();
   let auswahl = -1;
@@ -168,26 +192,28 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   let stellungen = [{ pos: klon(pos), zug: null }];
   let ansicht = null; // null = aktuelle Partie, sonst Index in stellungen
   let tastaturAktiv = false; // Rahmen fürs Tastatur-Spiel erst zeigen, wenn WASD benutzt wird
+  let druck = null; // gedrückte eigene Figur: { sq, x, y, warAusgewaehlt, id }
+  let ziehen = false; // wird sie gerade gezogen?
+  let zugPunkt = { x: 0, y: 0 }; // Zeigerposition in Brett-Einheiten
 
   const worker = new Worker(new URL("./schach-worker.js", import.meta.url), { type: "module" });
 
   const sicht = () => (ansicht === null ? { pos, zug: letzter } : stellungen[ansicht]);
   const sichtKey = () => (ansicht === null ? "live" : ansicht);
 
-  function zeichneFigur(p, x, y) {
+  function zeichneFigur(p, x, y, gross = 1) {
     if (stil !== "pixel") {
-      const bild = svgCache[stil]?.bilder[p];
+      const g = Z * 0.9 * gross;
+      const bild = raster(stil, p, Math.round(g * skala));
       if (bild) {
-        const g = Z * 0.9;
-        ctx.save();
-        ctx.imageSmoothingEnabled = true;
         ctx.drawImage(bild, x + (Z - g) / 2, y + (Z - g) / 2, g, g);
-        ctx.restore();
         return;
       }
     }
+    // Pixelfiguren: ohne Glätten skalieren, dann bleiben die Pixelkanten scharf
     const bild = figurBild(p);
-    ctx.drawImage(bild, x + (Z - bild.width) / 2, y + (Z - bild.height) / 2 + 2);
+    const w = bild.width * gross;
+    ctx.drawImage(bild, x + (Z - w) / 2, y + (Z - w) / 2 + 2, w, w);
   }
 
   const feldRahmen = (sq, farbeRahmen, d = 4) => {
@@ -246,7 +272,8 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     // Figuren; die gerade gleitenden werden zuletzt obendrauf gezeichnet
     const ziehendeZiele = new Set(meineAnims.map((a) => a.to));
     if (meineAnims.length && geschlagen) zeichneFigur(geschlagen.p, (geschlagen.sq % 8) * Z, Math.floor(geschlagen.sq / 8) * Z);
-    for (let sq = 0; sq < 64; sq++) if (p.b[sq] && !ziehendeZiele.has(sq)) zeichneFigur(p.b[sq], (sq % 8) * Z, Math.floor(sq / 8) * Z);
+    const gezogen = live && ziehen && druck ? druck.sq : -1;
+    for (let sq = 0; sq < 64; sq++) if (p.b[sq] && !ziehendeZiele.has(sq) && sq !== gezogen) zeichneFigur(p.b[sq], (sq % 8) * Z, Math.floor(sq / 8) * Z);
     for (const a of meineAnims) {
       const k = ease(Math.min(1, (t - a.start) / ANIM_MS));
       const x = ((a.from % 8) + ((a.to % 8) - (a.from % 8)) * k) * Z;
@@ -262,6 +289,12 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       ctx.strokeStyle = "rgba(245, 217, 122, 0.8)";
       ctx.lineWidth = 4;
       ctx.strokeRect(2, 2, N - 4, N - 4);
+    }
+    // Figur, die gerade mit Maus/Finger gezogen wird: Zielfeld markieren, Figur unter dem Zeiger
+    if (gezogen >= 0 && p.b[gezogen]) {
+      const ueber = feldBei(zugPunkt.x, zugPunkt.y);
+      if (ueber >= 0 && ueber !== gezogen) feldRahmen(ueber, preZiele.length ? FARBEN.premoveZiel : "rgba(255,255,255,0.75)", 3);
+      zeichneFigur(p.b[gezogen], zugPunkt.x - Z / 2, zugPunkt.y - Z / 2 - 6, 1.12);
     }
     if (live && document.activeElement === canvas && !meineAnims.length && tastaturAktiv) {
       ctx.strokeStyle = FARBEN.cursor;
@@ -539,15 +572,69 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   }
 
   // ---------- Eingabe ----------
+  // Klick oder Festhalten und Ziehen
+  const brettPunkt = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * N, y: ((e.clientY - r.top) / r.height) * N };
+  };
+  function feldBei(x, y) {
+    const c = Math.floor(x / Z);
+    const row = Math.floor(y / Z);
+    return c < 0 || c > 7 || row < 0 || row > 7 ? -1 : row * 8 + c;
+  }
+  const eigeneFigur = (sq) => ansicht === null && !vorbei && pos.b[sq] && farbe(pos.b[sq]) === "w";
+
   const onDown = (e) => {
     if (e.button === 2) return;
     tastaturAktiv = false;
-    const r = canvas.getBoundingClientRect();
-    const c = Math.floor(((e.clientX - r.left) / r.width) * 8);
-    const row = Math.floor(((e.clientY - r.top) / r.height) * 8);
-    if (c < 0 || c > 7 || row < 0 || row > 7) return;
-    cursor = row * 8 + c;
-    feldGeklickt(cursor);
+    const pt = brettPunkt(e);
+    const sq = feldBei(pt.x, pt.y);
+    if (sq < 0) return;
+    cursor = sq;
+    if (eigeneFigur(sq)) {
+      druck = { sq, x: pt.x, y: pt.y, warAusgewaehlt: auswahl === sq, id: e.pointerId };
+      zugPunkt = pt;
+      canvas.setPointerCapture?.(e.pointerId);
+      if (auswahl !== sq) feldGeklickt(sq); // gleich auswählen, damit die Ziele schon beim Ziehen sichtbar sind
+    } else {
+      druck = null;
+      feldGeklickt(sq);
+    }
+  };
+  const onMove = (e) => {
+    const pt = brettPunkt(e);
+    if (!druck) {
+      if (e.pointerType === "mouse") canvas.style.cursor = eigeneFigur(feldBei(pt.x, pt.y)) ? "grab" : "default";
+      return;
+    }
+    if (e.pointerId !== druck.id) return;
+    if (!ziehen && Math.hypot(pt.x - druck.x, pt.y - druck.y) < 6) return;
+    ziehen = true;
+    zugPunkt = pt;
+    canvas.style.cursor = "grabbing";
+    zeichne();
+  };
+  const onUp = (e) => {
+    if (!druck || e.pointerId !== druck.id) return;
+    const d = druck;
+    const warZiehen = ziehen;
+    druck = null;
+    ziehen = false;
+    canvas.style.cursor = "";
+    if (warZiehen) {
+      const ziel = feldBei(zugPunkt.x, zugPunkt.y);
+      // abgelegt auf einem anderen Feld: wie ein Klick dorthin (Zug, Premove oder neue Auswahl)
+      if (ziel >= 0 && ziel !== d.sq) feldGeklickt(ziel);
+      else zeichne();
+    } else if (d.warAusgewaehlt) {
+      feldGeklickt(d.sq); // zweiter Klick auf dieselbe Figur hebt die Auswahl auf
+    }
+  };
+  const onCancel = () => {
+    druck = null;
+    ziehen = false;
+    canvas.style.cursor = "";
+    zeichne();
   };
   const onContext = (e) => {
     e.preventDefault(); // Rechtsklick löscht Premove und Auswahl
@@ -581,7 +668,11 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   const onFocus = () => zeichne();
 
   canvas.addEventListener("pointerdown", onDown);
+  canvas.addEventListener("pointermove", onMove);
+  canvas.addEventListener("pointerup", onUp);
+  canvas.addEventListener("pointercancel", onCancel);
   canvas.addEventListener("contextmenu", onContext);
+  aufloesungRO.observe(canvas);
   canvas.addEventListener("focus", onFocus);
   canvas.addEventListener("blur", onFocus);
   window.addEventListener("keydown", onKey);
@@ -600,7 +691,12 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       cancelAnimationFrame(raf);
       worker.terminate();
       canvas.removeEventListener("pointerdown", onDown);
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("pointercancel", onCancel);
       canvas.removeEventListener("contextmenu", onContext);
+      aufloesungRO.disconnect();
+      canvas.style.cursor = "";
       canvas.removeEventListener("focus", onFocus);
       canvas.removeEventListener("blur", onFocus);
       window.removeEventListener("keydown", onKey);
