@@ -54,14 +54,18 @@ function karteHtml(s) {
       <h3 id="g-${s.id}">${esc(s.name)}</h3>
       <p class="game-desc">${esc(s.text)}</p>
       <p class="game-keys">${esc(s.tasten)}</p>
-      ${s.kat === "lernen" ? `<button class="lern-toggle" type="button" aria-expanded="false" aria-controls="lern-${s.id}"><span>So geht's</span><svg class="i" aria-hidden="true"><use href="#i-chev" /></svg></button>` : ""}
-      <div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
-        ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
-      </div>
-      ${s.stufenInfo ? `<p class="game-stufe-info num" aria-live="polite"></p>` : ""}
-      <div class="game-foot">
-        <p class="best"></p>
-        <button class="btn play" type="button">Spielen</button>
+      <!-- Bedienelemente immer unten, damit sie in jeder Reihe auf gleicher Höhe stehen -->
+      <div class="game-ctrl">
+        ${s.stufenInfo ? `<p class="game-stufe-info num" aria-live="polite"></p>` : ""}
+        ${s.kat === "lernen" ? `<button class="lern-toggle" type="button" aria-expanded="false" aria-controls="lern-${s.id}"><span>So geht's</span><svg class="i" aria-hidden="true"><use href="#i-chev" /></svg></button>` : ""}
+        <div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
+          <span class="seg-pill" aria-hidden="true"></span>
+          ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
+        </div>
+        <div class="game-foot">
+          <p class="best"></p>
+          <button class="btn play" type="button">Spielen</button>
+        </div>
       </div>
     </section>`;
 }
@@ -100,7 +104,7 @@ function zeigeBest(spiel) {
   const best = lese(bestKey(spiel, stufe), w === "zeit" ? null : 0);
   const label = w === "siege" ? "Siege" : w === "zeit" ? "Bestzeit" : "Highscore";
   const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : best;
-  k.querySelector(".best").innerHTML = `${label} (${STUFEN[stufe]}) <span class="num">${wert}</span>`;
+  k.querySelector(".best").innerHTML = `<span>${label} (${STUFEN[stufe]})</span><span class="num">${wert}</span>`;
 }
 
 function nachricht(html) {
@@ -152,7 +156,6 @@ async function starten(spiel) {
   beenden();
   const info = NACH_ID[spiel];
   const stufe = stufeVon(spiel);
-  schreibe("spiele:stufe:" + spiel, stufe);
 
   const stage = document.getElementById("stage");
   document.getElementById("stage-title").textContent = info.name;
@@ -261,11 +264,28 @@ function initKarten() {
     zeichneVorschau(art, spiel);
     document.fonts?.load('16px "Press Start 2P"').then(() => zeichneVorschau(art, spiel));
 
-    // zuletzt gewählte Stufe merken
-    const gemerkt = lese("spiele:stufe:" + spiel, "mittel");
     const radios = [...k.querySelectorAll('[role="radio"]')];
+    const seg = k.querySelector(".seg");
+    const pill = seg.querySelector(".seg-pill");
+    // Die Markierung gleitet unter den Knopf, auf dem die Maus ist,
+    // und kehrt beim Verlassen zur gewählten Stufe zurück
+    const pillZu = (btn) => {
+      if (!btn.offsetWidth) return;
+      pill.style.width = `${btn.offsetWidth}px`;
+      pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+      radios.forEach((r) => r.classList.toggle("unter-pill", r === btn));
+    };
+    const gewaehlt = () => radios.find((r) => r.getAttribute("aria-checked") === "true");
+    radios.forEach((r) => {
+      r.addEventListener("pointerenter", (e) => e.pointerType === "mouse" && pillZu(r));
+      r.addEventListener("focus", () => pillZu(r));
+      r.addEventListener("blur", () => pillZu(gewaehlt()));
+    });
+    seg.addEventListener("pointerleave", () => pillZu(gewaehlt()));
+    new ResizeObserver(() => pillZu(gewaehlt())).observe(seg);
     const waehle = (btn) => {
       radios.forEach((r) => r.setAttribute("aria-checked", String(r === btn)));
+      pillZu(btn);
       zeigeBest(spiel);
       const info = k.querySelector(".game-stufe-info");
       if (info) info.textContent = `Stärke ${STUFEN[btn.dataset.level]}: ${NACH_ID[spiel].stufenInfo[btn.dataset.level]}`;
@@ -282,7 +302,7 @@ function initKarten() {
         }
       });
     });
-    waehle(radios.find((r) => r.dataset.level === gemerkt) || radios[1]);
+    waehle(radios[1]); // startet immer auf Mittel
 
     k.querySelector(".play").addEventListener("click", () => starten(spiel));
     const lern = k.querySelector(".lern-toggle");
