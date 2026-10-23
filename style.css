@@ -146,11 +146,31 @@ svg.i {
   transition: background-color 0.3s, border-color 0.3s;
 }
 
-.rail-mark {
-  image-rendering: pixelated;
+.rail a.rail-mark {
   margin-right: 16px;
+}
+
+.rail-mark img {
+  display: block;
   width: 34px;
   height: 34px;
+  image-rendering: pixelated;
+  opacity: 0.85;
+  transition: opacity 0.15s, transform 0.2s var(--ease);
+}
+
+.rail-mark:hover img,
+.rail-mark:focus-visible img,
+.rail-mark[aria-current="page"] img {
+  opacity: 1;
+}
+
+.rail-mark:hover img {
+  transform: translateY(-2px);
+}
+
+.rail-mark:active img {
+  transform: scale(0.94);
 }
 
 .rail a,
@@ -870,9 +890,18 @@ body.power-off .rail {
   .rail-bottom::before {
     content: none;
   }
-  .rail-mark,
   .rail .desk {
     display: none;
+  }
+  .rail a.rail-mark {
+    margin-right: 0;
+  }
+  .rail-mark img {
+    width: 22px;
+    height: 22px;
+  }
+  .rail-mark:hover img {
+    transform: none;
   }
   .rail-bottom {
     margin: 0;
