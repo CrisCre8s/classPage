@@ -94,7 +94,9 @@ Spieleseite.
   Die Elo-Angaben (ca. 400 / 900 / 1400) sind grobe Schätzungen.
   Premoves (schon ziehen, während der Computer denkt), Nachspielen mit den Pfeiltasten
   und sechs Figurenstile: „Pixel“ ist selbst gezeichnet, die übrigen Sätze stammen von
-  Lichess und liegen mit Lizenzangaben in `public/pieces/` (siehe `public/pieces/LICENSE.md`)
+  Lichess und liegen mit Lizenzangaben in `public/pieces/` (siehe `public/pieces/LICENSE.md`).
+  Effekte beim Schlagen (`games/schach-effekte.js`): Explosion oder passend zur Figur
+  (Bauer sticht, Springer stampft, Läufer schneidet, Turm rammt, Dame blitzt, König drückt platt)
 - **Bits & Bugs** (`games/bits.js`): eigenes Labyrinth, Bits sammeln, Bugs ausweichen
 - **Snake** (`games/snake.js`): Leicht ohne Wände, Schwer mit Hindernissen
 - **Bug-Sucher** (`games/minen.js`): Minesweeper-Prinzip, 9×9 / 16×16 / 30×16, erster Klick ist sicher
