@@ -99,11 +99,11 @@ function lasur(ctx, pfad, F, flecken) {
 // ---------- Formen ----------
 const koerperPfad = (ctx) => () => {
   ctx.beginPath();
-  ctx.moveTo(50, 50);
-  ctx.bezierCurveTo(64, 50, 72, 62, 74, 76);
-  ctx.bezierCurveTo(76, 88, 70, 95, 50, 95);
-  ctx.bezierCurveTo(30, 95, 24, 88, 26, 76);
-  ctx.bezierCurveTo(28, 62, 36, 50, 50, 50);
+  ctx.moveTo(50, 54);
+  ctx.bezierCurveTo(66, 54, 76, 66, 76, 79);
+  ctx.bezierCurveTo(76, 91, 68, 95, 50, 95);
+  ctx.bezierCurveTo(32, 95, 24, 91, 24, 79);
+  ctx.bezierCurveTo(24, 66, 34, 54, 50, 54);
   ctx.closePath();
 };
 const kopfPfad = (ctx, wind) => () => {
@@ -181,8 +181,8 @@ function spitzhut(ctx, wind) {
   const kegel = () => {
     ctx.beginPath();
     ctx.moveTo(-13, 0);
-    ctx.quadraticCurveTo(-4, -16, 5 + wind * 0.8, -30);
-    ctx.quadraticCurveTo(7, -14, 13, 0);
+    ctx.quadraticCurveTo(-4, -12, 5 + wind * 0.8, -22);
+    ctx.quadraticCurveTo(7, -10, 13, 0);
     ctx.closePath();
   };
   const krempe = () => {
@@ -307,6 +307,8 @@ export function zeichneGemalteKatze(ctx, p, x, y, Z, t, seed) {
   const zucken = (t + seed * 7000) % 6400 < 200 ? 0.22 : 0;
   const spitze = Math.sin(t / 800 + seed * 3) * 0.5;
   const neigen = Math.sin(t / 2100 + seed * 2) * 0.04;
+  // ab und zu zufrieden die Augen zukneifen (wie beim Schnurren)
+  const froh = (t + seed * 8300) % 8800 < 1100;
 
   ctx.save();
   ctx.translate(x, y);
@@ -367,11 +369,12 @@ export function zeichneGemalteKatze(ctx, p, x, y, Z, t, seed) {
     }, 0.6);
   }
 
-  // Kopf
+  // Kopf: größer als bei echten Katzen (wirkt jung und lieb), neigt sich sanft
   ctx.save();
-  ctx.translate(50, 56);
-  ctx.rotate(neigen);
-  ctx.translate(-50, -56);
+  ctx.translate(50, 60);
+  ctx.rotate(neigen * 1.6);
+  ctx.scale(1.24, 1.24);
+  ctx.translate(-50, -54);
   const ohrL = ohrPfad(ctx, -1, zucken);
   const ohrR = ohrPfad(ctx, 1, 0);
   [ohrL, ohrR].forEach((o, i) => {
@@ -415,36 +418,39 @@ export function zeichneGemalteKatze(ctx, p, x, y, Z, t, seed) {
   }
   kontur(ctx, kopf);
 
-  // Augen: mandelförmig, Lid schließt sich langsam
+  // Augen: groß und rund, dunkle Pupille mit Farbrand, zwei Lichtpunkte; Lid schließt sich langsam
   [-1, 1].forEach((s) => {
-    const ax = 50 + s * 7.5;
-    const ay = 40;
+    const ax = 50 + s * 7.6;
+    const ay = 40.5;
     const auge = () => {
       ctx.beginPath();
-      ctx.moveTo(ax - 4.4, ay + 0.4 * s * 0);
-      ctx.quadraticCurveTo(ax, ay - 5.4, ax + 4.4, ay);
-      ctx.quadraticCurveTo(ax, ay + 4.6, ax - 4.4, ay);
-      ctx.closePath();
+      ctx.ellipse(ax, ay, 4.6, 5, 0, 0, Math.PI * 2);
     };
+    ell(ctx, 50 + s * 12.5, 46.5, 3.6, 2, "#f2a0a4", 0, 0.45); // rosige Bäckchen
+    if (froh) {
+      // zufrieden zugekniffen (wie beim Schnurren)
+      linie(ctx, LINIE, 1.5, () => {
+        ctx.moveTo(ax - 4.2, ay + 1);
+        ctx.quadraticCurveTo(ax, ay - 3.4, ax + 4.2, ay + 1);
+      });
+      return;
+    }
     ctx.save();
     auge();
     ctx.clip();
-    ell(ctx, ax, ay, 5, 5, F.auge);
-    ell(ctx, ax + blick, ay - 0.8, 5, 2.2, "rgba(255,255,255,0.25)");
-    ell(ctx, ax + blick, ay, 1.9, 3.3, "#1c140e");
-    ell(ctx, ax + blick - 1.3, ay - 1.5, 1.2, 1.2, "#ffffff", 0, 0.95);
-    ell(ctx, ax + blick + 1.2, ay + 1.4, 0.5, 0.5, "#ffffff", 0, 0.8);
+    ell(ctx, ax, ay, 5, 5.4, F.auge);
+    ell(ctx, ax + blick * 0.6, ay + 0.4, 3.5, 4, "#1d1410");
+    ell(ctx, ax + blick * 0.6, ay - 3.4, 4.6, 1.6, "rgba(0,0,0,0.25)"); // Schatten vom Lid
+    ell(ctx, ax + blick * 0.6 - 1.5, ay - 1.6, 1.6, 1.8, "#ffffff", 0, 0.97);
+    ell(ctx, ax + blick * 0.6 + 1.6, ay + 1.8, 0.7, 0.7, "#ffffff", 0, 0.85);
     if (lid > 0) {
       ctx.fillStyle = F.basis;
-      ctx.fillRect(ax - 5, ay - 5, 10, 9 * lid);
+      ctx.fillRect(ax - 5, ay - 5.4, 10, 10.8 * lid);
     }
     ctx.restore();
-    kontur(ctx, auge, 1);
-    if (lid > 0.6)
-      linie(ctx, LINIE, 1, () => {
-        ctx.moveTo(ax - 4.4, ay);
-        ctx.quadraticCurveTo(ax, ay + 1.6, ax + 4.4, ay);
-      }, 0.85);
+    kontur(ctx, auge, 1.1);
+    // kleine Wimpernlinie oben
+    linie(ctx, LINIE, 1.6, () => ctx.ellipse(ax, ay, 4.8, 5.2, 0, Math.PI * 1.15, Math.PI * 1.85), 0.9);
   });
   // Nase und Mund
   ctx.beginPath();
