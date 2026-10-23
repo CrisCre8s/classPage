@@ -966,6 +966,199 @@ body.power-off .rail {
   }
 }
 
+/* ===== Spieleabteil (Hub) ===== */
+.arcade {
+  grid-column: 1 / -1;
+  order: 10;
+}
+
+.arcade-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.arcade-games {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+  list-style: none;
+}
+
+.arcade-game {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 16px;
+  background: var(--raised);
+  border: 1px solid var(--raised-edge);
+  border-radius: var(--radius);
+  transition: border-color 0.15s, transform 0.2s var(--ease);
+}
+
+.arcade-game:hover,
+.arcade-game:focus-visible {
+  border-color: var(--brand-line);
+  transform: translateY(-3px);
+  outline: none;
+}
+
+.arcade-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.arcade-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.arcade-text {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.arcade-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.arcade-go svg.i {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  transition: transform 0.15s var(--ease);
+}
+
+.arcade-game:hover .arcade-go svg.i {
+  transform: translate(2px, -2px);
+}
+
+/* Türen */
+.door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 50%;
+  overflow: hidden;
+  background: #1a1822;
+  transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1), box-shadow 0.15s;
+}
+
+.door-l {
+  left: 0;
+  box-shadow: inset -1px 0 0 #3a3550;
+}
+
+.door-r {
+  right: 0;
+  box-shadow: inset 1px 0 0 #3a3550;
+}
+
+/* Das Schild läuft über beide Türen und teilt sich beim Öffnen */
+.door-sign {
+  position: absolute;
+  top: 50%;
+  width: 200%;
+  transform: translateY(-62%);
+  text-align: center;
+  font: 40px/1.2 "Press Start 2P", monospace;
+  letter-spacing: 6px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.door-sign::after {
+  content: "KLICK ZUM ÖFFNEN";
+  display: block;
+  margin-top: 18px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--brand-line);
+  animation: blink 1.4s steps(2) infinite;
+}
+
+.door-l .door-sign { left: 0; }
+.door-r .door-sign { right: 0; }
+
+.door-handle {
+  position: absolute;
+  top: 74%;
+  width: 4px;
+  height: 36px;
+  border-radius: 2px;
+  background: #4a4166;
+}
+
+.door-l .door-handle { right: 14px; }
+.door-r .door-handle { left: 14px; }
+
+/* Vorgeschmack: beim Drüberfahren öffnet sich ein Spalt */
+.arcade:not(.open) .arcade-stage:hover .door-l { transform: translateX(-10px); }
+.arcade:not(.open) .arcade-stage:hover .door-r { transform: translateX(10px); }
+
+.arcade.opening .door-l { box-shadow: inset -3px 0 0 var(--brand-line); }
+.arcade.opening .door-r { box-shadow: inset 3px 0 0 var(--brand-line); }
+
+.arcade.open .door-l { transform: translateX(-101%); }
+.arcade.open .door-r { transform: translateX(101%); }
+
+.arcade-open {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: pointer;
+}
+
+.arcade-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+.arcade-open-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.arcade.open .arcade-open {
+  display: none;
+}
+
+/* Spiele fliegen nacheinander herein, sobald die Türen aufgehen */
+.arcade:not(.open) .arcade-games li {
+  opacity: 0;
+}
+
+.arcade.open .arcade-games li {
+  animation: rein 0.55s var(--ease) both;
+}
+
+.arcade.open .arcade-games li:nth-child(1) { animation-delay: 0.45s; }
+.arcade.open .arcade-games li:nth-child(2) { animation-delay: 0.55s; }
+.arcade.open .arcade-games li:nth-child(3) { animation-delay: 0.65s; }
+
+@keyframes rein {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 760px) {
+  .arcade-games { grid-template-columns: 1fr; }
+  .door-sign { font-size: 30px; letter-spacing: 4px; }
+}
+
 /* ===== Spiele-Seite ===== */
 .page-title {
   font: 400 32px/1.4 "Press Start 2P", monospace;
@@ -1097,15 +1290,35 @@ body.power-off .rail {
 
 #game-canvas {
   display: block;
-  width: 100%;
-  max-height: calc(100vh - var(--bar) - 220px);
-  object-fit: contain;
   image-rendering: pixelated;
   outline: none;
 }
 
-.stage[data-game="schach"] #game-canvas {
-  width: min(100%, calc(100vh - var(--bar) - 220px));
+/* Während ein Spiel läuft: Titel weg, Spielfläche füllt genau den Bildschirm */
+body.game-on .title-row {
+  display: none;
+}
+
+body.game-on .canvas {
+  padding-top: calc(var(--bar) + 20px);
+  padding-bottom: 20px;
+}
+
+body.game-on .stage {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--bar) - 40px);
+  min-height: 360px;
+}
+
+body.game-on .stage-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+}
+
+body.game-on .stage-help {
+  margin-top: 12px;
 }
 
 .stage-msg {
@@ -1161,8 +1374,18 @@ body.power-off .rail {
   .page-title { font-size: 22px; }
   .title-row .btn-ghost { display: none; }
   .stage-msg .big { font-size: 18px; }
-  #game-canvas { max-height: none; }
-  .stage[data-game="schach"] #game-canvas { width: 100%; }
+  /* Handy: oben Platz für POWER, unten für die Leiste */
+  body.game-on .canvas {
+    padding: 76px 12px 76px;
+  }
+  body.game-on .stage {
+    height: calc(100dvh - 76px - 76px);
+    min-height: 300px;
+    padding: 14px;
+  }
+  body.game-on .stage-help {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
