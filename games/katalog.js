@@ -8,7 +8,7 @@ export const KATEGORIEN = [
 
 export const KATALOG = [
   { id: "pong", kat: "klassiker", name: "Ping-Pong", kurz: "Schläger gegen Schläger, bis 7", text: "Der Klassiker: Schläger gegen Schläger. Wer zuerst 7 Punkte hat, gewinnt.", tasten: "Maus, Finger, W/S oder ↑/↓", wertung: "siege" },
-  { id: "schach", kat: "klassiker", name: "Schach", kurz: "Du spielst Weiß gegen den Computer", text: "Du spielst Weiß gegen den Computer. Rochade, en passant und Umwandlung inklusive.", tasten: "Figur antippen, dann Zielfeld", wertung: "siege",
+  { id: "schach", kat: "klassiker", name: "Schach", kurz: "Du spielst Weiß gegen den Computer", text: "Du spielst Weiß gegen den Computer. Rochade, en passant und Umwandlung inklusive.", tasten: "Figur antippen, dann Zielfeld · Premove · ← → nachspielen", wertung: "siege",
     // grobe Schätzung der Spielstärke je Stufe (nicht gegen gewertete Spieler gemessen)
     stufenInfo: { leicht: "ca. 400 Elo", mittel: "ca. 900 Elo", schwer: "ca. 1400 Elo" } },
   { id: "bits", kat: "klassiker", name: "Bits & Bugs", kurz: "Bits sammeln, Bugs ausweichen", text: "Sammle als Pixel-Computer alle Bits ein. Mit dem Debugger jagst du die Bugs.", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },

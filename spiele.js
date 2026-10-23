@@ -148,6 +148,9 @@ function beenden() {
   const dom = document.getElementById("game-dom");
   dom.innerHTML = "";
   dom.hidden = true;
+  const tools = document.getElementById("stage-tools");
+  tools.innerHTML = "";
+  tools.hidden = true;
   document.getElementById("game-canvas").hidden = false;
   nachricht(null);
 }
@@ -180,6 +183,7 @@ async function starten(spiel) {
   const inst = modul.start({
     canvas,
     dom,
+    tools: document.getElementById("stage-tools"),
     stufe,
     passeCanvas,
     status,

@@ -1752,6 +1752,86 @@ body.power-off .rail {
   color: var(--text);
 }
 
+/* Leiste unter dem Spielfeld (z. B. Schach: Figurenstil, Züge nachspielen) */
+.stage-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 28px;
+  padding-top: 14px;
+}
+
+.tools-feld {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.tools-select {
+  height: 40px;
+  padding: 0 34px 0 14px;
+  border-radius: 999px;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--control);
+  background: var(--raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a9ca2' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.tools-select:focus-visible {
+  outline: 2px solid var(--brand-line);
+  outline-offset: 2px;
+}
+
+.tools-verlauf {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tools-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  border-radius: var(--radius);
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+  color: var(--text);
+  font-size: 14px;
+  transition: background-color 0.15s, transform 0.12s var(--ease);
+}
+
+.tools-btn:hover:not(:disabled) {
+  background: var(--control);
+}
+
+.tools-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.tools-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tools-nr {
+  min-width: 72px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.tools-neu {
+  margin-left: 0;
+}
+
 /* Spielfläche */
 .stage .stage-status {
   margin-left: auto;

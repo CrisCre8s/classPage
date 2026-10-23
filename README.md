@@ -91,7 +91,10 @@ Spieleseite.
 - **Schach** (`games/schach.js`, Regeln + KI in `games/schach-engine.js`): eigene
   Zuggenerierung inkl. Rochade, en passant, Umwandlung; der Computer rechnet je nach
   Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`).
-  Die Elo-Angaben (ca. 400 / 900 / 1400) sind grobe Schätzungen
+  Die Elo-Angaben (ca. 400 / 900 / 1400) sind grobe Schätzungen.
+  Premoves (schon ziehen, während der Computer denkt), Nachspielen mit den Pfeiltasten
+  und sechs Figurenstile: „Pixel“ ist selbst gezeichnet, die übrigen Sätze stammen von
+  Lichess und liegen mit Lizenzangaben in `public/pieces/` (siehe `public/pieces/LICENSE.md`)
 - **Bits & Bugs** (`games/bits.js`): eigenes Labyrinth, Bits sammeln, Bugs ausweichen
 - **Snake** (`games/snake.js`): Leicht ohne Wände, Schwer mit Hindernissen
 - **Bug-Sucher** (`games/minen.js`): Minesweeper-Prinzip, 9×9 / 16×16 / 30×16, erster Klick ist sicher
