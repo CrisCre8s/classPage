@@ -13,7 +13,8 @@ export const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "
 /**
  * naechste() liefert die nächste Frage:
  *  { frage: html, loesung: text, pruefe(eingabe) → bool, tastatur?: "bin"|"dez"|"hex"|"ip",
- *    optionen?: [text], richtigIndex?: number, erklaerung?: html, platzhalter?: text }
+ *    optionen?: [text], richtigIndex?: number, erklaerung?: html, platzhalter?: text,
+ *    freitext?: bool (normale Tastatur, keine Großbuchstaben), hinweis?: text (aufdeckbar, halbe Punkte) }
  */
 export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, sekunden, punkteJe, naechste }) {
   const grob = window.matchMedia("(pointer: coarse)").matches; // Touch: eigenes Ziffernfeld statt Handytastatur
@@ -28,6 +29,10 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
         <input class="quiz-input num" type="text" spellcheck="false" autocapitalize="characters" autocorrect="off" aria-label="Antwort" ${grob ? "readonly" : ""} />
         <button class="btn quiz-pruefen" type="submit">Prüfen</button>
       </form>
+      <div class="quiz-hilfe" hidden>
+        <button class="quiz-hinweis-btn" type="button">Hinweis aufdecken <span>halbe Punkte</span></button>
+        <p class="quiz-hinweis" hidden></p>
+      </div>
       <div class="quiz-optionen" hidden></div>
       <p class="quiz-feedback" aria-live="assertive"></p>
       <div class="quiz-pad" hidden></div>
@@ -42,8 +47,11 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
   const pad = el(".quiz-pad");
   const balken = el(".quiz-zeit span");
   const serieEl = el(".quiz-serie");
+  const hilfe = el(".quiz-hilfe");
+  const hinweisBtn = el(".quiz-hinweis-btn");
+  const hinweisEl = el(".quiz-hinweis");
 
-  let frage, punkte, serie, richtig, gesamt, fehler, ende, timer, sperre, laeuft, raf;
+  let frage, punkte, serie, richtig, gesamt, fehler, ende, timer, sperre, laeuft, raf, hinweise, mitHinweis;
 
   function zeigeStatus() {
     status(`${punkte} Pkt · ${richtig}/${gesamt} richtig`);
@@ -69,6 +77,11 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
     frageEl.innerHTML = frage.frage;
     feedback.textContent = "";
     feedback.className = "quiz-feedback";
+    mitHinweis = false;
+    hilfe.hidden = !frage.hinweis;
+    hinweisBtn.hidden = false;
+    hinweisEl.hidden = true;
+    hinweisEl.textContent = frage.hinweis || "";
     if (frage.optionen) {
       form.hidden = true;
       pad.hidden = true;
@@ -80,6 +93,10 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
       optionen.hidden = true;
       input.value = "";
       input.placeholder = frage.platzhalter || "";
+      // Freitext (z. B. Befehle): echte Handytastatur, nichts automatisch groß schreiben
+      input.readOnly = grob && !frage.freitext;
+      input.setAttribute("autocapitalize", frage.freitext ? "off" : "characters");
+      input.setAttribute("aria-label", frage.freitext ? "Befehl eingeben" : "Antwort");
       baueTastatur(frage.tastatur);
       if (!grob) input.focus({ preventScroll: true });
     }
@@ -93,8 +110,9 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
     if (ok) {
       richtig++;
       serie++;
-      punkte += punkteJe + bonus();
-      feedback.textContent = "Richtig!";
+      const wert = punkteJe + bonus();
+      punkte += mitHinweis ? Math.round(wert / 2) : wert;
+      feedback.textContent = mitHinweis ? `Richtig! Mit Hinweis: +${Math.round(wert / 2)}` : "Richtig!";
       feedback.className = "quiz-feedback ok";
     } else {
       serie = 0;
@@ -108,6 +126,7 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
         else if (i === optionIndex) b.classList.add("falsch");
       });
     }
+    hinweisBtn.hidden = true;
     zeigeStatus();
     setTimeout(() => {
       sperre = false;
@@ -134,7 +153,7 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
       .join("");
     nachricht(`
       <p class="big">Zeit um!</p>
-      <p>${punkte} Punkte · ${richtig} von ${gesamt} richtig (${quote} %)${neu ? " · neuer Highscore!" : ""}</p>
+      <p>${punkte} Punkte · ${richtig} von ${gesamt} richtig (${quote} %)${hinweise ? ` · ${hinweise} ${hinweise === 1 ? "Hinweis" : "Hinweise"} genutzt` : ""}${neu ? " · neuer Highscore!" : ""}</p>
       ${liste ? `<div class="quiz-auswertung"><p class="small">Zum Nachlernen:</p><ul>${liste}</ul></div>` : ""}
       <p><button class="btn" type="button" data-neu>Nochmal</button></p>`);
     document.querySelector("#stage-msg [data-neu]")?.addEventListener("click", (e) => {
@@ -149,6 +168,7 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
     richtig = 0;
     gesamt = 0;
     fehler = [];
+    hinweise = 0;
     sperre = false;
     laeuft = true;
     nachricht(null);
@@ -177,6 +197,14 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
     else input.value += t;
   });
   el(".quiz-skip").addEventListener("click", () => antworte("", -1));
+  hinweisBtn.addEventListener("click", () => {
+    if (!laeuft || sperre || mitHinweis) return;
+    mitHinweis = true;
+    hinweise++;
+    hinweisBtn.hidden = true;
+    hinweisEl.hidden = false;
+    input.focus({ preventScroll: true });
+  });
   const onKey = (e) => {
     if (!laeuft) {
       if (e.key === "Enter" && !document.getElementById("stage-msg").hidden && gesamt === undefined) los();

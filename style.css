@@ -1625,6 +1625,7 @@ body.power-off .rail {
 }
 
 .lh-befehle li {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1646,6 +1647,20 @@ body.power-off .rail {
 .lh-befehle span {
   font-size: 14px;
   color: var(--muted);
+}
+
+.lh-befehle .lh-os {
+  align-self: flex-start;
+  margin-bottom: 2px;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0 8px;
+}
+
+.game-stufe-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--accent);
 }
 
 .lern-foot {
@@ -2065,28 +2080,81 @@ body.game-on .stage-help {
   display: none;
 }
 
-/* Befehle tippen */
-.tippen-befehl {
-  display: block;
-  font: 500 clamp(20px, 3.6vw, 30px) / 1.5 var(--mono);
-  overflow-wrap: anywhere;
-  color: var(--faint);
+/* Befehl gesucht */
+.quiz-os {
+  align-self: center;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font: 500 13px/22px var(--mono);
+  background: var(--pill-neu-bg);
+  color: var(--pill-neu-ink);
 }
 
-.tippen-befehl .tw { white-space: nowrap; }
-.tippen-befehl .ok {
-  color: var(--pill-pos-ink);
+.quiz-os[data-sys="linux"] { background: #2a2612; color: var(--accent); }
+.quiz-os[data-sys="cmd"],
+.quiz-os[data-sys="ps"] { background: #16233a; color: #8ab8ff; }
+.quiz-os[data-sys="git"] { background: #2c1a20; color: #f08a6a; }
+.quiz-os[data-sys="docker"] { background: #13282e; color: #6fc8e0; }
+
+.quiz-aufgabe {
+  font-size: clamp(20px, 3.2vw, 28px);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
 }
 
-.tippen-befehl .falsch {
-  color: #fff;
-  background: var(--pill-neg-bg);
-  box-shadow: inset 0 -2px 0 var(--pill-neg-ink);
+.quiz-hilfe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.tippen-befehl .cursor {
-  box-shadow: inset 0 -3px 0 var(--accent);
+.quiz-hinweis-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--control);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--text);
+  transition: background-color 0.15s, transform 0.12s var(--ease);
+}
+
+.quiz-hinweis-btn span {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.quiz-hinweis-btn:hover {
+  background: var(--raised);
+}
+
+.quiz-hinweis-btn:active {
+  transform: scale(0.98);
+}
+
+.quiz-hinweis {
+  max-width: 52ch;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  background: #2a2612;
+  color: var(--accent);
+  text-align: center;
+  font-size: 15px;
+  animation: lern-auf 0.25s var(--ease) both;
+}
+
+.quiz-auswertung-frage .quiz-os,
+.quiz-auswertung-frage .quiz-label {
+  display: none;
+}
+
+.quiz-auswertung-frage .quiz-aufgabe {
+  font-size: 15px;
 }
 
 @media (max-width: 760px) {

@@ -1,6 +1,6 @@
 // Aufklappbare Erklärungen zu den Lernspielen: erst lernen, dann spielen.
 // Wird erst geladen, wenn jemand „So geht's“ öffnet.
-import { BEFEHLE } from "./tippen.js";
+import { BEFEHLE, SYSTEME } from "./befehle.js";
 import { PORTS } from "./ports.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -112,17 +112,22 @@ function subnetz() {
   ].join("");
 }
 
-// ---------- Befehle tippen ----------
-function tippen() {
-  return Object.entries({ leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" })
-    .map(([id, name]) =>
-      block(
-        `${name} <span class="chip">${BEFEHLE[id].length}</span>`,
-        `<ul class="lh-befehle">${BEFEHLE[id].map(([b, e]) => `<li><code class="num">${esc(b)}</code><span>${esc(e)}</span></li>`).join("")}</ul>`,
-      ),
-    )
-    .join("")
-    .replace(/^/, `<p class="lh-intro">Alle Befehle aus dem Spiel. Unter jedem Befehl steht im Spiel auch die Erklärung, hier kannst du sie vorher in Ruhe durchgehen. Tipp: Großschreibung, Leerzeichen und Anführungszeichen müssen genau stimmen.</p>`);
+// ---------- Befehl gesucht ----------
+function befehle() {
+  const stufen = { leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
+  return (
+    `<p class="lh-intro">Alle Aufgaben aus dem Spiel mit Lösung. Bei der Eingabe ist egal: mehrere Leerzeichen, Anführungszeichen und unter Linux ein vorangestelltes <code class="num">sudo</code>. Windows (CMD und PowerShell) achtet nicht auf Groß-/Kleinschreibung, Linux, Git und Docker schon. Wo mehrere Schreibweisen gehen, zählen sie alle.</p>` +
+    Object.entries(stufen)
+      .map(([id, name]) =>
+        block(
+          `${name} <span class="chip">${BEFEHLE[id].length}</span>`,
+          `<ul class="lh-befehle">${BEFEHLE[id]
+            .map((b) => `<li><span class="quiz-os lh-os" data-sys="${b.sys}">${SYSTEME[b.sys]}</span><span>${esc(b.aufgabe)}</span><code class="num">${esc(b.loesungen[0])}</code></li>`)
+            .join("")}</ul>`,
+        ),
+      )
+      .join("")
+  );
 }
 
 // ---------- Port-Quiz ----------
@@ -156,6 +161,6 @@ function ports() {
 export const LERNHILFE = {
   binaer: { titel: "So rechnest du um", inhalt: binaer },
   subnetz: { titel: "So berechnest du Subnetze", inhalt: subnetz },
-  tippen: { titel: "Alle Befehle im Überblick", inhalt: tippen },
+  befehle: { titel: "Alle Befehle im Überblick", inhalt: befehle },
   ports: { titel: "Alle Ports im Überblick", inhalt: ports },
 };
