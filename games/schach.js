@@ -1,6 +1,7 @@
 // Schach gegen den Computer. Du spielst Weiß.
 import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe } from "./schach-engine.js";
 import { zeichneKatze } from "./katzen3d.js";
+import { zeichneAnimeKatze } from "./katzen-anime.js";
 import { EFFEKTE, erzeuge as erzeugeEffekt, zeichne as zeichneEffekt, wackeln, bewegung } from "./schach-effekte.js";
 
 export const HILFE = "Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
@@ -46,7 +47,7 @@ const KATZEN_PALETTE = {
 // selbst gezeichnete Pixel-Sätze (Muster + Farben je Seite)
 const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE }, "katzen-pixel": { muster: KATZEN, palette: KATZEN_PALETTE } };
 // gezeichnete (nicht gerasterte) Sätze mit Bewegung, siehe katzen3d.js
-const LEBENDIG = { katzen: zeichneKatze };
+const LEBENDIG = { katzen: zeichneKatze, "katzen-anime": zeichneAnimeKatze };
 
 // Brettfarben: dunkel für die Pixelfiguren, heller für die Lichess-Figuren
 // (schwarze Figuren wären auf dunklen Feldern kaum zu sehen)
@@ -73,6 +74,7 @@ export const STILE = [
   { id: "celtic", name: "Keltisch", brett: "hell" },
   { id: "chessnut", name: "Chessnut", brett: "hell" },
   { id: "rhosgfx", name: "Holz", brett: "hell" },
+  { id: "katzen-anime", name: "Anime-Katzen", brett: "katze", animiert: true },
   { id: "katzen", name: "Katzen", brett: "katze", animiert: true },
   { id: "katzen-pixel", name: "Katzen (Pixel)", brett: "katze" },
 ];
