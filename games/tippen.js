@@ -5,7 +5,7 @@ export const DOM = true;
 export const HILFE = "Befehl genau so abtippen · Enter oder fertig getippt: nächster Befehl · 60 Sekunden";
 
 // [Befehl, was er tut]
-const BEFEHLE = {
+export const BEFEHLE = {
   leicht: [
     ["ls", "Dateien im aktuellen Ordner anzeigen"],
     ["pwd", "aktuellen Pfad ausgeben"],

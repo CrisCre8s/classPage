@@ -173,10 +173,13 @@
               </div>
               <div class="arcade-stage">
                 <!-- Kacheln kommen aus games/katalog.js (arcade.js) -->
-                <ul class="arcade-games" id="arcade-games"></ul>
+                <a class="arcade-all" id="arcade-link" href="/spiele.html">
+                  <ul class="arcade-games" id="arcade-games"></ul>
+                  <span class="arcade-all-label"></span>
+                </a>
                 <div class="door door-l" aria-hidden="true"><span class="door-sign">SPIELE</span><span class="door-handle"></span></div>
                 <div class="door door-r" aria-hidden="true"><span class="door-sign">SPIELE</span><span class="door-handle"></span></div>
-                <button class="arcade-open" id="arcade-open" type="button" aria-expanded="false" aria-controls="arcade-games">
+                <button class="arcade-open" id="arcade-open" type="button" aria-expanded="false" aria-controls="arcade-link">
                   <span class="arcade-open-label">Spiele öffnen</span>
                 </button>
               </div>

@@ -990,33 +990,29 @@ body.power-off .rail {
   border-radius: var(--radius);
 }
 
+/* Die ganze Fläche ist ein Link zur Spieleseite */
+.arcade-all {
+  position: relative;
+  display: block;
+  border-radius: var(--radius);
+  outline: none;
+}
+
 .arcade-games {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap);
   list-style: none;
-  /* Luft nach oben: die Karten heben sich beim Hover um 3 px und werden
-     sonst vom overflow: hidden der Bühne (wegen der Türen) abgeschnitten */
-  padding-top: 6px;
 }
 
 .arcade-game {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  height: 100%;
   padding: 16px;
   background: var(--raised);
   border: 1px solid var(--raised-edge);
   border-radius: var(--radius);
-  transition: border-color 0.15s, transform 0.2s var(--ease);
-}
-
-.arcade-game:hover,
-.arcade-game:focus-visible {
-  border-color: var(--brand-line);
-  transform: translateY(-3px);
-  outline: none;
 }
 
 .arcade-art {
@@ -1038,121 +1034,59 @@ body.power-off .rail {
   color: var(--muted);
 }
 
-.arcade-go {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  font-weight: 500;
-}
-
-.arcade-go svg.i {
-  width: 16px;
-  height: 16px;
-  color: var(--accent);
-  transition: transform 0.15s var(--ease);
-}
-
-.arcade-game:hover .arcade-go svg.i {
-  transform: translate(2px, -2px);
-}
-
-/* Schwierigkeitsauswahl auf einer Spielkarte */
-.arcade-games li {
-  position: relative;
-}
-
-.arcade-game {
-  transition: border-color 0.15s, transform 0.2s var(--ease), opacity 0.2s;
-}
-
-.arcade-games li.picking .arcade-game {
-  opacity: 0;
-}
-
-.arcade-pick {
+/* Hover: eine dunkle Fläche über allen Kacheln statt einzelner Karten */
+.arcade-all::after {
+  content: "";
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 18px 20px;
-  background: var(--raised);
-  border: 1px solid var(--brand-line);
   border-radius: var(--radius);
-  animation: pick-rein 0.24s var(--ease) both;
-}
-
-.arcade-pick[hidden] {
-  display: none;
-}
-
-.arcade-pick-title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.arcade-pick-sub {
-  font-size: 15px;
-  color: var(--muted);
-}
-
-.arcade-pick-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.arcade-pick-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 46px;
-  padding: 0 16px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--raised-edge);
-  font-weight: 500;
-  transition: box-shadow 0.15s, background-color 0.15s, transform 0.12s var(--ease);
-}
-
-.arcade-pick-btn::after {
-  content: "▸";
-  color: var(--faint);
-  transition: color 0.15s, transform 0.15s var(--ease);
-}
-
-.arcade-pick-btn:hover,
-.arcade-pick-btn:focus-visible {
+  background: rgb(8 8 12 / 0.72);
   box-shadow: inset 0 0 0 1px var(--brand-line);
-  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
 }
 
-.arcade-pick-btn:hover::after,
-.arcade-pick-btn:focus-visible::after {
-  color: var(--accent);
-  transform: translateX(3px);
+.arcade-all-label {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--ground);
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(6px);
+  transition: opacity 0.2s var(--ease), transform 0.25s var(--ease);
+  pointer-events: none;
 }
 
-.arcade-pick-btn:active {
-  transform: scale(0.98);
+.arcade-all-label svg.i {
+  width: 18px;
+  height: 18px;
 }
 
-/* zuletzt gespielte Stufe */
-.arcade-pick-btn.is-last {
-  box-shadow: inset 0 -2px 0 var(--brand-line), inset 0 0 0 1px var(--raised-edge);
+.arcade-all:hover::after,
+.arcade-all:focus-visible::after,
+.arcade-all:hover .arcade-all-label,
+.arcade-all:focus-visible .arcade-all-label {
+  opacity: 1;
 }
 
-.arcade-pick-back {
-  align-self: flex-start;
-  margin: 8px 0 0;
+.arcade-all:hover .arcade-all-label,
+.arcade-all:focus-visible .arcade-all-label {
+  transform: translate(-50%, -50%);
 }
 
-@keyframes pick-rein {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: none; }
+.arcade-all:active .arcade-all-label {
+  transform: translate(-50%, -50%) scale(0.98);
 }
 
 /* Türen */
@@ -1270,17 +1204,6 @@ body.power-off .rail {
 /* nacheinander, jede Kachel 45 ms nach der vorigen (--i kommt aus arcade.js) */
 .arcade.open .arcade-games li { animation-delay: calc(0.42s + var(--i, 0) * 45ms); }
 
-.arcade-tag {
-  margin-left: 6px;
-  padding: 1px 7px;
-  border-radius: 4px;
-  vertical-align: 2px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--pill-pos-bg);
-  color: var(--pill-pos-ink);
-}
-
 .arcade.closing .arcade-games li {
   animation: raus 0.22s ease-in both;
 }
@@ -1299,18 +1222,26 @@ body.power-off .rail {
 }
 
 @media (max-width: 760px) {
-  .arcade-games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .arcade-game { padding: 10px; }
-  .arcade-text, .arcade-go { display: none; }
-  .arcade-name { font-size: 15px; line-height: 20px; }
-  .arcade-tag { display: block; width: fit-content; margin: 4px 0 0; }
-  .arcade-games li.picking { min-height: 216px; }
-  .arcade-pick { padding: 12px; gap: 4px; }
-  .arcade-pick-sub { display: none; }
-  .arcade-pick-title { font-size: 15px; }
-  .arcade-pick-list { margin-top: 6px; gap: 6px; }
-  .arcade-pick-btn { height: 38px; padding: 0 12px; font-size: 15px; }
-  .arcade-pick-back { margin-top: 4px; }
+  .arcade-games { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .arcade-game { padding: 8px; gap: 4px; }
+  .arcade-art { margin-bottom: 4px; }
+  .arcade-text { display: none; }
+  .arcade-name { font-size: 14px; line-height: 18px; }
+  /* ohne Hover: Hinweis immer sichtbar unter den Kacheln */
+  .arcade-all-label {
+    position: static;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 46px;
+    margin-top: 10px;
+    font-size: 15px;
+    opacity: 1;
+    transform: none;
+  }
+  .arcade-all:hover .arcade-all-label,
+  .arcade-all:focus-visible .arcade-all-label { transform: none; }
+  .arcade-all::after { display: none; }
   /* offen: „Schließen“ statt „Zur Spieleseite“ (die ist unten in der Leiste) */
   .arcade.open .panel-head .more:not(.arcade-toggle) { display: none; }
   .arcade .arcade-toggle { margin-left: auto; }
@@ -1448,6 +1379,295 @@ body.power-off .rail {
   padding-top: 20px;
 }
 
+/* zweiter, klar getrennter Bereich (Klassiker unter den Lernspielen) */
+.kat + .kat {
+  padding-top: 44px;
+  border-top: 1px solid var(--border);
+}
+
+/* Lernhilfe: die Erklärung klappt als volle Zeile unter der Karte auf;
+   „dense“ lässt die übrigen Karten trotzdem in ihrer Reihe */
+.games-grid {
+  grid-auto-flow: row dense;
+}
+
+.lern-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+  margin-top: 16px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  background: var(--pill-pos-bg);
+  color: var(--pill-pos-ink);
+  font-size: 15px;
+  font-weight: 600;
+  transition: background-color 0.15s, transform 0.12s var(--ease);
+}
+
+.lern-toggle:hover {
+  background: #213333;
+}
+
+.lern-toggle:active {
+  transform: scale(0.99);
+}
+
+.lern-toggle svg.i {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s var(--ease);
+}
+
+.lern-toggle[aria-expanded="true"] svg.i {
+  transform: rotate(180deg);
+}
+
+.game-card:has(.lern-toggle[aria-expanded="true"]) {
+  border-color: var(--pill-pos-ink);
+}
+
+.lern-panel {
+  grid-column: 1 / -1;
+  padding: 28px;
+  border: 1px solid var(--pill-pos-ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  animation: lern-auf 0.3s var(--ease) both;
+}
+
+@keyframes lern-auf {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.lern-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.lern-kicker {
+  font: 500 13px/20px var(--mono);
+  color: var(--pill-pos-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lern-head h3 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.lh {
+  columns: 3 300px;
+  column-gap: 28px;
+}
+
+.lh-intro {
+  column-span: all;
+  max-width: 70ch;
+  margin-bottom: 20px;
+  color: var(--muted);
+}
+
+.lh-block {
+  break-inside: avoid;
+  margin-bottom: 24px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+}
+
+.lh-block h4 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.lh-block p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.lh-block p + p,
+.lh-block p + .lh-bsp,
+.lh-block .lh-bsp + p,
+.lh-block .lh-scroll + p {
+  margin-top: 10px;
+}
+
+.lh-block b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.lh-klein {
+  font-size: 14px !important;
+}
+
+.lh-bsp {
+  margin-top: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-radius: 4px;
+  background: var(--surface);
+  font: 400 14px/1.6 var(--mono);
+  color: var(--text);
+  white-space: pre;
+}
+
+.lh-stellen {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.lh-stellen span {
+  padding: 8px 0;
+  border-radius: 4px;
+  background: var(--surface);
+  text-align: center;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.lh-nibbles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  list-style: none;
+}
+
+.lh-nibbles li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.lh-nibbles b {
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.lh-nibbles span {
+  font-size: 13px;
+}
+
+.lh-nibbles small {
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.lh-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.lh-liste li::marker {
+  color: var(--pill-pos-ink);
+}
+
+.lh-liste + p {
+  margin-top: 12px;
+}
+
+.lh-scroll {
+  overflow-x: auto;
+}
+
+.lh-tab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.lh-tab th {
+  padding: 0 8px 8px 0;
+  text-align: left;
+  font-weight: 500;
+  color: var(--faint);
+}
+
+.lh-tab td {
+  padding: 6px 8px 6px 0;
+  border-top: 1px solid var(--raised-edge);
+  color: var(--muted);
+}
+
+.lh-tab td.num {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.lh-befehle {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.lh-befehle li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-top: 1px solid var(--raised-edge);
+}
+
+.lh-befehle li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.lh-befehle code {
+  font-size: 14px;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.lh-befehle span {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.lern-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.lern-foot p {
+  font-weight: 600;
+}
+
+.lern-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .best {
   font-size: 15px;
   color: var(--muted);
@@ -1550,7 +1770,6 @@ body.game-on .stage-help {
 @media (max-width: 1100px) {
   .s4 { grid-column: 1 / -1; }
   .games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .arcade-games { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .game-art { max-width: 480px; }
 }
 
@@ -1564,7 +1783,12 @@ body.game-on .stage-help {
   }
   .page-title { font-size: 22px; }
   .games-grid { grid-template-columns: 1fr; }
-  .arcade-games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lern-panel { padding: 18px 14px; }
+  .lern-head h3 { font-size: 20px; }
+  .lh { columns: 1; }
+  .lh-block { padding: 14px; }
+  .lern-start { width: 100%; }
+  .lern-start .btn { flex: 1; justify-content: center; padding: 0 10px; }
   .kat-head h2 { font-size: 20px; }
   .title-row .btn-ghost { display: none; }
   .stage-msg .big { font-size: 18px; }
