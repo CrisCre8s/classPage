@@ -1372,6 +1372,7 @@ body.power-off .rail {
 }
 
 .seg {
+  position: relative;
   display: flex;
   margin-top: 20px;
   padding: 3px;
@@ -1381,6 +1382,8 @@ body.power-off .rail {
 }
 
 .seg button {
+  position: relative;
+  z-index: 1;
   flex: 1 1 0;
   height: 36px;
   border-radius: 999px;
@@ -1389,14 +1392,39 @@ body.power-off .rail {
   transition: color 0.15s, background-color 0.15s;
 }
 
-.seg button:hover {
+.seg button.unter-pill {
   color: var(--text);
 }
 
-.seg button[aria-checked="true"] {
+.seg button:focus-visible {
+  outline: none;
+}
+
+/* gleitende Markierung (Aussehen der gewählten Stufe) */
+.seg-pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
   background: var(--surface);
-  color: var(--text);
   box-shadow: inset 0 -2px 0 var(--brand-line);
+  transition: transform 0.28s var(--ease), width 0.28s var(--ease);
+  pointer-events: none;
+}
+
+.seg:has(button:focus-visible) .seg-pill {
+  outline: 2px solid var(--brand-line);
+  outline-offset: 1px;
+}
+
+/* Bedienelemente unten in der Karte: in einer Reihe alle auf gleicher Höhe */
+.game-ctrl {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  padding-top: 4px;
 }
 
 .game-foot {
@@ -1404,7 +1432,6 @@ body.power-off .rail {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: auto;
   padding-top: 20px;
 }
 
@@ -1687,7 +1714,7 @@ body.power-off .rail {
 }
 
 .game-stufe-info {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 14px;
   color: var(--accent);
 }
@@ -1712,13 +1739,16 @@ body.power-off .rail {
   gap: 10px;
 }
 
+/* immer zwei Zeilen, damit alle Kartenfüße gleich hoch sind */
 .best {
+  display: flex;
+  flex-direction: column;
   font-size: 15px;
+  line-height: 22px;
   color: var(--muted);
 }
 
 .best .num {
-  margin-left: 6px;
   color: var(--text);
 }
 
