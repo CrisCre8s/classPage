@@ -60,7 +60,12 @@ steht dort „gerade nicht verfügbar“.
 ```
 ├── index.html      # Seite
 ├── style.css       # Alle Styles
-├── main.js         # Einstieg: Datum, Power-Button, Init
+├── main.js         # Einstieg Hub
+├── spiele.html     # Spiele-Seite
+├── spiele.js       # Einstieg Spiele
+├── games/          # die drei Spiele
+├── shell.js        # gemeinsam: Sterne, POWER, Void
+├── vite.config.js  # baut beide Seiten
 ├── lks.js          # Leistungskontrollen aus lks.json
 ├── lks.json        # ← LKs hier eintragen
 ├── berichte.js     # Berichte automatisch aus berichte/
@@ -71,6 +76,19 @@ steht dort „gerade nicht verfügbar“.
 ├── void.js         # Void-Funktion (Easter Egg)
 └── public/         # Bilder, Favicon, Schriften (fonts/, selbst gehostet, OFL-Lizenz)
 ```
+
+## Spiele
+
+Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es drei Spiele gegen den
+Computer, jeweils in **Leicht, Mittel und Schwer**:
+
+- **Ping-Pong** (`games/pong.js`): erster bei 7 Punkten gewinnt
+- **Schach** (`games/schach.js`, Regeln + KI in `games/schach-engine.js`): eigene
+  Zuggenerierung inkl. Rochade, en passant, Umwandlung; der Computer rechnet je nach
+  Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`)
+- **Bits & Bugs** (`games/bits.js`): eigenes Labyrinth, Bits sammeln, Bugs ausweichen
+
+Siege bzw. Highscores speichert jeder Browser für sich (localStorage).
 
 ## Design
 
