@@ -966,7 +966,7 @@ body.power-off .rail {
   }
 }
 
-/* ===== Spieleabteil (Hub) ===== */
+/* ===== Spiele auf dem Hub (Schiebetüren) ===== */
 .arcade {
   grid-column: 1 / -1;
   order: 10;
@@ -1075,7 +1075,11 @@ body.power-off .rail {
   transform: translateY(-62%);
   text-align: center;
   font: 40px/1.2 "Press Start 2P", monospace;
-  letter-spacing: 6px;
+  --ls: 6px;
+  letter-spacing: var(--ls);
+  /* letter-spacing hängt auch hinter den letzten Buchstaben Platz an; ohne Ausgleich
+     sitzt das Wort ls/2 zu weit links und die Türfuge schneidet ins „E“ */
+  padding-left: calc(var(--ls) + 4px); /* + 4 px Feinausgleich: Fuge genau mittig zwischen I und E */
   color: #fff;
   white-space: nowrap;
 }
@@ -1086,6 +1090,8 @@ body.power-off .rail {
   margin-top: 18px;
   font-size: 11px;
   letter-spacing: 2px;
+  /* gleicher Ausgleich für die zweite Zeile (Eltern verschieben schon um ls/2) */
+  margin-left: calc(-1 * var(--ls) - 2px);
   color: var(--brand-line);
   animation: blink 1.4s steps(2) infinite;
 }
@@ -1108,6 +1114,9 @@ body.power-off .rail {
 /* Vorgeschmack: beim Drüberfahren öffnet sich ein Spalt */
 .arcade:not(.open) .arcade-stage:hover .door-l { transform: translateX(-10px); }
 .arcade:not(.open) .arcade-stage:hover .door-r { transform: translateX(10px); }
+
+/* im Spalt keine Kantenlinien, sonst wirken sie wie ein zusätzlicher Strich am „E“ */
+.arcade:not(.opening) .arcade-stage:hover .door { box-shadow: none; }
 
 .arcade.opening .door-l { box-shadow: inset -3px 0 0 var(--brand-line); }
 .arcade.opening .door-r { box-shadow: inset 3px 0 0 var(--brand-line); }
@@ -1152,6 +1161,18 @@ body.power-off .rail {
 .arcade.open .arcade-games li:nth-child(2) { animation-delay: 0.55s; }
 .arcade.open .arcade-games li:nth-child(3) { animation-delay: 0.65s; }
 
+.arcade.closing .arcade-games li {
+  animation: raus 0.22s ease-in both;
+}
+
+.arcade .arcade-toggle {
+  margin-left: 20px;
+}
+
+@keyframes raus {
+  to { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+
 @keyframes rein {
   from { opacity: 0; transform: translateY(18px) scale(0.98); }
   to { opacity: 1; transform: none; }
@@ -1159,7 +1180,7 @@ body.power-off .rail {
 
 @media (max-width: 760px) {
   .arcade-games { grid-template-columns: 1fr; }
-  .door-sign { font-size: 30px; letter-spacing: 4px; }
+  .door-sign { font-size: 30px; --ls: 4px; }
 }
 
 /* ===== Spiele-Seite ===== */
