@@ -1,5 +1,6 @@
 // Schach gegen den Computer. Du spielst Weiß.
 import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe } from "./schach-engine.js";
+import { zeichneKatze } from "./katzen3d.js";
 import { EFFEKTE, erzeuge as erzeugeEffekt, zeichne as zeichneEffekt, wackeln, bewegung } from "./schach-effekte.js";
 
 export const HILFE = "Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
@@ -43,7 +44,9 @@ const KATZEN_PALETTE = {
 };
 
 // selbst gezeichnete Pixel-Sätze (Muster + Farben je Seite)
-const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE }, katzen: { muster: KATZEN, palette: KATZEN_PALETTE } };
+const PIXEL_SAETZE = { pixel: { muster: FIGUREN, palette: PALETTE }, "katzen-pixel": { muster: KATZEN, palette: KATZEN_PALETTE } };
+// gezeichnete (nicht gerasterte) Sätze mit Bewegung, siehe katzen3d.js
+const LEBENDIG = { katzen: zeichneKatze };
 
 // Brettfarben: dunkel für die Pixelfiguren, heller für die Lichess-Figuren
 // (schwarze Figuren wären auf dunklen Feldern kaum zu sehen)
@@ -70,7 +73,8 @@ export const STILE = [
   { id: "celtic", name: "Keltisch", brett: "hell" },
   { id: "chessnut", name: "Chessnut", brett: "hell" },
   { id: "rhosgfx", name: "Holz", brett: "hell" },
-  { id: "katzen", name: "Katzen", brett: "katze" },
+  { id: "katzen", name: "Katzen", brett: "katze", animiert: true },
+  { id: "katzen-pixel", name: "Katzen (Pixel)", brett: "katze" },
 ];
 const STIL_KEY = "schach:figuren";
 const EFFEKT_KEY = "schach:effekt";
@@ -94,7 +98,7 @@ function gemerkterStil() {
 // SVG-Figuren einmal laden; gerastert wird passend zur echten Bildschirmgröße (siehe raster)
 const svgCache = {};
 function ladeStil(id) {
-  if (PIXEL_SAETZE[id]) return Promise.resolve();
+  if (PIXEL_SAETZE[id] || LEBENDIG[id]) return Promise.resolve();
   if (svgCache[id]) return svgCache[id].bereit;
   const imgs = {};
   const bereit = Promise.all(
@@ -222,6 +226,9 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   // Verlauf: jede Stellung nach einem Zug, zum Nachspielen mit den Pfeiltasten
   let stellungen = [{ pos: klon(pos), zug: null }];
   let ansicht = null; // null = aktuelle Partie, sonst Index in stellungen
+  let zeichenZeit = performance.now();
+  let lebenRaf = 0; // Dauerschleife für bewegte Figuren (ca. 30 Bilder/s)
+  let gestoppt = false;
   let effekt = gemerkterEffekt();
   let effekte = []; // laufende Schlag-Effekte
   let fxRaf = 0;
@@ -236,6 +243,13 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   const sichtKey = () => (ansicht === null ? "live" : ansicht);
 
   function zeichneFigur(p, x, y, gross = 1) {
+    if (LEBENDIG[stil]) {
+      // jede Figur bewegt sich etwas anders (Startwert aus Figur und Feld)
+      const seed = ((Math.round(x / Z) * 7 + Math.round(y / Z) * 13 + p.charCodeAt(0)) % 17) / 17;
+      const g = Z * gross;
+      LEBENDIG[stil](ctx, p, x + (Z - g) / 2, y + (Z - g) / 2, g, zeichenZeit, seed);
+      return;
+    }
     if (!PIXEL_SAETZE[stil]) {
       const g = Z * 0.9 * gross;
       const bild = raster(stil, p, Math.round(g * skala));
@@ -266,6 +280,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
 
   // Ein Bild zeichnen: Brett (evtl. wackelnd), dann die Effekte darüber
   function zeichne(t = performance.now()) {
+    zeichenZeit = t;
     const versatz = wackeln(effekte, t);
     if (versatz) {
       ctx.fillStyle = "#0f0e13";
@@ -404,6 +419,23 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       raf = requestAnimationFrame(schritt);
     };
     raf = requestAnimationFrame(schritt);
+  }
+
+  // Bewegte Figuren (Katzen): neu zeichnen, solange nichts anderes animiert
+  let lebenZuletzt = 0;
+  function lebenSchritt(t) {
+    if (!LEBENDIG[stil] || gestoppt) {
+      lebenRaf = 0;
+      return;
+    }
+    if (!anims.length && !fxRaf && t - lebenZuletzt > 32 && !document.hidden) {
+      lebenZuletzt = t;
+      zeichne(t);
+    }
+    lebenRaf = requestAnimationFrame(lebenSchritt);
+  }
+  function lebenStarten() {
+    if (LEBENDIG[stil] && !lebenRaf && !gestoppt) lebenRaf = requestAnimationFrame(lebenSchritt);
   }
 
   // Schlag-Effekt starten und so lange Bilder zeichnen, bis er vorbei ist
@@ -656,6 +688,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     } catch {}
     ladeStil(stil).then(() => zeichne());
     zeichne();
+    lebenStarten();
   });
 
   function neuePartie() {
@@ -789,6 +822,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
 
   document.fonts?.load('11px "Press Start 2P"').finally(() => zeichne());
   ladeStil(stil).then(() => zeichne());
+  lebenStarten();
   zeigeVerlauf();
   zeichne();
   zeigeStatus();
@@ -799,6 +833,8 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       vorbei = true;
       cancelAnimationFrame(raf);
       cancelAnimationFrame(fxRaf);
+      gestoppt = true;
+      cancelAnimationFrame(lebenRaf);
       worker.terminate();
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
