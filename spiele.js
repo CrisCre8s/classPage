@@ -15,7 +15,7 @@ const LADER = {
   mauer: () => import("./games/mauer.js"),
   binaer: () => import("./games/binaer.js"),
   subnetz: () => import("./games/subnetz.js"),
-  tippen: () => import("./games/tippen.js"),
+  befehle: () => import("./games/befehle.js"),
   ports: () => import("./games/ports.js"),
 };
 const STUFEN = { leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
@@ -58,6 +58,7 @@ function karteHtml(s) {
       <div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
         ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
       </div>
+      ${s.stufenInfo ? `<p class="game-stufe-info num" aria-live="polite"></p>` : ""}
       <div class="game-foot">
         <p class="best"></p>
         <button class="btn play" type="button">Spielen</button>
@@ -155,7 +156,7 @@ async function starten(spiel) {
 
   const stage = document.getElementById("stage");
   document.getElementById("stage-title").textContent = info.name;
-  document.getElementById("stage-level").textContent = STUFEN[stufe];
+  document.getElementById("stage-level").textContent = STUFEN[stufe] + (info.stufenInfo ? ` · ${info.stufenInfo[stufe]}` : "");
   document.getElementById("games").hidden = true;
   stage.hidden = false;
   stage.dataset.game = spiel;
@@ -266,6 +267,8 @@ function initKarten() {
     const waehle = (btn) => {
       radios.forEach((r) => r.setAttribute("aria-checked", String(r === btn)));
       zeigeBest(spiel);
+      const info = k.querySelector(".game-stufe-info");
+      if (info) info.textContent = `Stärke ${STUFEN[btn.dataset.level]}: ${NACH_ID[spiel].stufenInfo[btn.dataset.level]}`;
     };
     radios.forEach((r) => {
       r.addEventListener("click", () => waehle(r));

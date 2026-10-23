@@ -90,7 +90,8 @@ Spieleseite.
 - **Ping-Pong** (`games/pong.js`): erster bei 7 Punkten gewinnt
 - **Schach** (`games/schach.js`, Regeln + KI in `games/schach-engine.js`): eigene
   Zuggenerierung inkl. Rochade, en passant, Umwandlung; der Computer rechnet je nach
-  Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`)
+  Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`).
+  Die Elo-Angaben (ca. 400 / 900 / 1400) sind grobe Schätzungen
 - **Bits & Bugs** (`games/bits.js`): eigenes Labyrinth, Bits sammeln, Bugs ausweichen
 - **Snake** (`games/snake.js`): Leicht ohne Wände, Schwer mit Hindernissen
 - **Bug-Sucher** (`games/minen.js`): Minesweeper-Prinzip, 9×9 / 16×16 / 30×16, erster Klick ist sicher
@@ -104,7 +105,7 @@ Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabel
 
 - **Binär-Blitz** (`games/binaer.js`): Binär, Dezimal und Hex umrechnen
 - **Subnetz-Sprint** (`games/subnetz.js`): Netz, Broadcast, Maske, Hosts berechnen
-- **Befehle tippen** (`games/tippen.js`): Linux-, Git-, Windows- und Netzwerkbefehle mit Erklärung
+- **Befehl gesucht** (`games/befehle.js`): Aufgabe + System (Linux, Windows CMD/PowerShell, Git, Docker), den Befehl selbst eintippen; aufdeckbarer Hinweis kostet die halben Punkte
 - **Port-Quiz** (`games/ports.js`): Standard-Ports und Dienste
 
 Neues Spiel: Eintrag in `games/katalog.js`, Modul mit `start()` in `games/`,
