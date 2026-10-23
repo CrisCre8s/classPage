@@ -524,7 +524,7 @@ a.row:active {
 /* Nächste LK */
 .lead {
   display: grid;
-  grid-template-columns: 190px 1fr auto;
+  grid-template-columns: 220px 1fr;
   align-items: center;
   gap: 24px;
   padding: 24px 26px;
@@ -542,6 +542,16 @@ a.row:active {
   margin-left: 8px;
   font-size: 19px;
   color: var(--muted);
+}
+
+.lead-in {
+  margin-right: 8px;
+  font-size: 19px;
+  color: var(--muted);
+}
+
+.lead--bald .lead-count {
+  color: var(--pill-neg-ink);
 }
 
 .lead-when {

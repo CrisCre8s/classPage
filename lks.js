@@ -74,12 +74,14 @@ function renderLead(next) {
   }
 
   const d = next.datumObj;
-  const zahl = next.tage === 0 ? "Heute" : `${next.tage}<small>${next.tage === 1 ? "Tag" : "Tage"}</small>`;
-  const pill =
-    next.tage <= BALD_TAGE ? `<span class="pill neg">${relativ(next.tage)}</span>` : `<span class="pill neu">${relativ(next.tage)}</span>`;
-
+  // „in 6 Tagen“ links; ab BALD_TAGE wird die Zahl rot (ersetzt den früheren Hinweis rechts)
+  const zahl =
+    next.tage === 0
+      ? "Heute"
+      : `<span class="lead-in">in</span>${next.tage}<small>${next.tage === 1 ? "Tag" : "Tagen"}</small>`;
+  const bald = next.tage <= BALD_TAGE ? " lead--bald" : "";
   el.innerHTML = `
-    <div class="lead">
+    <div class="lead${bald}">
       <div>
         <div class="lead-count">${zahl}</div>
         <div class="lead-when">${WOCHENTAGE_LANG[d.getDay()]}, ${kurz(d)}</div>
@@ -88,7 +90,6 @@ function renderLead(next) {
         <div class="lead-what">${esc(next.fach)}</div>
         <div class="lead-detail">${esc([next.art, next.thema].filter(Boolean).join(" · ")) || "&nbsp;"}</div>
       </div>
-      ${pill}
     </div>`;
 }
 
