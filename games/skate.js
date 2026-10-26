@@ -3,7 +3,7 @@
 // Rampen, Kisten, Kegel und Münzen. Wird in voller Bildschirmauflösung gezeichnet.
 import { overlayKlick } from "./eingabe.js";
 
-export const HILFE = "→ oder D anschieben (halten = weiter schieben) · Leertaste/↑ springen (halten = höher) · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
+export const HILFE = "→ oder D anschieben · Leertaste/↑ springen (kurz = kleiner Hüpfer, halten = hoch) · auf der Stange: ↑ ↓ ← → Grind-Tricks · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
 
 const W = 960; // logische Größe; gezeichnet wird in echter Bildschirmauflösung
 const H = 480;
@@ -21,6 +21,12 @@ const STUFEN = {
   mittel: { max: 510, schub: 100, reibung: 18, leben: 2, flachLang: [440, 660], nachSprung: [360, 470], hindernis: 0.7, muenzen: 0.4, show: 0.75, zone: [3200, 4200], treppe: [4, 6], luecke: [90, 140], gewichte: { flach: 4, treppe: 3, luecke: 2, hoch: 2, kicker: 1 }, railChance: 0.55, wand: true },
   schwer: { max: 590, schub: 95, reibung: 20, leben: 1, flachLang: [330, 500], nachSprung: [300, 400], hindernis: 0.88, muenzen: 0.35, show: 0.9, zone: [3000, 4000], treppe: [5, 8], luecke: [120, 180], gewichte: { flach: 3, treppe: 3, luecke: 3, hoch: 2, kicker: 2 }, railChance: 0.6, wand: true },
 };
+const GRIND_TRICKS = {
+  nose: { name: "Nosegrind", muenzen: 1 },
+  board: { name: "Boardslide", muenzen: 2 },
+  tail: { name: "Tailslide", muenzen: 1 },
+  crooked: { name: "Crooked", muenzen: 2 },
+};
 const BOOST_TEMPO = 720; // Tempo auf dem Boost-Streifen vor den großen Sprüngen
 const ZONEN = { dach: "Über den Dächern", park: "Skatepark", strasse: "Innenstadt" };
 const LAEDEN = ["KIOSK", "PIZZA", "CAFÉ", "BURGER", "24/7", "SNEAKER", "GAMES", "DÖNER", "BÄCKER", "COMICS"];
@@ -30,7 +36,7 @@ const BODEN_STIL = {
   strasse: { oben: "#45444f", mitte: "#2d2c35", unten: "#16161c", kante: "#a19eae" },
 };
 const AUTOFARBEN = ["#e5566f", "#5fc39c", "#7fb8ff", "#f0a35e", "#b48ef0", "#d9d6e2"];
-const SCHUB_DAUER = 0.4; // so lange dauert ein Anschieben mit dem Fuß
+const SCHUB_DAUER = 0.5; // so lange dauert ein Anschieben mit dem Fuß (aufsetzen, schieben, zurück)
 
 const TRICKS = {
   kickflip: { name: "Kickflip", dauer: 0.42, muenzen: 1 },
@@ -165,14 +171,15 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       objekte.push({ art: "kiste", stil: "pad", x: mitte - 90, y, w: 180, h: 18 });
       muenzReihe(mitte - 50, y - 52, mitte + 50, y - 52);
     } else if (art === "auto") {
-      objekte.push({ art: "kiste", stil: "auto", x: mitte - 65, y, w: 130, h: 46, farbe: AUTOFARBEN[ganz(0, AUTOFARBEN.length - 1)] });
+      // Dach als Grind-Kante; vorbeifahren geht auch
+      objekte.push({ art: "rail", stil: "auto", x0: mitte - 57, x1: mitte + 57, y0: y - 46, y1: y - 46, boden: y, farbe: AUTOFARBEN[ganz(0, AUTOFARBEN.length - 1)] });
       muenzReihe(mitte - 40, y - 84, mitte + 40, y - 84);
     } else if (art === "kicker") {
       objekte.push({ art: "kicker", x0: mitte - 45, x1: mitte + 45, y, h: 44 });
       muenzReihe(mitte + 80, y - 150, mitte + 260, y - 60, 40);
     } else {
       // Rail, Ledge oder Bank zum Grinden
-      const w = art === "bank" ? zufall(110, 150) : zufall(180, 280);
+      const w = art === "bank" ? zufall(120, 170) : Math.random() < 0.35 ? zufall(300, 400) : zufall(190, 290);
       const h = art === "ledge" ? 30 : art === "bank" ? 30 : 40;
       objekte.push({ art: "rail", stil: art, x0: mitte - w / 2, x1: mitte + w / 2, y0: y - h, y1: y - h });
       muenzReihe(mitte - w / 3, y - h - 34, mitte + w / 3, y - h - 34);
@@ -253,7 +260,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ebene -= h;
     const oben = ganz(180, 260);
     teile.push({ art: "flach", x0: cursor, x1: cursor + oben, y: ebene, zone, funbox: true });
-    if (Math.random() < 0.6) objekte.push({ art: "rail", stil: "rail", x0: cursor + 40, x1: cursor + oben - 40, y0: ebene - 34, y1: ebene - 34 });
+    if (Math.random() < 0.6) objekte.push({ art: "rail", stil: "rail", x0: cursor + 30, x1: cursor + oben - 30, y0: ebene - 34, y1: ebene - 34 });
     muenzReihe(cursor + 50, ebene - 80, cursor + oben - 50, ebene - 80);
     cursor += oben;
     teile.push({ art: "rampe", x0: cursor, x1: cursor + 110, y0: ebene, y1: ebene + h, zone });
@@ -381,7 +388,6 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       else if (t.art === "treppe") l.push(treppenY(t, x));
     }
     for (const o of objekte) {
-      if (o.art === "kiste" && x > o.x + 4 && x < o.x + o.w) l.push(o.y - o.h);
       if (o.art === "klein" && x > o.x - 6 && x < o.x + o.w + 6) l.push(o.y - o.h + (o.stil === "brett" ? 2 : 6));
       if (o.art === "scooter" && x > o.x - 4 && x < o.x + o.w + 4) l.push(o.y - o.h + 8);
     }
@@ -399,14 +405,29 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function springen() {
     if (zustand !== "laeuft" || sp.sturz || !sp.amBoden) return;
     if (sp.boost > 0) return; // auf dem Boost-Streifen trägt dich der Kicker
+    grindEnde();
     sp.vy = -SPRUNG + (sp.auf?.art === "rail" ? 60 : 0);
     sp.amBoden = false;
     sp.halten = true;
     sp.haltZeit = 0;
+    sp.sprungSchnitt = true; // lässt man früh los, wird der Sprung abgeschnitten
     sp.kombi = [];
     sp.absprung = { x: kamX + SPIELER_X, von: sp.auf };
     sp.auf = null;
     staub(kamX + SPIELER_X, sp.y, 5);
+  }
+  // Grind-Trick starten (nur auf einer Stange) und beim Verlassen belohnen
+  function grindTrick(art) {
+    if (zustand !== "laeuft" || sp.sturz || !sp.amBoden || sp.auf?.art !== "rail") return;
+    if (sp.grindTrick?.art === art) return;
+    grindEnde();
+    sp.grindTrick = { art, t: 0 };
+    popup(GRIND_TRICKS[art].name + "!", "#9fd0ff");
+  }
+  function grindEnde() {
+    const g = sp.grindTrick;
+    sp.grindTrick = null;
+    if (g && g.t > 0.3 && !sp.sturz) belohnung(GRIND_TRICKS[g.art].muenzen, GRIND_TRICKS[g.art].name, "#9fd0ff");
   }
   function trick(art) {
     if (zustand !== "laeuft" || sp.sturz || sp.amBoden || sp.trick) return;
@@ -416,6 +437,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function sturz(grund) {
     if (sp.sturz || unverwundbar > 0) return;
     sp.sturz = { t: 0, vy: -420, dreh: 0, bx: 0 };
+    sp.grindTrick = null;
     sp.boost = 0;
     sp.trick = null;
     sp.kombi = [];
@@ -450,8 +472,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     sp.vy = 0;
     sp.amBoden = true;
     sp.auf = fl;
-    tempo = Math.min(tempo, S.max * 1.05);
+    if (tempo > S.max * 1.05 && !sp.nachBoost) sp.nachBoost = 1.4; // nach Boost-Sprung noch kurz schnell
     sp.halten = false;
+    sp.sprungSchnitt = false;
     staub(wx, fl.y, 8);
     let bonus = 0;
     const texte = [];
@@ -511,8 +534,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (sp.schub) {
       const vorher = sp.schub.t;
       sp.schub.t += dt;
-      if (vorher < SCHUB_DAUER * 0.45 && sp.schub.t >= SCHUB_DAUER * 0.45 && sp.amBoden) {
-        tempo = Math.min(S.max, tempo + S.schub * (1 - 0.65 * (tempo / S.max)));
+      if (vorher < SCHUB_DAUER * 0.5 && sp.schub.t >= SCHUB_DAUER * 0.5 && sp.amBoden) {
+        tempo = Math.max(tempo, Math.min(S.max, tempo + S.schub * (1 - 0.65 * (tempo / S.max))));
         staub(kamX + SPIELER_X - 22, sp.y, 2);
       }
       if (sp.schub.t >= SCHUB_DAUER || !sp.amBoden) sp.schub = null;
@@ -527,7 +550,11 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         tempo += sinus * 520 * dt;
       } else if (sp.auf?.art === "kicker") tempo -= Math.sin(Math.atan2(f.h, f.x1 - f.x0)) * 360 * dt;
     } else tempo -= tempo * 0.02 * dt;
-    tempo = Math.max(0, Math.min(sp.boost > 0 || !sp.amBoden ? BOOST_TEMPO : S.max * 1.12, tempo));
+    // über dem Höchsttempo (nach Boost): erst kurz halten, dann sanft auslaufen
+    if (sp.nachBoost > 0) sp.nachBoost = Math.max(0, sp.nachBoost - dt);
+    else if (tempo > S.max && sp.amBoden && !sp.boost) tempo -= (tempo - S.max) * 1.4 * dt;
+    if (sp.nachBoost > 0 && sp.amBoden) tempo += (S.reibung + tempo * 0.045) * dt * 0.85; // kaum Rollwiderstand
+    tempo = Math.max(0, Math.min(BOOST_TEMPO, tempo));
     const vorherX = kamX;
     if (!sp.sturz) kamX += tempo * dt;
     else if (sp.sturz.t < 0.5) kamX += tempo * dt * (1 - sp.sturz.t * 2);
@@ -590,6 +617,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         // Ende der Fläche: nahtlos weiter auf etwa gleicher Höhe?
         const weiter = flaechenBei(wx).filter((o) => o.art !== "treppe" && o.y >= sp.y - 10 && o.y <= sp.y + 8).sort((a, b) => a.y - b.y)[0];
         if (weiter) {
+          if (weiter.art !== "rail") grindEnde();
           sp.auf = weiter;
           y = weiter.y;
         }
@@ -597,6 +625,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       if (y !== null) {
         sp.y = y;
         sp.letzterBoden = y;
+        if (sp.grindTrick) sp.grindTrick.t += dt;
         if (sp.auf.art === "rail") {
           if (Math.random() < 0.8) teilchen.push({ art: "funke", x: wx - 10, y: sp.y + 2, vx: -zufall(80, 260), vy: -zufall(40, 240), t: 0, leben: 0.35, r: 2 });
         }
@@ -611,6 +640,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         popup(auf.f.gross ? "Abflug!" : "Air!", "#9fd0ff", auf.f.gross);
       } else {
         // Kante, Treppe oder Lücke: fallen
+        grindEnde();
         sp.amBoden = false;
         sp.vy = auf?.art === "rail" && auf.f.y1 > auf.f.y0 ? 120 : 0;
         sp.absprung = { x: wx, von: auf };
@@ -619,7 +649,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     } else {
       const vorherY = sp.y;
       sp.haltZeit += dt;
-      const g = sp.halten && sp.vy < 0 && sp.haltZeit < 0.25 ? SCHWERKRAFT * 0.42 : SCHWERKRAFT;
+      const g = SCHWERKRAFT;
       sp.vy += g * dt;
       sp.y += sp.vy * dt;
       if (sp.vy > 0) {
@@ -638,12 +668,6 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (!sp.sturz && unverwundbar <= 0) {
       const tief = festeOberkanten(wx + 6).some((oy) => sp.y > oy + 7 && !(sp.auf && sp.auf.art === "rail"));
       if (tief) sturz("Autsch!");
-      // unter einem Geländer durchfahren geht nicht
-      for (const o of objekte) {
-        if (o.art !== "rail" || !(wx > o.x0 + 6 && wx < o.x1)) continue;
-        const ry = lerp(o.y0, o.y1, (wx - o.x0) / (o.x1 - o.x0));
-        if (sp.y > ry + 10 && sp.y - 60 < ry && sp.amBoden) sturz("Autsch!");
-      }
     }
   }
 
@@ -1397,6 +1421,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
           ctx.fillStyle = "#1f2638";
           for (let x = o.x0 + 30; x < o.x1; x += 26) ctx.fillRect(x, o.y - (o.h * (x - o.x0)) / (o.x1 - o.x0) + 4, 3, (o.h * (x - o.x0)) / (o.x1 - o.x0) - 4);
         }
+      } else if (o.art === "rail" && o.stil === "auto") {
+        zeichneKiste({ stil: "auto", x: o.x0 - 8, y: o.boden, w: o.x1 - o.x0 + 16, h: o.boden - o.y0, farbe: o.farbe }, t);
       } else if (o.art === "rail" && o.stil === "ledge") {
         const g = ctx.createLinearGradient(0, o.y0, 0, o.y0 + 30);
         g.addColorStop(0, "#b8bcc8");
@@ -1646,6 +1672,19 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       if (sp.trick.art === "shove") boardX = Math.cos(k * Math.PI * 2);
       if (sp.trick.art === "backflip") drehen = -k * Math.PI * 2;
     }
+    // Grind-Trick: Brett kippt (Nose/Tail), steht quer (Boardslide) oder schräg (Crooked)
+    let grindKipp = 0;
+    if (sp.grindTrick && grind) {
+      const ein = Math.min(1, sp.grindTrick.t / 0.12);
+      const a = sp.grindTrick.art;
+      if (a === "nose") grindKipp = 0.22 * ein;
+      if (a === "tail") grindKipp = -0.22 * ein;
+      if (a === "board") boardX = lerp(1, 0.32, ein);
+      if (a === "crooked") {
+        grindKipp = 0.14 * ein;
+        boardX = lerp(1, 0.7, ein);
+      }
+    }
     let neigung = 0;
     if (sp.amBoden && sp.auf) {
       const f = sp.auf.f;
@@ -1684,6 +1723,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.rotate(drehen);
       ctx.translate(0, 38);
       ctx.save();
+      ctx.rotate(grindKipp);
       ctx.scale(boardX, 1);
       zeichneBrett(brettWinkel);
       ctx.restore();
@@ -1699,11 +1739,26 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     let knieX = -9;
     let knieY = -24 + hocke;
     if (sp.schub && !sp.sturz) {
-      const k = Math.sin((sp.schub.t / SCHUB_DAUER) * Math.PI);
-      fussX = -10 - 22 * k;
-      fussY = -6 + 10 * k;
-      knieX = -9 - 8 * k;
-      knieY = -24 + hocke + 4 * k;
+      // echte Push-Bewegung: Fuß vom Brett nach vorne-unten auf den Boden setzen,
+      // am Boden nach hinten durchziehen, dann anheben und zurück aufs Tail
+      const k = sp.schub.t / SCHUB_DAUER;
+      const BODEN_Y = 6; // Bodenhöhe in Figur-Koordinaten
+      if (k < 0.22) {
+        const a = k / 0.22;
+        fussX = lerp(-10, 8, a);
+        fussY = lerp(-6, BODEN_Y, a) - Math.sin(a * Math.PI) * 5;
+      } else if (k < 0.72) {
+        const a = (k - 0.22) / 0.5;
+        fussX = lerp(8, -34, a);
+        fussY = BODEN_Y;
+      } else {
+        const a = (k - 0.72) / 0.28;
+        fussX = lerp(-34, -10, a);
+        fussY = lerp(BODEN_Y, -6, a) - Math.sin(a * Math.PI) * 9;
+      }
+      // Knie liegt zwischen Hüfte und Fuß, leicht nach vorn gebeugt
+      knieX = (0 + fussX) / 2 + 5;
+      knieY = (hy + fussY) / 2 + 2;
     }
     const koerper = () => {
       ctx.beginPath();
@@ -1891,6 +1946,12 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       if (k === " " || k === "Enter" || k === "ArrowUp") los();
       return;
     }
+    const aufStange = sp.amBoden && sp.auf?.art === "rail" && !sp.sturz;
+    if (aufStange && k !== " ") {
+      // auf der Stange: Pfeile = Grind-Tricks, Leertaste = abspringen
+      const art = { ArrowUp: "nose", w: "nose", W: "nose", ArrowDown: "board", s: "board", S: "board", ArrowLeft: "tail", a: "tail", A: "tail", ArrowRight: "crooked", d: "crooked", D: "crooked" }[k];
+      if (art) return grindTrick(art);
+    }
     if (k === "ArrowRight" || k === "d" || k === "D") {
       schubHalten = true;
       anschieben();
@@ -1900,8 +1961,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     } else if (k === "ArrowDown" || k === "s" || k === "S") trick("shove");
     else if (k === "ArrowLeft" || k === "a" || k === "A") trick("backflip");
   };
+  // Sprungtaste früh losgelassen: kleiner Hüpfer statt voller Ollie
+  function sprungLoslassen() {
+    sp.halten = false;
+    if (sp.sprungSchnitt && !sp.amBoden && sp.vy < -160) sp.vy *= 0.42;
+    sp.sprungSchnitt = false;
+  }
   const onKeyUp = (e) => {
-    if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") sp.halten = false;
+    if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") sprungLoslassen();
     if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") schubHalten = false;
   };
   let schubHalten = false;
@@ -1927,13 +1994,18 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     const dy = e.clientY - zeiger.y;
     if (Math.hypot(dx, dy) < 26) return;
     zeiger.gewischt = true;
+    if (sp.amBoden && sp.auf?.art === "rail") {
+      // auf der Stange wischen = Grind-Trick
+      grindTrick(Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? "nose" : "board") : dx < 0 ? "tail" : "crooked");
+      return;
+    }
     if (Math.abs(dy) > Math.abs(dx)) trick(dy < 0 ? "kickflip" : "shove");
     else trick(dx < 0 ? "backflip" : "kickflip");
   };
   const onUp = () => {
     if (zeiger && !zeiger.gewischt && !zeiger.warAmBoden && !zeiger.schieben) trick("kickflip");
     zeiger = null;
-    sp.halten = false;
+    sprungLoslassen();
     schubHalten = false;
   };
   window.addEventListener("keydown", onKeyDown);
