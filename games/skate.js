@@ -805,39 +805,114 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     }
   }
 
+  // Skateboard leicht von oben gesehen: Griptape-Fläche, Holzkante, hochgezogene Kicktails,
+  // Achsen und Rollen als kleine Zylinder. boardY = cos(Drehung um die Längsachse) beim Kickflip
   function zeichneBrett(boardY) {
-    const umgedreht = boardY < 0;
+    const c = boardY;
+    const unten = c < 0; // Unterseite zeigt nach oben
+    const tiefe = 7 * Math.max(0.08, Math.abs(c)); // sichtbare Tiefe der Deckfläche
+    const dicke = 3;
     ctx.save();
-    ctx.scale(1, Math.abs(boardY) < 0.15 ? 0.15 : Math.abs(boardY));
-    // Achsen und Rollen
-    ctx.fillStyle = "#9a97ad";
-    ctx.fillRect(-19, -1, 8, 3);
-    ctx.fillRect(11, -1, 8, 3);
-    for (const wx of [-15, 15]) {
-      const g = ctx.createRadialGradient(wx - 1, 3, 0.5, wx, 4, 4.2);
-      g.addColorStop(0, "#fff3b0");
-      g.addColorStop(1, "#e0a92a");
+    ctx.translate(0, -8.5); // Rollen stehen auf der Fläche
+    if (unten) {
+      // umgedreht: an der Brettmitte spiegeln, Rollen sind dann oben
+      ctx.translate(0, -6);
+      ctx.scale(1, -1);
+      ctx.translate(0, 6);
+    }
+    // Profil der Deck-Oberkante (Mitte flach, Nose und Tail nach oben gebogen)
+    const profil = [];
+    for (let i = 0; i <= 24; i++) {
+      const x = -34 + (68 * i) / 24;
+      const rand = Math.max(0, Math.abs(x) - 24) / 10; // 0 … 1 in den Kicktails
+      profil.push([x, -6 - 6 * rand * rand]);
+    }
+    const rolle = (x, y, r, dunkel) => {
+      // Lauffläche (Zylinder von der Seite) + vordere Kreisfläche
+      ctx.fillStyle = dunkel ? "#a8822a" : "#d9a42c";
+      ctx.fillRect(x - r, y - r * 0.2, r * 2, r * 0.4);
+      const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
+      g.addColorStop(0, dunkel ? "#e6c86e" : "#fff4b8");
+      g.addColorStop(0.7, dunkel ? "#b8902e" : "#f2c23e");
+      g.addColorStop(1, dunkel ? "#7a5c12" : "#b5841a");
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(wx, 4, 4.2, 0, Math.PI * 2);
+      ctx.ellipse(x, y, r * 0.8, r, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = "rgba(60, 40, 10, 0.55)";
+      ctx.beginPath();
+      ctx.ellipse(x, y, r * 0.25, r * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    const achse = (x, versatz, dunkel) => {
+      // Grundplatte + Hänger
+      ctx.fillStyle = dunkel ? "#5f5b70" : "#a9a6bb";
+      ctx.fillRect(x - 6, -4 - versatz, 12, 2.4);
+      ctx.beginPath();
+      ctx.moveTo(x - 4, -2 - versatz);
+      ctx.lineTo(x + 4, -2 - versatz);
+      ctx.lineTo(x + 6, 1.5 - versatz);
+      ctx.lineTo(x - 6, 1.5 - versatz);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = dunkel ? "#3f3c4d" : "#e2e0ea";
+      ctx.fillRect(x - 7.5, 1 - versatz, 15, 1.6);
+    };
+    // hintere (entfernte) Achsen und Rollen, etwas höher und dunkler
+    for (const x of [-15, 15]) {
+      achse(x, tiefe * 0.8, true);
+      rolle(x + 1.5, 3.6 - tiefe * 0.8, 3.6, true);
     }
-    // Deck (oben Griptape, unten Grafik)
+    // Deckfläche (oben: Griptape, unten: Grafik)
     ctx.beginPath();
-    ctx.moveTo(-26, -5);
-    ctx.lineTo(26, -5);
-    ctx.quadraticCurveTo(32, -5, 33, -10);
-    ctx.lineTo(33, -6);
-    ctx.quadraticCurveTo(32, -1, 26, -1);
-    ctx.lineTo(-26, -1);
-    ctx.quadraticCurveTo(-32, -1, -33, -6);
-    ctx.lineTo(-33, -10);
-    ctx.quadraticCurveTo(-32, -5, -26, -5);
+    profil.forEach(([x, y], i) => (i ? ctx.lineTo(x, y - tiefe) : ctx.moveTo(x, y - tiefe)));
+    for (let i = profil.length - 1; i >= 0; i--) ctx.lineTo(profil[i][0], profil[i][1]);
     ctx.closePath();
-    ctx.fillStyle = umgedreht ? "#f5d97a" : "#b48ef0";
+    if (unten) {
+      const g = ctx.createLinearGradient(-34, 0, 34, 0);
+      g.addColorStop(0, "#b48ef0");
+      g.addColorStop(0.5, "#f5d97a");
+      g.addColorStop(1, "#e5566f");
+      ctx.fillStyle = g;
+    } else {
+      const g = ctx.createLinearGradient(0, -6 - tiefe, 0, -6);
+      g.addColorStop(0, "#2c2838");
+      g.addColorStop(1, "#16131e");
+      ctx.fillStyle = g;
+    }
     ctx.fill();
-    ctx.fillStyle = umgedreht ? "#e5566f" : "#1b1726";
-    ctx.fillRect(-24, -5, 48, 1.6);
+    if (!unten) {
+      // Griptape-Körnung und Lichtkante
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      for (let i = 0; i < 14; i++) ctx.fillRect(-26 + ((i * 37) % 52), -6 - tiefe * ((i * 13) % 10) / 10, 1, 1);
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      profil.forEach(([x, y], i) => (i ? ctx.lineTo(x, y - tiefe) : ctx.moveTo(x, y - tiefe)));
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.fillRect(-8, -6 - tiefe * 0.55, 16, 1.4);
+    }
+    // vordere Holzkante (Dicke), Schichtholz-Look
+    ctx.beginPath();
+    profil.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    for (let i = profil.length - 1; i >= 0; i--) ctx.lineTo(profil[i][0], profil[i][1] + dicke);
+    ctx.closePath();
+    const kante = ctx.createLinearGradient(0, -6, 0, -6 + dicke);
+    kante.addColorStop(0, "#f2d6a8");
+    kante.addColorStop(0.5, "#c99a5e");
+    kante.addColorStop(1, "#8f6434");
+    ctx.fillStyle = kante;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(40, 24, 8, 0.6)";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+    // vordere Achsen und Rollen
+    for (const x of [-15, 15]) {
+      achse(x, 0, false);
+      rolle(x - 1, 4.2, 4.3, false);
+    }
     ctx.restore();
   }
 
@@ -900,6 +975,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.restore();
     }
 
+    ctx.translate(0, -9); // Füße stehen auf dem Griptape
     const wedeln = grind ? Math.sin(t / 80) * 9 : Math.sin(t / 260) * 2;
     const hy = -42 + hocke * 1.4;
     const sy = -68 + hocke * 1.5;
