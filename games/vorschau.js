@@ -132,6 +132,34 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.fillStyle = gelb;
     ctx.fillRect(128, 80, 7, 7);
   }
+  if (spiel === "skate") {
+    // Boden, Kegel, Strichmännchen im Sprung
+    ctx.fillStyle = "#3a3550";
+    ctx.fillRect(0, 100, 240, 3);
+    ctx.fillStyle = "#ff8a3d";
+    ctx.beginPath();
+    ctx.moveTo(150, 100);
+    ctx.lineTo(160, 84);
+    ctx.lineTo(170, 100);
+    ctx.fill();
+    ctx.strokeStyle = weiss;
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(108, 70); ctx.lineTo(111, 60); ctx.lineTo(116, 52); ctx.lineTo(122, 60); ctx.lineTo(124, 70);
+    ctx.moveTo(116, 52); ctx.lineTo(119, 34);
+    ctx.moveTo(118, 38); ctx.lineTo(106, 44); ctx.lineTo(98, 40);
+    ctx.moveTo(119, 38); ctx.lineTo(130, 42); ctx.lineTo(138, 38);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(121, 26, 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#b48ef0";
+    ctx.fillRect(100, 71, 34, 4);
+    ctx.fillStyle = gelb;
+    ctx.fillRect(105, 76, 4, 4);
+    ctx.fillRect(125, 76, 4, 4);
+  }
   const textBild = (oben, gross, unten) => {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";

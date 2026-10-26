@@ -63,7 +63,7 @@ steht dort „gerade nicht verfügbar“.
 ├── main.js         # Einstieg Hub
 ├── spiele.html     # Spiele-Seite
 ├── spiele.js       # Einstieg Spiele
-├── games/          # die 12 Spiele (Liste in games/katalog.js)
+├── games/          # die 13 Spiele (Liste in games/katalog.js)
 ├── shell.js        # gemeinsam: Sterne, POWER, Void
 ├── vite.config.js  # baut beide Seiten
 ├── lks.js          # Leistungskontrollen aus lks.json
@@ -79,7 +79,7 @@ steht dort „gerade nicht verfügbar“.
 
 ## Spiele
 
-Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 12 Spiele, jeweils in
+Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 13 Spiele, jeweils in
 **Leicht, Mittel und Schwer**. Name, Beschreibung und Kategorie stehen zentral in
 `games/katalog.js`. Auf der Spieleseite stehen die Lernspiele oben, die Klassiker
 darunter. Der Hub zeigt nur drei Lernspiele als Vorschau, die ganze Fläche führt zur
@@ -103,6 +103,7 @@ Spieleseite.
 - **2048** (`games/z2048.js`): 5×5, 4×4 oder 3×3 Felder
 - **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker)
 - **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
+- **Stick-Skater** (`games/skate.js`): springen (halten = höher), Kickflip/Shove-it/Backflip in der Luft, grinden, Rampen, Lücken
 
 **Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`).
 Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabellen aus

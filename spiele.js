@@ -13,6 +13,7 @@ const LADER = {
   z2048: () => import("./games/z2048.js"),
   vier: () => import("./games/vier.js"),
   mauer: () => import("./games/mauer.js"),
+  skate: () => import("./games/skate.js"),
   binaer: () => import("./games/binaer.js"),
   subnetz: () => import("./games/subnetz.js"),
   befehle: () => import("./games/befehle.js"),
