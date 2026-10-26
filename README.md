@@ -103,7 +103,7 @@ Spieleseite.
 - **2048** (`games/z2048.js`): 5×5, 4×4 oder 3×3 Felder
 - **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker)
 - **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
-- **Stick-Skater** (`games/skate.js`): über Dächer in verschiedenen Höhen; Treppen überspringen, Geländer an Treppen und über Lücken grinden, Rampen, Münzen; Kickflip/Shove-it/Backflip. Tempo kommt nur vom Anschieben (→/D, Handy: links tippen). Wird in voller Bildschirmauflösung gezeichnet
+- **Stick-Skater** (`games/skate.js`): Zonen „Über den Dächern“, „Skatepark“ (Funboxen, Ledges, Publikum) und „Innenstadt“ (Läden, Autos, Scooter-Kids, Baustellen); Boost-Sprünge über Autos und durch den Feuerring; Highscore = Münzen (Tricks und Sprünge geben Bonus-Münzen); Tempo nur durch Anschieben
 
 **Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`).
 Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabellen aus
