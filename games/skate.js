@@ -3,7 +3,7 @@
 // Rampen, Kisten, Kegel und Münzen. Wird in voller Bildschirmauflösung gezeichnet.
 import { overlayKlick } from "./eingabe.js";
 
-export const HILFE = "Leertaste/↑ springen (halten = höher) · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
+export const HILFE = "→ oder D anschieben (halten = weiter schieben) · Leertaste/↑ springen (halten = höher) · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
 
 const W = 960; // logische Größe; gezeichnet wird in echter Bildschirmauflösung
 const H = 480;
@@ -13,11 +13,15 @@ const SPRUNG = 740;
 const STUFE_B = 32; // Treppenstufe: Breite
 const STUFE_H = 21; //                Höhe
 
+// Stufen unterscheiden sich in Länge der freien Strecken, Anzahl der Hindernisse und Sprünge
+// flachLang: freie Strecke zwischen zwei Abschnitten · nachSprung: Auslauf nach Treppe/Lücke
+// hindernis: Anteil der Strecken mit Kegel/Kiste/Rail/Kicker · gewichte: wie oft welcher Abschnitt kommt
 const STUFEN = {
-  leicht: { tempo: 300, max: 440, plus: 4, leben: 3, treppe: [3, 5], luecke: [80, 120], gewichte: { flach: 5, treppe: 3, luecke: 2, hoch: 2, kicker: 1 }, railChance: 0.45, wand: false },
-  mittel: { tempo: 350, max: 540, plus: 6, leben: 2, treppe: [4, 7], luecke: [100, 160], gewichte: { flach: 4, treppe: 3, luecke: 3, hoch: 2, kicker: 2 }, railChance: 0.55, wand: true },
-  schwer: { tempo: 410, max: 660, plus: 8, leben: 1, treppe: [5, 9], luecke: [130, 200], gewichte: { flach: 3, treppe: 3, luecke: 4, hoch: 2, kicker: 2 }, railChance: 0.6, wand: true },
+  leicht: { max: 430, schub: 105, reibung: 16, leben: 3, flachLang: [900, 1300], nachSprung: [600, 800], hindernis: 0.3, treppe: [3, 4], luecke: [70, 100], gewichte: { flach: 6, treppe: 2, luecke: 1, hoch: 2, kicker: 1 }, railChance: 0.5, wand: false },
+  mittel: { max: 510, schub: 100, reibung: 18, leben: 2, flachLang: [650, 1000], nachSprung: [480, 640], hindernis: 0.55, treppe: [4, 6], luecke: [90, 140], gewichte: { flach: 4, treppe: 3, luecke: 2, hoch: 2, kicker: 1 }, railChance: 0.55, wand: true },
+  schwer: { max: 590, schub: 95, reibung: 20, leben: 1, flachLang: [460, 760], nachSprung: [380, 500], hindernis: 0.8, treppe: [5, 8], luecke: [120, 180], gewichte: { flach: 3, treppe: 3, luecke: 3, hoch: 2, kicker: 2 }, railChance: 0.6, wand: true },
 };
+const SCHUB_DAUER = 0.4; // so lange dauert ein Anschieben mit dem Fuß
 
 const TRICKS = {
   kickflip: { name: "Kickflip", dauer: 0.42, punkte: 100 },
@@ -32,6 +36,7 @@ const lerp = (a, b, k) => a + (b - a) * k;
 export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis }) {
   const S = STUFEN[stufe] || STUFEN.mittel;
   const ctx = passeCanvas(canvas, W, H);
+  const grob = window.matchMedia("(pointer: coarse)").matches;
 
   // ---------- HD: Zeichenfläche so groß wie auf dem Bildschirm ----------
   let skala = 1;
@@ -78,7 +83,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   function neu() {
     kamX = 0;
-    tempo = S.tempo;
+    tempo = 0; // Tempo kommt nur vom Anschieben
     punkte = 0;
     meter = 0;
     leben = S.leben;
@@ -90,7 +95,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ebene = 0;
     cursor = -400;
     flach(1100, false);
-    sp = { y: 0, vy: 0, amBoden: true, auf: null, halten: false, haltZeit: 0, trick: null, kombi: [], sturz: null, absprung: null };
+    sp = { y: 0, vy: 0, amBoden: true, auf: null, halten: false, haltZeit: 0, trick: null, kombi: [], sturz: null, absprung: null, schub: null };
     kamY = -H * 0.68;
     popups = [];
     teilchen = [];
@@ -102,7 +107,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function flach(laenge, mitHindernis = true) {
     const f = { art: "flach", x0: cursor, x1: cursor + laenge, y: ebene };
     teile.push(f);
-    if (mitHindernis && laenge > 380) {
+    if (mitHindernis && laenge > 380 && Math.random() < S.hindernis) {
       const mitte = cursor + laenge * zufall(0.4, 0.6);
       const r = Math.random();
       if (r < 0.28) {
@@ -142,12 +147,12 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     }
     cursor = t.x1;
     ebene = t.y1;
-    flach(ganz(340, 520));
+    flach(ganz(...S.nachSprung));
   }
 
   function luecke() {
     const mitRail = Math.random() < S.railChance * 0.8;
-    const w = mitRail ? zufall(S.luecke[1], S.luecke[1] + 120) : zufall(...S.luecke) + tempo * 0.08;
+    const w = mitRail ? zufall(S.luecke[1], S.luecke[1] + 120) : zufall(...S.luecke);
     const tiefer = !mitRail && ebene < 160 && Math.random() < 0.35 ? ganz(30, 80) : 0;
     teile.push({ art: "luecke", x0: cursor, x1: cursor + w });
     if (mitRail) {
@@ -158,7 +163,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     }
     cursor += w;
     ebene += tiefer;
-    flach(ganz(340, 520));
+    flach(ganz(...S.nachSprung));
   }
 
   function hoch() {
@@ -168,12 +173,12 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       // Kante nach oben: nur mit Sprung
       ebene -= Math.min(h, 52);
       bogen(cursor - 90, ebene + 20, cursor + 90, ebene - 30, 80, 4);
-      flach(ganz(360, 520));
+      flach(ganz(...S.nachSprung));
     } else {
       teile.push({ art: "rampe", x0: cursor, x1: cursor + 130, y0: ebene, y1: ebene - h });
       cursor += 130;
       ebene -= h;
-      flach(ganz(360, 520));
+      flach(ganz(...S.nachSprung));
     }
   }
 
@@ -185,7 +190,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     teile.push({ art: "luecke", x0: x0 + 130, x1: x0 + 130 + w });
     bogen(x0 + 70, ebene - 90, x0 + 160 + w, ebene - 40, 140, 6);
     cursor = x0 + 130 + w;
-    flach(ganz(360, 520));
+    flach(ganz(...S.nachSprung));
   }
   function flachStueck(x0, x1) {
     teile.push({ art: "flach", x0, x1, y: ebene });
@@ -219,7 +224,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function erzeuge() {
     while (cursor < kamX + W + 900) {
       const art = waehle();
-      if (art === "flach") flach(ganz(420, 760));
+      if (art === "flach") flach(ganz(...S.flachLang));
       else if (art === "treppe") treppe();
       else if (art === "luecke") luecke();
       else if (art === "hoch") hoch();
@@ -376,7 +381,27 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
 
   function schritt(dt) {
-    tempo = Math.min(S.max, tempo + S.plus * dt);
+    // Anschieben: der hintere Fuß tritt kurz auf den Boden; in der Mitte gibt es Schwung
+    if (sp.schub) {
+      const vorher = sp.schub.t;
+      sp.schub.t += dt;
+      if (vorher < SCHUB_DAUER * 0.45 && sp.schub.t >= SCHUB_DAUER * 0.45 && sp.amBoden) {
+        tempo = Math.min(S.max, tempo + S.schub * (1 - 0.65 * (tempo / S.max)));
+        staub(kamX + SPIELER_X - 22, sp.y, 2);
+      }
+      if (sp.schub.t >= SCHUB_DAUER || !sp.amBoden) sp.schub = null;
+    }
+    if (!sp.schub && schubHalten && sp.amBoden && !sp.sturz && sp.auf?.art !== "rail") sp.schub = { t: 0 };
+    // Rollwiderstand am Boden, kaum in der Luft; bergauf langsamer, Geländer bergab schneller
+    if (sp.amBoden && !sp.sturz) {
+      tempo -= (S.reibung + tempo * 0.045) * dt;
+      const f = sp.auf?.f;
+      if (sp.auf?.art === "rampe" || sp.auf?.art === "rail") {
+        const sinus = Math.sin(Math.atan2(f.y1 - f.y0, f.x1 - f.x0));
+        tempo += sinus * 520 * dt;
+      } else if (sp.auf?.art === "kicker") tempo -= Math.sin(Math.atan2(f.h, f.x1 - f.x0)) * 360 * dt;
+    } else tempo -= tempo * 0.02 * dt;
+    tempo = Math.max(0, Math.min(S.max * 1.12, tempo));
     const vorherX = kamX;
     if (!sp.sturz) kamX += tempo * dt;
     else if (sp.sturz.t < 0.5) kamX += tempo * dt * (1 - sp.sturz.t * 2);
@@ -513,7 +538,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     sp.auf = ziel ? { y: ziel.y, art: "boden", f: ziel } : null;
     sp.absprung = null;
     unverwundbar = 1.6;
-    tempo = Math.max(S.tempo, tempo * 0.85);
+    tempo *= 0.4;
   }
 
   function ende() {
@@ -780,40 +805,157 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     }
   }
 
-  function zeichneBrett(boardY) {
-    const umgedreht = boardY < 0;
-    ctx.save();
-    ctx.scale(1, Math.abs(boardY) < 0.15 ? 0.15 : Math.abs(boardY));
-    // Achsen und Rollen
-    ctx.fillStyle = "#9a97ad";
-    ctx.fillRect(-19, -1, 8, 3);
-    ctx.fillRect(11, -1, 8, 3);
-    for (const wx of [-15, 15]) {
-      const g = ctx.createRadialGradient(wx - 1, 3, 0.5, wx, 4, 4.2);
-      g.addColorStop(0, "#fff3b0");
-      g.addColorStop(1, "#e0a92a");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(wx, 4, 4.2, 0, Math.PI * 2);
-      ctx.fill();
+  // Skateboard in echten Proportionen von der Seite: dünnes Ahorn-Deck mit Griptape und
+  // hochgezogenen Kicktails, Achsen (Grundplatte, Lenkgummis, Hänger), Rollen aus Urethan mit Kugellager.
+  // winkel = Drehung um die Längsachse (Kickflip); 0 = normal. Ursprung = Boden unter der Brettmitte.
+  const ROLLE_R = 3.6;
+  const ACHSE_Y = -ROLLE_R; // Achsmitte über dem Boden
+  const DECK_Y = -10.4; // Unterkante Deck (Mitte)
+  const DECK_DICKE = 2.2;
+  const DECK_BREITE = 13; // so hoch wirkt das Deck, wenn es senkrecht steht
+  const SPUR = 10; // Abstand der beiden Rollen einer Achse (von vorn gesehen)
+  function deckProfil(y0) {
+    // Mittelteil flach, Kicktails mit ca. 20° nach oben
+    const pts = [];
+    for (let i = 0; i <= 28; i++) {
+      const x = -35 + (70 * i) / 28;
+      const k = Math.max(0, Math.abs(x) - 22) / 13;
+      pts.push([x, y0 - 6.2 * (k * k * 0.55 + k * 0.45)]);
     }
-    // Deck (oben Griptape, unten Grafik)
-    ctx.beginPath();
-    ctx.moveTo(-26, -5);
-    ctx.lineTo(26, -5);
-    ctx.quadraticCurveTo(32, -5, 33, -10);
-    ctx.lineTo(33, -6);
-    ctx.quadraticCurveTo(32, -1, 26, -1);
-    ctx.lineTo(-26, -1);
-    ctx.quadraticCurveTo(-32, -1, -33, -6);
-    ctx.lineTo(-33, -10);
-    ctx.quadraticCurveTo(-32, -5, -26, -5);
-    ctx.closePath();
-    ctx.fillStyle = umgedreht ? "#f5d97a" : "#b48ef0";
-    ctx.fill();
-    ctx.fillStyle = umgedreht ? "#e5566f" : "#1b1726";
-    ctx.fillRect(-24, -5, 48, 1.6);
-    ctx.restore();
+    return pts;
+  }
+  function zeichneBrett(winkel = 0) {
+    const c = Math.cos(winkel);
+    const s = Math.sin(winkel);
+    const mitte = DECK_Y - DECK_DICKE / 2; // Drehachse = Deckmitte
+    // Hilfsfunktion: Punkt (Höhe über Deckmitte h, Seitenversatz q) nach der Drehung
+    const proj = (h, q) => mitte - h * c - q * s; // h > 0 = über der Deckmitte
+    const unterseiteSichtbar = s > 0.05;
+    const flaeche = Math.abs(s) * DECK_BREITE; // sichtbare Breite der Deckfläche
+
+    const achsen = () => {
+      for (const ax of [-17, 17]) {
+        // Höhe unter der Deckmitte: Grundplatte, Hänger, Achse
+        const hB = -(DECK_DICKE / 2 + 1.4);
+        const yB = proj(hB, 0);
+        const yA = proj(-(-mitte + ACHSE_Y), 0);
+        // Grundplatte
+        ctx.fillStyle = "#6f6c7c";
+        ctx.fillRect(ax - 5.5, Math.min(proj(-DECK_DICKE / 2, 0), yB), 11, Math.abs(yB - proj(-DECK_DICKE / 2, 0)) + 0.6);
+        // Lenkgummi (rot) und Hänger (Alu)
+        const yG = lerp(yB, yA, 0.35);
+        ctx.fillStyle = "#e5566f";
+        ctx.beginPath();
+        ctx.ellipse(ax, yG, 2.4, 1.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const g = ctx.createLinearGradient(ax - 6, 0, ax + 6, 0);
+        g.addColorStop(0, "#8d8a99");
+        g.addColorStop(0.45, "#e8e6ef");
+        g.addColorStop(1, "#7b788a");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(ax - 2.2, yG);
+        ctx.lineTo(ax + 2.2, yG);
+        ctx.lineTo(ax + 4.6, yA + (yA > yG ? -0.6 : 0.6));
+        ctx.lineTo(ax - 4.6, yA + (yA > yG ? -0.6 : 0.6));
+        ctx.closePath();
+        ctx.fill();
+        // Rollen: zwei pro Achse; von der Seite liegen sie hintereinander, beim Drehen gehen sie auseinander
+        const rollen = [proj(-(-mitte + ACHSE_Y), SPUR / 2), proj(-(-mitte + ACHSE_Y), -SPUR / 2)];
+        rollen.sort((a, b) => a - b);
+        rollen.forEach((ry, i) => {
+          const hinten = i === 0 && Math.abs(rollen[1] - rollen[0]) < 0.5 ? false : i === 0;
+          const rx = ax + (i === 0 ? 0.6 : 0);
+          const gr = ctx.createRadialGradient(rx - 1.2, ry - 1.2, 0.3, rx, ry, ROLLE_R);
+          gr.addColorStop(0, hinten ? "#d8d2c4" : "#fffaf0");
+          gr.addColorStop(0.75, hinten ? "#b9b2a2" : "#ebe3d2");
+          gr.addColorStop(1, hinten ? "#8f897b" : "#b7ae9b");
+          ctx.fillStyle = gr;
+          ctx.beginPath();
+          ctx.arc(rx, ry, ROLLE_R, 0, Math.PI * 2);
+          ctx.fill();
+          // Kugellager
+          ctx.fillStyle = "#3c3b46";
+          ctx.beginPath();
+          ctx.arc(rx, ry, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#c9c7d3";
+          ctx.beginPath();
+          ctx.arc(rx, ry, 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+    };
+
+    const deck = () => {
+      const oben = deckProfil(0);
+      // Fläche (Griptape oder Unterseite), sichtbar beim Drehen
+      if (flaeche > 0.6) {
+        ctx.beginPath();
+        oben.forEach(([x, y], i) => {
+          const yy = mitte + y * c + flaeche / 2;
+          i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
+        });
+        for (let i = oben.length - 1; i >= 0; i--) ctx.lineTo(oben[i][0], mitte + oben[i][1] * c - flaeche / 2);
+        ctx.closePath();
+        if (unterseiteSichtbar) {
+          const g = ctx.createLinearGradient(-35, 0, 35, 0);
+          g.addColorStop(0, "#b48ef0");
+          g.addColorStop(0.5, "#f5d97a");
+          g.addColorStop(1, "#e5566f");
+          ctx.fillStyle = g;
+        } else ctx.fillStyle = "#1c1a22";
+        ctx.fill();
+        if (!unterseiteSichtbar) {
+          ctx.fillStyle = "rgba(255,255,255,0.07)";
+          for (let i = 0; i < 18; i++) ctx.fillRect(-28 + ((i * 41) % 56), mitte - flaeche / 2 + (((i * 7) % 10) / 10) * flaeche, 0.8, 0.8);
+        }
+      }
+      // Holzkante: helles Ahorn mit Schichtlinien, oben ein dünner Streifen Griptape
+      const dicke = DECK_DICKE * Math.max(0.35, Math.abs(c));
+      const kante = (dy) => oben.map(([x, y]) => [x, mitte + y * c + dy]);
+      const o = kante(-dicke / 2 + (s >= 0 ? -flaeche / 2 : flaeche / 2) * 0);
+      const u = kante(dicke / 2);
+      ctx.beginPath();
+      o.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      for (let i = u.length - 1; i >= 0; i--) ctx.lineTo(u[i][0], u[i][1]);
+      ctx.closePath();
+      ctx.fillStyle = "#e3c497";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(150, 100, 50, 0.55)";
+      ctx.lineWidth = 0.35;
+      for (const f of [0.35, 0.65]) {
+        ctx.beginPath();
+        o.forEach(([x, y], i) => {
+          const yy = lerp(y, u[i][1], f);
+          i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
+        });
+        ctx.stroke();
+      }
+      // Griptape-Kante auf der Oberseite (zeigt nach oben, solange das Brett richtig herum ist)
+      if (c > 0.2) {
+        ctx.strokeStyle = "#141218";
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        o.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      } else if (c < -0.2) {
+        ctx.strokeStyle = "#141218";
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        u.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      }
+    };
+
+    // Reihenfolge: liegt die Unterseite (mit den Achsen) zur Kamera, kommen die Achsen nach vorn
+    if (unterseiteSichtbar) {
+      deck();
+      achsen();
+    } else {
+      achsen();
+      deck();
+    }
   }
 
   function zeichneFahrer(t) {
@@ -825,10 +967,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     let hocke = inLuft ? 13 : sp.halten ? 7 : grind ? 6 : 2;
     let drehen = 0;
     let boardX = 1;
-    let boardY = 1;
+    let brettWinkel = 0;
     if (sp.trick) {
       const k = Math.min(1, sp.trick.t / TRICKS[sp.trick.art].dauer);
-      if (sp.trick.art === "kickflip") boardY = Math.cos(k * Math.PI * 2);
+      if (sp.trick.art === "kickflip") brettWinkel = k * Math.PI * 2;
       if (sp.trick.art === "shove") boardX = Math.cos(k * Math.PI * 2);
       if (sp.trick.art === "backflip") drehen = -k * Math.PI * 2;
     }
@@ -858,7 +1000,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.save();
       ctx.translate(70 * s.t + 20, -40 * Math.sin(Math.min(1, s.t * 2) * Math.PI));
       ctx.rotate(s.t * 9);
-      zeichneBrett(1);
+      zeichneBrett(0);
       ctx.restore();
       ctx.translate(-14 * s.t, -20);
       ctx.rotate(-s.dreh);
@@ -871,17 +1013,30 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.translate(0, 38);
       ctx.save();
       ctx.scale(boardX, 1);
-      zeichneBrett(boardY);
+      zeichneBrett(brettWinkel);
       ctx.restore();
     }
 
+    ctx.translate(0, -7); // Füße stehen auf dem Griptape
     const wedeln = grind ? Math.sin(t / 80) * 9 : Math.sin(t / 260) * 2;
     const hy = -42 + hocke * 1.4;
     const sy = -68 + hocke * 1.5;
+    // beim Anschieben geht der hintere Fuß vom Brett nach unten-hinten auf den Boden
+    let fussX = -10;
+    let fussY = -6;
+    let knieX = -9;
+    let knieY = -24 + hocke;
+    if (sp.schub && !sp.sturz) {
+      const k = Math.sin((sp.schub.t / SCHUB_DAUER) * Math.PI);
+      fussX = -10 - 22 * k;
+      fussY = -6 + 10 * k;
+      knieX = -9 - 8 * k;
+      knieY = -24 + hocke + 4 * k;
+    }
     const koerper = () => {
       ctx.beginPath();
-      ctx.moveTo(-10, -6);
-      ctx.lineTo(-9, -24 + hocke);
+      ctx.moveTo(fussX, fussY);
+      ctx.lineTo(knieX, knieY);
       ctx.lineTo(0, hy);
       ctx.lineTo(10, -24 + hocke * 0.8);
       ctx.lineTo(11, -6);
@@ -907,7 +1062,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.stroke();
     // Schuhe
     ctx.fillStyle = "#e5566f";
-    ctx.fillRect(-15, -9, 10, 4);
+    ctx.fillRect(fussX - 5, fussY - 3, 10, 4);
     ctx.fillRect(7, -9, 10, 4);
     // Kopf mit Kappe
     ctx.fillStyle = "#14111c";
@@ -981,6 +1136,15 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     zeichneTeilchen(dt);
     zeichnePopups(dt);
     ctx.restore();
+    // Hinweis, solange man (fast) steht
+    if (zustand === "laeuft" && tempo < 90 && !sp.sturz) {
+      ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t / 260);
+      ctx.font = '13px "Press Start 2P", monospace';
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#f5d97a";
+      ctx.fillText(grob ? "Links tippen: anschieben" : "→ oder D: anschieben", W / 2, H - 28);
+      ctx.globalAlpha = 1;
+    }
     // Tempo-Linien bei hoher Geschwindigkeit
     if (zustand === "laeuft" && tempo > S.max * 0.85) {
       ctx.strokeStyle = "rgba(255,255,255,0.08)";
@@ -1037,14 +1201,17 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const onKeyDown = (e) => {
     if (e.target.closest?.("input, select, textarea")) return;
     const k = e.key;
-    if ([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "W", "s", "S", "a", "A"].includes(k)) e.preventDefault();
+    if ([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "W", "s", "S", "a", "A", "d", "D"].includes(k)) e.preventDefault();
     if (e.repeat) return;
     if (k === "p" || k === "P" || k === "Escape") return zustand === "laeuft" ? pause() : null;
     if (zustand !== "laeuft") {
       if (k === " " || k === "Enter" || k === "ArrowUp") los();
       return;
     }
-    if (k === " " || k === "ArrowUp" || k === "w" || k === "W") {
+    if (k === "ArrowRight" || k === "d" || k === "D") {
+      schubHalten = true;
+      anschieben();
+    } else if (k === " " || k === "ArrowUp" || k === "w" || k === "W") {
       if (sp.amBoden) springen();
       else trick("kickflip");
     } else if (k === "ArrowDown" || k === "s" || k === "S") trick("shove");
@@ -1052,12 +1219,24 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   };
   const onKeyUp = (e) => {
     if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") sp.halten = false;
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") schubHalten = false;
   };
+  let schubHalten = false;
+  function anschieben() {
+    if (zustand !== "laeuft" || sp.sturz || !sp.amBoden || sp.schub || sp.auf?.art === "rail") return;
+    sp.schub = { t: 0 };
+  }
   let zeiger = null;
   const onDown = (e) => {
     if (zustand !== "laeuft") return los();
-    zeiger = { x: e.clientX, y: e.clientY, warAmBoden: sp.amBoden, gewischt: false };
-    if (sp.amBoden) springen();
+    const r = canvas.getBoundingClientRect();
+    const links = e.clientX - r.left < r.width * 0.4;
+    zeiger = { x: e.clientX, y: e.clientY, warAmBoden: sp.amBoden, gewischt: false, schieben: links };
+    if (links) {
+      // linke Seite: anschieben (gedrückt halten = weiter schieben)
+      schubHalten = true;
+      anschieben();
+    } else if (sp.amBoden) springen();
   };
   const onMove = (e) => {
     if (!zeiger || zeiger.gewischt) return;
@@ -1069,9 +1248,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     else trick(dx < 0 ? "backflip" : "kickflip");
   };
   const onUp = () => {
-    if (zeiger && !zeiger.gewischt && !zeiger.warAmBoden) trick("kickflip");
+    if (zeiger && !zeiger.gewischt && !zeiger.warAmBoden && !zeiger.schieben) trick("kickflip");
     zeiger = null;
     sp.halten = false;
+    schubHalten = false;
   };
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
@@ -1084,7 +1264,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   zustand = "bereit";
   neu();
   passeAufloesung();
-  nachricht(`<p class="big">Stick-Skater</p><p>Über die Dächer: Treppen und Lücken überspringen, Geländer runtergrinden, Münzen sammeln. Tricks zählen nur, wenn du sie zu Ende drehst.</p><p class="small">${S.leben} Leben · Leertaste, ↑ oder Klick zum Start</p>`);
+  nachricht(`<p class="big">Stick-Skater</p><p>Über die Dächer: Treppen und Lücken überspringen, Geländer runtergrinden, Münzen sammeln. Tricks zählen nur, wenn du sie zu Ende drehst.</p><p><b>→</b> oder <b>D</b> schiebt an (halten = weiter schieben), <b>Leertaste</b> springt. Handy: links tippen = anschieben, rechts = springen.</p><p class="small">${S.leben} Leben · Leertaste, ↑ oder Klick zum Start</p>`);
   raf = requestAnimationFrame(loop);
   document.fonts?.load('12px "Press Start 2P"');
 
