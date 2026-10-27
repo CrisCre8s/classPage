@@ -55,6 +55,28 @@ erscheint, kann man mit `TANKERKOENIG_STATION_ID` eine feste ID setzen.
 Lokal funktioniert `/api/sprit` nur mit `npx vercel dev`, bei `npm run dev`
 steht dort „gerade nicht verfügbar“.
 
+### Wochenverlauf
+
+Tankerkönig liefert nur die aktuellen Preise. Den Verlauf der letzten 7 Tage
+schreibt die Seite deshalb selbst mit: Jeder Abruf von `/api/sprit` (höchstens
+alle 10 Minuten) legt den Preis pro Stunde in einer Redis-Datenbank ab (9 Tage lang),
+dazu kommt ein täglicher Cron-Job (`vercel.json` → `/api/sprit-speichern`), damit
+auch Tage ohne Besucher einen Wert haben. `/api/sprit-verlauf` liefert je Tag
+Schnitt, Tiefst- und Höchstpreis; die Seite zeigt daraus den Verlauf und ob es
+gerade teurer oder billiger ist als an den Vortagen.
+
+Einrichtung, einmalig:
+
+1. Vercel → Projekt → **Storage** → **Create Database** → „Upstash for Redis“
+   (Gratis-Tarif) anlegen und mit dem Projekt verbinden. Vercel setzt dabei
+   `KV_REST_API_URL` und `KV_REST_API_TOKEN` automatisch.
+2. Optional: `CRON_SECRET` als Umgebungsvariable setzen (beliebiger langer Text),
+   dann darf nur Vercels Cron-Job `/api/sprit-speichern` aufrufen.
+3. **Redeploy** auslösen.
+
+Ohne Datenbank bleibt der Verlauf einfach ausgeblendet. Die ersten Vergleiche
+erscheinen ab dem zweiten Tag, die volle Woche nach 7 Tagen.
+
 ## Projektstruktur
 
 ```
@@ -71,7 +93,9 @@ steht dort „gerade nicht verfügbar“.
 ├── berichte.js     # Berichte automatisch aus berichte/
 ├── berichte/       # ← PDFs hier ablegen
 ├── sprit.js        # Spritpreise im Globus-Fenster
-├── api/sprit.js    # Vercel-Funktion → Tankerkönig-API
+├── api/sprit.js    # Vercel-Funktion → Tankerkönig-API (merkt sich nebenbei den Preis)
+├── api/sprit-verlauf.js / sprit-speichern.js  # Wochenverlauf (Redis) und täglicher Cron-Job
+├── vercel.json     # Cron-Job für den Wochenverlauf
 ├── canvas.js       # Sternenfeld im Hintergrund
 ├── void.js         # Void-Funktion (Easter Egg)
 └── public/         # Bilder, Favicon, Schriften (fonts/, selbst gehostet, OFL-Lizenz)

@@ -720,6 +720,79 @@ a.row:active {
   color: var(--faint);
 }
 
+/* Kleiner Pfeil am Preis: teurer oder billiger als die Vortage */
+.trend {
+  margin-left: 4px;
+  font: 500 12px var(--mono);
+  white-space: nowrap;
+}
+.trend.billiger { color: var(--pill-pos-ink); }
+.trend.teurer { color: var(--pill-neg-ink); }
+.trend.gleich { color: var(--faint); }
+
+/* Wochenverlauf */
+.verlauf {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+.verlauf-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.verlauf-kopf h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.verlauf-tabs {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+}
+.verlauf-tabs button {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--muted);
+  transition: background-color 0.15s, color 0.15s;
+}
+.verlauf-tabs button:hover { color: var(--text); }
+.verlauf-tabs button[aria-pressed="true"] {
+  background: var(--raised);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--control);
+}
+.verlauf-bild {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.vb-linie { fill: none; stroke: var(--control); stroke-width: 1.5; }
+.vb-jetzt { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.6; }
+.vb-spanne { fill: var(--raised-edge); }
+.vb-punkt { fill: var(--muted); }
+.vb-heute .vb-punkt { fill: var(--accent); }
+.vb-heute .vb-spanne { fill: #4a4330; }
+.vb-spalte:hover .vb-punkt { fill: var(--text); }
+.vb-tag { font: 11px var(--font); fill: var(--faint); }
+.vb-tag.vb-heute { fill: var(--accent); }
+.vb-leer { font: 14px var(--font); fill: var(--faint); }
+.verlauf-satz {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+}
+.verlauf-satz b { font-weight: 600; }
+.verlauf-satz.billiger b { color: var(--pill-pos-ink); }
+.verlauf-satz.teurer b { color: var(--pill-neg-ink); }
+
 .block {
   margin-top: 18px;
   padding-top: 14px;
@@ -868,7 +941,8 @@ body.power-off .rail {
     grid-template-columns: 1fr 1fr;
     gap: 0 40px;
   }
-  .sprit-body .block {
+  .sprit-body .block,
+  .sprit-body .verlauf {
     margin-top: 0;
     padding-top: 0;
     border-top: 0;
@@ -996,7 +1070,8 @@ body.power-off .rail {
   .sprit-body {
     display: block;
   }
-  .sprit-body .block {
+  .sprit-body .block,
+  .sprit-body .verlauf {
     margin-top: 18px;
     padding-top: 14px;
     border-top: 1px solid var(--rule);
