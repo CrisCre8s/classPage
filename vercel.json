@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/sprit-speichern", "schedule": "0 15 * * *" }]
+}
