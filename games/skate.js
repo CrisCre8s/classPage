@@ -335,7 +335,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     teile.push({ art: "flach", x0: cursor, x1: x0 + 90, y: ebene, zone });
     objekte.push({ art: "kicker", x0, x1: x0 + 90, y: ebene, h: 46 });
     const w = zufall(...S.luecke) + 40;
-    teile.push({ art: "luecke", x0: x0 + 130, x1: x0 + 130 + w, zone, y: ebene });
+    teile.push({ art: "luecke", x0: x0 + 90, x1: x0 + 130 + w, zone, y: ebene, kicker: true });
     muenzReihe(x0 + 120, ebene - 150, x0 + 140 + w, ebene - 60, 50);
     cursor = x0 + 130 + w;
     flach(ganz(...S.nachSprung));
@@ -640,7 +640,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
           texte.push(`${t.n}-Stair`);
           if (t.n >= 5) aufgabe("treppe");
         }
-        if (t.art === "luecke" && ab.x <= t.x0 && wx >= t.x1) {
+        if (t.art === "luecke" && ab.x <= t.x0 + (t.kicker ? 14 : 0) && wx >= t.x1) {
           bonus += 1;
           texte.push("Gap");
           aufgabe("gap");
@@ -972,7 +972,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         if (!STADT_ZONEN.includes(t.zone)) zeichneLuecke(ctx, t.zone, performance.now(), t.x0, t.x1, Math.max(t.y, rechtsY), unten);
         else if (t.zone !== "dach") {
           // Baustelle: Warnbaken mit Blinklicht an beiden Kanten
-          for (const [bx, by] of [[t.x0 - 10, t.y], [t.x1 + 4, rechtsY]]) {
+          for (const [bx, by] of t.kicker ? [[t.x1 + 4, rechtsY]] : [[t.x0 - 10, t.y], [t.x1 + 4, rechtsY]]) {
             for (let i = 0; i < 4; i++) {
               ctx.fillStyle = i % 2 ? "#ffffff" : "#e5566f";
               ctx.fillRect(bx, by - 40 + i * 9, 6, 9);
@@ -1954,15 +1954,15 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const BODEN_Y = 6; // Bodenhöhe in Figur-Koordinaten
       if (k < 0.22) {
         const a = k / 0.22;
-        fussX = lerp(-10, 8, a);
+        fussX = lerp(-10, 15, a);
         fussY = lerp(-6, BODEN_Y, a) - Math.sin(a * Math.PI) * 5;
       } else if (k < 0.72) {
         const a = (k - 0.22) / 0.5;
-        fussX = lerp(8, -34, a);
+        fussX = lerp(15, -32, a);
         fussY = BODEN_Y;
       } else {
         const a = (k - 0.72) / 0.28;
-        fussX = lerp(-34, -10, a);
+        fussX = lerp(-32, -10, a);
         fussY = lerp(BODEN_Y, -6, a) - Math.sin(a * Math.PI) * 9;
       }
       // Knie liegt zwischen Hüfte und Fuß, leicht nach vorn gebeugt
@@ -2225,10 +2225,26 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.lineWidth = 1;
     ctx.stroke();
   }
+  const ueber = (x, y, w, h) => maus && maus.x >= x && maus.x <= x + w && maus.y >= y && maus.y <= y + h;
   function knopf(x, y, w, h, text, aktion, an, farbe, unter) {
+    const hov = an && ueber(x, y, w, h);
+    if (hov) {
+      // Hover: leicht anheben, heller, mit Leuchtrand
+      y -= 2;
+      ctx.shadowColor = farbe;
+      ctx.shadowBlur = 18;
+    }
     ctx.fillStyle = an ? farbe : "rgba(90, 86, 110, 0.6)";
     rund(x, y, w, h, 12);
     ctx.fill();
+    ctx.shadowBlur = 0;
+    if (hov) {
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
     ctx.fillStyle = an ? "#0f0e13" : "#c8c4d6";
     ctx.textAlign = "center";
     ctx.font = `${h > 50 ? 15 : 11}px "Press Start 2P", monospace`;
@@ -2321,7 +2337,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const { x, y } = KNOTEN[i];
       const frei = i <= fp.welten;
       const gew = i === wahlWelt;
-      const r = gew ? 34 + Math.sin(t / 300) * 1.5 : 27;
+      const hov = ueber(x - 44, y - 44, 88, 100);
+      const r = (gew ? 34 + Math.sin(t / 300) * 1.5 : 27) + (hov ? 3 : 0);
       if (gew) {
         const g = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2);
         g.addColorStop(0, welt.farbe + "88");
@@ -2336,13 +2353,20 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.strokeStyle = frei ? welt.farbe : "#5a566a";
       ctx.lineWidth = gew ? 4 : 3;
       ctx.stroke();
+      if (hov && !gew) {
+        ctx.strokeStyle = "rgba(255,255,255,0.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, r + 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.globalAlpha = frei ? 1 : 0.3;
       zeichneWeltSymbol(ctx, welt.id, x, y, r * 0.62, t);
       ctx.globalAlpha = 1;
       if (!frei) schloss(x + r * 0.62, y + r * 0.5, 1);
       ctx.textAlign = "center";
       ctx.font = `${gew ? "bold " : ""}13px ${SANS}`;
-      ctx.fillStyle = frei ? "#f4f1f8" : "#8a8698";
+      ctx.fillStyle = frei || hov ? "#f4f1f8" : "#8a8698";
       ctx.fillText(welt.name, x, y + r + 20);
       knoepfe.push({ x: x - 44, y: y - 44, w: 88, h: 100, aktion: () => (wahlWelt = i) });
     });
@@ -2529,11 +2553,12 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const x = 24 + i * 114;
       const y = 330;
       const gew = i === wahlBoard;
-      ctx.fillStyle = gew ? "rgba(40, 34, 64, 0.95)" : "rgba(14, 12, 24, 0.82)";
-      rund(x, y, 104, 112, 12);
+      const hov = ueber(x, y, 104, 112);
+      ctx.fillStyle = gew ? "rgba(40, 34, 64, 0.95)" : hov ? "rgba(32, 28, 50, 0.92)" : "rgba(14, 12, 24, 0.82)";
+      rund(x, y - (hov ? 3 : 0), 104, 112, 12);
       ctx.fill();
-      ctx.strokeStyle = gew ? "#f5d97a" : "rgba(255,255,255,0.1)";
-      ctx.lineWidth = gew ? 2.5 : 1;
+      ctx.strokeStyle = gew ? "#f5d97a" : hov ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.1)";
+      ctx.lineWidth = gew ? 2.5 : hov ? 1.5 : 1;
       ctx.stroke();
       ctx.save();
       ctx.translate(x + 52, y + 50);
@@ -2630,6 +2655,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (aufStange && k !== " ") {
       // auf der Stange: Pfeile = Grind-Tricks, Leertaste = abspringen
       const art = { ArrowUp: "nose", w: "nose", W: "nose", ArrowDown: "board", s: "board", S: "board", ArrowLeft: "tail", a: "tail", A: "tail", ArrowRight: "crooked", d: "crooked", D: "crooked" }[k];
+      if (art === "crooked") schubHalten = true;
       if (art) return grindTrick(art);
     }
     if (k === "ArrowRight" || k === "d" || k === "D") {
@@ -2656,27 +2682,39 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (zustand !== "laeuft" || sp.sturz || !sp.amBoden || sp.schub || sp.auf?.art === "rail") return;
     sp.schub = { t: 0 };
   }
-  let zeiger = null;
+  let zeiger = null; // Finger für Sprung/Wischen
+  let schubFinger = null; // Finger, der links gedrückt hält
+  let maus = null; // Mausposition im Menü (für Hover)
+  const logisch = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  };
+  const knopfBei = (pt) => pt && [...knoepfe].reverse().find((b) => b.aktion && pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h);
   const onDown = (e) => {
     const r = canvas.getBoundingClientRect();
     if (zustand === "karte" || zustand === "garage") {
-      const lx = ((e.clientX - r.left) / r.width) * W;
-      const ly = ((e.clientY - r.top) / r.height) * H;
-      const kn = [...knoepfe].reverse().find((b) => lx >= b.x && lx <= b.x + b.w && ly >= b.y && ly <= b.y + b.h);
-      kn?.aktion?.();
+      knopfBei(logisch(e))?.aktion();
       return;
     }
     if (zustand !== "laeuft") return los();
     const links = e.clientX - r.left < r.width * 0.4;
-    zeiger = { x: e.clientX, y: e.clientY, warAmBoden: sp.amBoden, gewischt: false, schieben: links };
     if (links) {
-      // linke Seite: anschieben (gedrückt halten = weiter schieben)
+      // linke Seite: anschieben (gedrückt halten = weiter schieben, auch über Sprünge hinweg)
+      schubFinger = e.pointerId;
       schubHalten = true;
       anschieben();
-    } else if (sp.amBoden) springen();
+      return;
+    }
+    zeiger = { id: e.pointerId, x: e.clientX, y: e.clientY, warAmBoden: sp.amBoden, gewischt: false };
+    if (sp.amBoden) springen();
   };
   const onMove = (e) => {
-    if (!zeiger || zeiger.gewischt) return;
+    if (zustand === "karte" || zustand === "garage") {
+      maus = logisch(e);
+      canvas.style.cursor = knopfBei(maus) ? "pointer" : "default";
+      return;
+    }
+    if (!zeiger || zeiger.gewischt || e.pointerId !== zeiger.id) return;
     const dx = e.clientX - zeiger.x;
     const dy = e.clientY - zeiger.y;
     if (Math.hypot(dx, dy) < 26) return;
@@ -2689,11 +2727,20 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (Math.abs(dy) > Math.abs(dx)) trick(dy < 0 ? "kickflip" : "shove");
     else trick(dx < 0 ? "backflip" : "kickflip");
   };
-  const onUp = () => {
-    if (zeiger && !zeiger.gewischt && !zeiger.warAmBoden && !zeiger.schieben) trick("kickflip");
+  const onUp = (e) => {
+    if (e.pointerId === schubFinger) {
+      schubFinger = null;
+      schubHalten = false;
+      return;
+    }
+    if (!zeiger || e.pointerId !== zeiger.id) return;
+    if (!zeiger.gewischt && !zeiger.warAmBoden) trick("kickflip");
     zeiger = null;
     sprungLoslassen();
-    schubHalten = false;
+  };
+  const onLeave = () => {
+    maus = null;
+    canvas.style.cursor = "";
   };
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
@@ -2701,6 +2748,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   canvas.addEventListener("pointermove", onMove);
   canvas.addEventListener("pointerup", onUp);
   canvas.addEventListener("pointercancel", onUp);
+  canvas.addEventListener("pointerleave", onLeave);
   const ausOverlay = overlayKlick(() => zustand !== "laeuft" && los());
 
   zustand = "karte";
@@ -2723,6 +2771,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
+      canvas.removeEventListener("pointerleave", onLeave);
+      canvas.style.cursor = "";
       ausOverlay();
     },
   };
