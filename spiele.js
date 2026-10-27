@@ -37,6 +37,10 @@ function schreibe(key, wert) {
   } catch {}
 }
 const bestKey = (spiel, stufe) => `spiele:${spiel}:${stufe}`;
+// die letzten 5 Ergebnisse je Spiel (alle Stufen zusammen, neuestes zuerst)
+const letzteKey = (spiel) => `spiele:${spiel}:letzte`;
+const LETZTE_ANZAHL = 5;
+const mitStufen = (spiel) => NACH_ID[spiel].stufen !== false;
 
 export function formatZeit(sek) {
   const m = Math.floor(sek / 60);
@@ -60,10 +64,11 @@ function karteHtml(s) {
       <div class="game-ctrl">
         ${s.stufenInfo ? `<p class="game-stufe-info num" aria-live="polite"></p>` : ""}
         ${s.kat === "lernen" ? `<button class="lern-toggle" type="button" aria-expanded="false" aria-controls="lern-${s.id}"><span>So geht's</span><svg class="i" aria-hidden="true"><use href="#i-chev" /></svg></button>` : ""}
-        <div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
+        ${s.stufen === false ? "" : `<div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
           <span class="seg-pill" aria-hidden="true"></span>
           ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
-        </div>
+        </div>`}
+        <div class="letzte" aria-label="Letzte ${LETZTE_ANZAHL} Ergebnisse"></div>
         <div class="game-foot">
           <p class="best"></p>
           <button class="btn play" type="button">Spielen</button>
@@ -106,7 +111,57 @@ function zeigeBest(spiel) {
   const best = lese(bestKey(spiel, stufe), w === "zeit" ? null : 0);
   const label = w === "siege" ? "Siege" : w === "zeit" ? "Bestzeit" : "Highscore";
   const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : best;
-  k.querySelector(".best").innerHTML = `<span>${label} (${STUFEN[stufe]})</span><span class="num">${wert}</span>`;
+  const wo = mitStufen(spiel) ? STUFEN[stufe] : NACH_ID[spiel].bestText || "";
+  k.querySelector(".best").innerHTML = `<span>${label}${wo ? ` (${wo})` : ""}</span><span class="num">${wert}</span>`;
+  zeigeLetzte(spiel);
+}
+
+// ---------- Letzte 5 Ergebnisse ----------
+function merkeErgebnis(spiel, stufe, { gewonnen, punkte, zeit }) {
+  const w = NACH_ID[spiel].wertung;
+  const eintrag = { s: stufe, t: Date.now() };
+  if (w === "punkte") eintrag.p = punkte ?? 0;
+  else {
+    eintrag.g = Boolean(gewonnen);
+    if (w === "zeit" && gewonnen) eintrag.z = Math.round(zeit);
+  }
+  const liste = [eintrag, ...lese(letzteKey(spiel), [])].slice(0, LETZTE_ANZAHL);
+  schreibe(letzteKey(spiel), liste);
+}
+function wann(t) {
+  const d = new Date(t);
+  const heute = new Date();
+  const gestern = new Date(Date.now() - 864e5);
+  const uhr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  if (d.toDateString() === heute.toDateString()) return `heute ${uhr}`;
+  if (d.toDateString() === gestern.toDateString()) return `gestern ${uhr}`;
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}. ${uhr}`;
+}
+function zeigeLetzte(spiel) {
+  const el = karte(spiel)?.querySelector(".letzte");
+  if (!el) return;
+  const w = NACH_ID[spiel].wertung;
+  const liste = lese(letzteKey(spiel), []);
+  if (!liste.length) {
+    el.innerHTML = `<span class="letzte-label">Letzte ${LETZTE_ANZAHL}</span><span class="letzte-leer">noch nichts gespielt</span>`;
+    return;
+  }
+  // bestes der letzten Ergebnisse hervorheben
+  const wert = (e) => (w === "punkte" ? e.p : w === "zeit" ? (e.g ? -e.z : -Infinity) : e.g ? 1 : 0);
+  const bester = liste.reduce((a, e) => (wert(e) > wert(a) ? e : a), liste[0]);
+  el.innerHTML =
+    `<span class="letzte-label">Letzte ${LETZTE_ANZAHL}</span><ol class="letzte-liste">` +
+    liste
+      .map((e) => {
+        const text = w === "punkte" ? e.p : w === "zeit" ? (e.g ? formatZeit(e.z) : "✗") : e.g ? "✓" : "✗";
+        const art = w === "punkte" ? "" : e.g ? " sieg" : " niederlage";
+        const top = e === bester && liste.length > 1 && (w === "punkte" ? e.p > 0 : e.g) ? " top" : "";
+        const stufe = mitStufen(spiel) && STUFEN[e.s] ? `${STUFEN[e.s]}, ` : "";
+        const was = w === "punkte" ? `${e.p} Punkte` : w === "zeit" ? (e.g ? `geschafft in ${formatZeit(e.z)}` : "verloren") : e.g ? "gewonnen" : "verloren";
+        return `<li class="num${art}${top}" title="${was} · ${stufe}${wann(e.t)}">${text}</li>`;
+      })
+      .join("") +
+    `</ol>`;
 }
 
 function nachricht(html) {
@@ -164,7 +219,8 @@ async function starten(spiel) {
 
   const stage = document.getElementById("stage");
   document.getElementById("stage-title").textContent = info.name;
-  document.getElementById("stage-level").textContent = STUFEN[stufe] + (info.stufenInfo ? ` · ${info.stufenInfo[stufe]}` : "");
+  document.getElementById("stage-level").textContent = info.stufen === false ? info.stufeText || "" : STUFEN[stufe] + (info.stufenInfo ? ` · ${info.stufenInfo[stufe]}` : "");
+  document.getElementById("stage-level").hidden = info.stufen === false && !info.stufeText;
   document.getElementById("games").hidden = true;
   stage.hidden = false;
   stage.dataset.game = spiel;
@@ -193,6 +249,7 @@ async function starten(spiel) {
     einpassen,
     // Ergebnis melden. Rückgabe: true, wenn es ein neuer Bestwert ist
     ergebnis({ gewonnen, punkte, zeit }) {
+      merkeErgebnis(spiel, stufe, { gewonnen, punkte, zeit });
       const key = bestKey(spiel, stufe);
       let neu = false;
       if (info.wertung === "siege" && gewonnen) schreibe(key, lese(key, 0) + 1);
@@ -270,8 +327,14 @@ function initKarten() {
     zeichneVorschau(art, spiel);
     document.fonts?.load('16px "Press Start 2P"').then(() => zeichneVorschau(art, spiel));
 
+    k.querySelector(".play").addEventListener("click", () => starten(spiel));
     const radios = [...k.querySelectorAll('[role="radio"]')];
     const seg = k.querySelector(".seg");
+    if (!seg) {
+      // Spiel ohne Schwierigkeitsgrade (z. B. Schlagzeug)
+      zeigeBest(spiel);
+      return;
+    }
     const pill = seg.querySelector(".seg-pill");
     // Die Markierung gleitet unter den Knopf, auf dem die Maus ist,
     // und kehrt beim Verlassen zur gewählten Stufe zurück
@@ -310,7 +373,6 @@ function initKarten() {
     });
     waehle(radios[1]); // startet immer auf Mittel
 
-    k.querySelector(".play").addEventListener("click", () => starten(spiel));
     const lern = k.querySelector(".lern-toggle");
     lern?.addEventListener("click", () => lernhilfeUmschalten(spiel, lern));
   });

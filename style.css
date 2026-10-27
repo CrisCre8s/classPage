@@ -2402,3 +2402,55 @@ body.game-on .stage-help {
   accent-color: #b48ef0;
   cursor: pointer;
 }
+
+/* Letzte 5 Ergebnisse auf der Spielkarte (neuestes links) */
+.letzte {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--faint);
+}
+.letzte-label {
+  flex: none;
+}
+.letzte-leer {
+  color: var(--faint);
+  font-style: italic;
+}
+.letzte-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.letzte-liste li {
+  min-width: 28px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--raised-edge);
+  color: var(--muted);
+  font: 500 13px var(--mono);
+  text-align: center;
+  cursor: default;
+}
+.letzte-liste li:first-child {
+  color: var(--text);
+}
+.letzte-liste li.sieg {
+  color: var(--pill-pos-ink);
+  background: var(--pill-pos-bg);
+}
+.letzte-liste li.niederlage {
+  color: var(--pill-neg-ink);
+  background: var(--pill-neg-bg);
+}
+.letzte-liste li.top {
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--accent);
+}
