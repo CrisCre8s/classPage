@@ -1,5 +1,6 @@
 // Alle Spiele an einer Stelle. Spieleseite und Hub bauen ihre Karten daraus.
 // wertung: "siege" (zählt Siege), "punkte" (Highscore), "zeit" (schnellste Zeit, weniger ist besser)
+// stufen: false → keine Schwierigkeitsgrade (Highscore ohne Stufe)
 
 export const KATEGORIEN = [
   { id: "lernen", name: "Lernen", text: "Prüfungsstoff für Fachinformatiker. Unter „So geht's“ steht erst alles zum Nachlesen, dann wird gespielt." },
@@ -17,7 +18,9 @@ export const KATALOG = [
   { id: "z2048", kat: "klassiker", name: "2048", kurz: "Zweierpotenzen zusammenschieben", text: "Schiebe gleiche Zahlen zusammen, bis du 2048 erreichst. Zweierpotenzen, wie im Speicher.", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
   { id: "vier", kat: "klassiker", name: "Vier in einer Reihe", kurz: "Vier Steine in eine Reihe bringen", text: "Lass deine Steine fallen und bring vier in eine Reihe, waagerecht, senkrecht oder diagonal.", tasten: "Spalte antippen · Tastatur: ← → und Enter", wertung: "siege" },
   { id: "skate", kat: "klassiker", name: "Stick-Skater", kurz: "7 Welten, Boards, Aufgaben", text: "Ein Strichmännchen skatet durch 7 Welten: Stadt, Strand, Dschungel, Eiswelt, Hölle, Himmel und Mond. Je weiter du fährst, desto mehr Welten schaltest du auf der Karte frei. Mit den Münzen kaufst du neue Boards, Aufgaben bringen Bonus-Münzen.", tasten: "Karte: ← → Welt, B Boards · → anschieben · Leertaste springen · ↑ ↓ ← Tricks · Handy: links schieben, rechts springen", wertung: "punkte" },
-  { id: "schlagzeug", kat: "klassiker", name: "Schlagzeug", kurz: "Trommeln mit der Tastatur spielen", text: "Ein ganzes Schlagzeug mit vier Kits: zwei echte Akustik-Aufnahmen, Elektro und 8-Bit. Tasten frei belegbar. Frei spielen mit Metronom oder in der Rhythmus-Challenge die Noten im Takt treffen.", tasten: "Q Crash · A/W Hi-Hat · S Snare · D F G Toms · R Ride · Leertaste Bass (änderbar) · antippen geht auch", wertung: "punkte" },
+  { id: "schlagzeug", kat: "klassiker", name: "Schlagzeug", kurz: "Trommeln mit der Tastatur spielen", text: "Ein ganzes Schlagzeug mit vier Kits: zwei echte Akustik-Aufnahmen, Elektro und 8-Bit. Tasten frei belegbar. Frei spielen mit Metronom oder in der Rhythmus-Challenge die Noten im Takt treffen.", tasten: "Q Crash · A/W Hi-Hat · S Snare · D F G Toms · R Ride · Leertaste Bass (änderbar) · antippen geht auch", wertung: "punkte",
+    // nur spielen: keine Schwierigkeitsgrade; der Highscore gilt für die Rhythmus-Challenge
+    stufen: false },
   { id: "mauer", kat: "klassiker", name: "Mauerbrecher", kurz: "Mit dem Ball die Mauer abräumen", text: "Halte den Ball im Spiel und räume mit ihm die Mauer ab. Jede Mauer wird schneller.", tasten: "Maus, Finger oder ←/→ · Leertaste: Start", wertung: "punkte" },
   { id: "binaer", kat: "lernen", name: "Binär-Blitz", kurz: "Binär, Dezimal und Hex umrechnen", text: "Rechne Zahlen zwischen Binär, Dezimal und Hexadezimal um, so viele wie möglich in 60 Sekunden.", tasten: "Tastatur oder Ziffernfeld · Enter: prüfen", wertung: "punkte" },
   { id: "subnetz", kat: "lernen", name: "Subnetz-Sprint", kurz: "Netz, Broadcast, Hosts berechnen", text: "IP-Adresse mit CIDR: Netzadresse, Broadcast, Maske oder Hostanzahl berechnen. 90 Sekunden.", tasten: "Tastatur oder Ziffernfeld · Enter: prüfen", wertung: "punkte" },
