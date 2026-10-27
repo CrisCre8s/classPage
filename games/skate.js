@@ -2,8 +2,10 @@
 // Unterschiedliche Höhen, Treppen (springen!), Geländer an Treppen und über Lücken zum Grinden,
 // Rampen, Kisten, Kegel und Münzen. Wird in voller Bildschirmauflösung gezeichnet.
 import { overlayKlick } from "./eingabe.js";
+import { WELTEN, STADT_ZONEN, ZONEN, weltVonZone, PHYSIK, BODEN_STIL, RAIL_STIL, HINDERNISSE, zeichneHintergrund, zeichneWetter, bodenDetail, zeichneLuecke, dekoFuerWelt, VOGEL, zeichneWeltDeko, zeichneKleinWelt, zeichneKisteWelt, zeichneRailWelt, zeichneMover, zeichnePilz, zeichneGeysir, RING_FARBEN, zeichneWeltSymbol } from "./skate-welten.js";
+import { BOARDS, boardVon, boardFaktoren, neueAufgabe, laden, speichern } from "./skate-fortschritt.js";
 
-export const HILFE = "→ oder D anschieben · Leertaste/↑ springen (kurz = kleiner Hüpfer, halten = hoch) · auf der Stange: ↑ ↓ ← → Grind-Tricks · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
+export const HILFE = "Karte: ← → Welt wählen · B Boards · Leertaste los · Im Spiel: → oder D anschieben · Leertaste/↑ springen (kurz = kleiner Hüpfer, halten = hoch) · auf der Stange: ↑ ↓ ← → Grind-Tricks · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
 
 const W = 960; // logische Größe; gezeichnet wird in echter Bildschirmauflösung
 const H = 480;
@@ -28,12 +30,15 @@ const GRIND_TRICKS = {
   crooked: { name: "Crooked", muenzen: 2 },
 };
 const BOOST_TEMPO = 720; // Tempo auf dem Boost-Streifen vor den großen Sprüngen
-const ZONEN = { dach: "Über den Dächern", park: "Skatepark", strasse: "Innenstadt" };
+const WELT_PX = 450 * 40; // so lang ist eine Welt (450 m); danach kommt ein Portal in die nächste
 const LAEDEN = ["KIOSK", "PIZZA", "CAFÉ", "BURGER", "24/7", "SNEAKER", "GAMES", "DÖNER", "BÄCKER", "COMICS"];
-const BODEN_STIL = {
-  dach: { oben: "#3b3456", mitte: "#2b2541", unten: "#141120", kante: "#6f6596" },
-  park: { oben: "#9a9fb0", mitte: "#6a6f80", unten: "#2b2d36", kante: "#d3d7e3" },
-  strasse: { oben: "#45444f", mitte: "#2d2c35", unten: "#16161c", kante: "#a19eae" },
+const KICKER_FARBE = {
+  strand: ["#b07a44", "#fff0c8"],
+  dschungel: ["#5a3a1e", "#8fd35a"],
+  eis: ["#6f9ec8", "#ffffff"],
+  hoelle: ["#3a1410", "#ff7a3a"],
+  himmel: ["#dfe7f7", "#f5c842"],
+  weltall: ["#4b4f63", "#5ff7ff"],
 };
 const AUTOFARBEN = ["#e5566f", "#5fc39c", "#7fb8ff", "#f0a35e", "#b48ef0", "#d9d6e2"];
 const SCHUB_DAUER = 0.5; // so lange dauert ein Anschieben mit dem Fuß (aufsetzen, schieben, zurück)
@@ -69,26 +74,6 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const ro = new ResizeObserver(passeAufloesung);
   ro.observe(canvas);
 
-  // ---------- Hintergrund (einmal erzeugt) ----------
-  const ebenen = [
-    { f: 0.08, farbe: "#171329", hMin: 120, hMax: 260, fenster: 0.15 },
-    { f: 0.2, farbe: "#1f1a36", hMin: 90, hMax: 220, fenster: 0.35 },
-    { f: 0.38, farbe: "#29224a", hMin: 60, hMax: 170, fenster: 0.55 },
-  ].map((e) => {
-    const liste = [];
-    let x = 0;
-    while (x < 2200) {
-      const b = zufall(60, 140);
-      const h = zufall(e.hMin, e.hMax);
-      const fenster = [];
-      for (let fy = 14; fy < h - 16; fy += 20) for (let fx = 10; fx < b - 12; fx += 18) if (Math.random() < e.fenster) fenster.push([fx, fy, Math.random()]);
-      liste.push({ x, b, h, fenster, antenne: Math.random() < 0.25 });
-      x += b + zufall(6, 26);
-    }
-    return { ...e, liste, breite: x };
-  });
-  const sterne = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.random() * 260, r: Math.random() < 0.15 ? 1.6 : 0.9, p: Math.random() * 6 }));
-
   // ---------- Zustand ----------
   let zustand, raf, zuletzt;
   let kamX, kamY, tempo, punkte, meter, leben, unverwundbar, muenzenZahl;
@@ -96,6 +81,18 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   let zone, zoneBis, showOffen, jubel;
   let sp; // Spieler
   let popups, teilchen;
+  let weltIdx, naechsteWeltX, aktWelt, banner, abgerechnet, weltAnfangX;
+  // Fortschritt (Münzkonto, Welten, Boards, Aufgaben)
+  const fp = laden(WELTEN);
+  let board = boardVon(fp.board);
+  let bf = boardFaktoren(board);
+  const maxT = () => S.max * bf.tempo;
+  let wahlWelt = fp.startWelt;
+  let wahlBoard = Math.max(0, BOARDS.findIndex((b) => b.id === fp.board));
+  let knoepfe = []; // klickbare Flächen im Menü
+  let bgAktuell = null;
+  let bgAlt = null;
+  let bgMix = 1;
 
   function neu() {
     kamX = 0;
@@ -113,6 +110,11 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     cursor = -400;
     zone = null;
     jubel = 0;
+    weltIdx = fp.startWelt;
+    aktWelt = weltIdx;
+    weltAnfangX = 0;
+    naechsteWeltX = WELT_PX;
+    abgerechnet = false;
     neueZone();
     flach(1100, false);
     sp = { y: 0, vy: 0, amBoden: true, auf: null, halten: false, haltZeit: 0, trick: null, kombi: [], sturz: null, absprung: null, schub: null, boost: 0 };
@@ -120,17 +122,35 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     popups = [];
     teilchen = [];
     erzeuge();
+    banner = { titel: WELTEN[weltIdx].name, unter: `Welt ${weltIdx + 1}`, t: 0, farbe: WELTEN[weltIdx].farbe };
+    bgAktuell = null;
     zeigeStatus();
   }
 
   // ---------- Strecke erzeugen ----------
   // Die Strecke besteht aus Zonen (Dächer, Skatepark, Innenstadt) mit eigenen Hindernissen und Deko.
+  // Gibt "welt" zurück, wenn ein Portal in die nächste Welt gesetzt wurde, "zone" bei neuer Zone
   function neueZone() {
-    const andere = Object.keys(ZONEN).filter((z) => z !== zone);
-    zone = zone ? andere[Math.floor(Math.random() * andere.length)] : "dach";
-    zoneBis = cursor + ganz(...S.zone);
+    let wechsel = null;
+    if (cursor >= naechsteWeltX) {
+      weltIdx++;
+      naechsteWeltX = cursor + WELT_PX;
+      wechsel = "welt";
+    }
+    const welt = WELTEN[weltIdx % WELTEN.length];
+    const vorher = zone;
+    if (welt.id === "stadt") {
+      const andere = STADT_ZONEN.filter((z) => z !== zone);
+      zone = zone === null ? "dach" : andere[Math.floor(Math.random() * andere.length)];
+    } else zone = welt.id;
+    zoneBis = Math.min(cursor + ganz(...S.zone), naechsteWeltX);
     showOffen = Math.random() < S.show;
-    if (cursor > 0) deko.push({ art: "schild", x: cursor + 140, y: ebene, zone });
+    if (wechsel) deko.push({ art: "portal", x: cursor + 220, y: ebene, name: welt.name, farbe: welt.farbe, idx: weltIdx, durch: false });
+    else if (cursor > 0 && zone !== vorher) {
+      deko.push({ art: "schild", x: cursor + 140, y: ebene, zone });
+      wechsel = "zone";
+    }
+    return wechsel;
   }
 
   function muenzReihe(xa, ya, xb, yb, hoehe = 0, n = 3, sicher = false) {
@@ -155,8 +175,45 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       dach: ["kegel", "klima", "rail", "kicker", "kegel"],
       park: ["ledge", "rail", "kicker", "pad", "brett", "scooter"],
       strasse: ["auto", "hydrant", "tonne", "kegel", "scooter", "brett", "bank"],
-    }[zone];
+    }[zone] || HINDERNISSE[zone];
     const art = auswahl[Math.floor(Math.random() * auswahl.length)];
+    const KLEIN = { sandburg: [44, 30], ball: [26, 26], stein: [34, 26], lavastein: [34, 26], fels: [38, 28], schneemann: [30, 46], gewitter: [40, 34] };
+    const MOVER = { krabbe: [30, 24, 40, 90], pinguin: [28, 36, 30, 60], rover: [36, 34, 40, 80] };
+    if (KLEIN[art]) {
+      const [w, h] = KLEIN[art];
+      objekte.push({ art: "klein", stil: art, x: mitte, y, w, h });
+      muenzReihe(mitte - 70, y - 60 - h * 0.5, mitte + 90, y - 60 - h * 0.5, 70);
+      return;
+    }
+    if (MOVER[art]) {
+      const [w, h, v0, v1] = MOVER[art];
+      objekte.push({ art: "scooter", stil: art, x: mitte, y, w, h, v: zufall(v0, v1), x0: x0 + 20, x1: x1 - 60, phase: Math.random() * 6 });
+      return;
+    }
+    if (art === "eisblock" || art === "wolke") {
+      const w = art === "wolke" ? zufall(110, 150) : zufall(70, 100);
+      const h = art === "wolke" ? 30 : zufall(36, 48);
+      objekte.push({ art: "kiste", stil: art, x: mitte - w / 2, y, w, h });
+      muenzReihe(mitte - w / 3, y - h - 34, mitte + w / 3, y - h - 34);
+      return;
+    }
+    if (art === "pilz") {
+      objekte.push({ art: "pilz", x: mitte - 32, y, w: 64, h: 40, gedrueckt: 0 });
+      muenzReihe(mitte - 10, y - 190, mitte + 150, y - 190, 0, 3, true);
+      return;
+    }
+    if (art === "geysir") {
+      objekte.push({ art: "geysir", x: mitte - 13, y, w: 26, phase: Math.random() * 2.8 });
+      muenzReihe(mitte - 60, y - 70, mitte + 60, y - 70, 60);
+      return;
+    }
+    if (art === "surf" || art === "liege" || art === "stamm") {
+      const w = art === "surf" ? zufall(170, 230) : art === "liege" ? zufall(120, 150) : zufall(220, 340);
+      const h = art === "surf" ? 34 : art === "liege" ? 24 : 22;
+      objekte.push({ art: "rail", stil: art, x0: mitte - w / 2, x1: mitte + w / 2, y0: y - h, y1: y - h, boden: y, farbe: AUTOFARBEN[ganz(0, AUTOFARBEN.length - 1)] });
+      muenzReihe(mitte - w / 3, y - h - 34, mitte + w / 3, y - h - 34);
+      return;
+    }
     if (art === "kegel") {
       objekte.push({ art: "klein", stil: "kegel", x: mitte, y, w: 24, h: 32 });
       muenzReihe(mitte - 70, y - 60, mitte + 90, y - 60, 70);
@@ -195,12 +252,16 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         deko.push({ art: "laden", x, b: Math.min(b, x1 - x), y, name: LAEDEN[ganz(0, LAEDEN.length - 1)], farbe: AUTOFARBEN[ganz(0, AUTOFARBEN.length - 1)], hoch: zufall(110, 170), seed: Math.random() });
         x += b + 6;
       }
-      for (let x = x0 + 120; x < x1 - 40; x += 320) deko.push({ art: "laterne", x, y });
+      // Lichtkegel reicht von x-36 bis x+80: nur dort, wo darunter Boden ist
+      for (let x = x0 + 60; x < x1 - 100; x += 320) deko.push({ art: "laterne", x, y });
     } else if (zone === "park") {
       deko.push({ art: "zaun", x0, x1, y });
-      for (let x = x0 + 160; x < x1 - 60; x += 460) deko.push({ art: "strahler", x, y });
+      for (let x = x0 + 170; x < x1 - 170; x += 460) deko.push({ art: "strahler", x, y });
       if (Math.random() < 0.55) deko.push({ art: "graffiti", x: x0 + zufall(60, Math.max(70, x1 - x0 - 260)), y, b: zufall(160, 240), seed: Math.random() });
       if (Math.random() < 0.6) deko.push({ art: "publikum", x: x0 + zufall(40, Math.max(50, x1 - x0 - 280)), y, b: zufall(160, 260), seed: Math.random() });
+    } else if (zone !== "dach") {
+      dekoFuerWelt(zone, x0, x1, y, (d) => deko.push(d));
+      return;
     } else {
       if (Math.random() < 0.35) deko.push({ art: "wasserturm", x: x0 + zufall(80, Math.max(90, x1 - x0 - 120)), y });
       for (let x = x0 + 60; x < x1 - 60; x += zufall(200, 380)) if (Math.random() < 0.4) deko.push({ art: "antenne", x, y, h: zufall(30, 60) });
@@ -216,7 +277,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (Math.random() < S.railChance) {
       // Geländer die Treppe hinunter (zum Grinden)
       const steig = (t.y1 - t.y0) / (t.x1 - t.x0);
-      objekte.push({ art: "rail", stil: "rail", x0: x0 - 40, x1: t.x1 + 30, y0: ebene - 38 - steig * 40, y1: t.y1 - 38 + steig * 30, treppe: true });
+      objekte.push({ art: "rail", stil: RAIL_STIL[zone] || "rail", x0: x0 - 40, x1: t.x1 + 30, y0: ebene - 38 - steig * 40, y1: t.y1 - 38 + steig * 30, treppe: true });
       muenzReihe(x0 + 10, ebene - 70, t.x1 - 10, t.y1 - 70);
     } else muenzReihe(x0 - 40, ebene - 60, t.x1 + 70, t.y1 - 50, 70);
     cursor = t.x1;
@@ -227,10 +288,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function luecke() {
     const mitRail = Math.random() < S.railChance * 0.8;
     const w = mitRail ? zufall(S.luecke[1], S.luecke[1] + 120) : zufall(...S.luecke);
-    const tiefer = !mitRail && ebene < 160 && Math.random() < 0.35 ? ganz(30, 80) : 0;
+    const tiefer = !mitRail && ebene < 160 && zone !== "hoelle" && Math.random() < 0.35 ? ganz(30, 80) : 0;
     teile.push({ art: "luecke", x0: cursor, x1: cursor + w, zone, y: ebene });
     if (mitRail) {
-      objekte.push({ art: "rail", stil: "rail", x0: cursor - 90, x1: cursor + w + 90, y0: ebene - 36, y1: ebene - 36, luecke: true });
+      objekte.push({ art: "rail", stil: RAIL_STIL[zone] || "rail", x0: cursor - 90, x1: cursor + w + 90, y0: ebene - 36, y1: ebene - 36, luecke: true });
       muenzReihe(cursor, ebene - 70, cursor + w, ebene - 70, 0, 3);
     } else muenzReihe(cursor - 40, ebene - 50, cursor + w + 40, ebene + tiefer - 50, 80);
     cursor += w;
@@ -283,21 +344,22 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   // Show: Boost-Streifen, großer Kicker, dann über Autos oder durch einen Feuerring
   function show() {
     showOffen = false;
-    const feuer = zone !== "strasse" && (zone === "park" || Math.random() < 0.5);
+    const feuer = zone !== "strasse" && (zone !== "dach" || Math.random() < 0.5);
+    const g = SCHWERKRAFT * (PHYSIK[zone]?.g ?? 1);
     const start = cursor;
     const kx = start + 420;
-    const ende = kx + 110 + 1000;
+    const ende = kx + 110 + Math.max(1000, BOOST_TEMPO * (2 * (300 + BOOST_TEMPO * 0.95)) / (SCHWERKRAFT * (PHYSIK[zone]?.g ?? 1)) + 200);
     teile.push({ art: "flach", x0: start, x1: ende, y: ebene, zone });
     dekoFuer(start, ende);
     objekte.push({ art: "booster", x0: start + 140, x1: kx - 10, y: ebene });
     objekte.push({ art: "kicker", x0: kx, x1: kx + 110, y: ebene, h: 60, gross: true });
     // Flugbahn bei BOOST_TEMPO: Scheitel ca. 308 px hinter dem Kicker, 210 px über der Kante
     const vy = 300 + BOOST_TEMPO * 0.95;
-    const tScheitel = vy / SCHWERKRAFT;
+    const tScheitel = vy / g;
     const scheitelX = kx + 110 + BOOST_TEMPO * tScheitel;
-    const scheitelY = ebene - 60 - (vy * vy) / (2 * SCHWERKRAFT);
+    const scheitelY = ebene - 60 - (vy * vy) / (2 * g);
     if (feuer) {
-      objekte.push({ art: "ring", x: scheitelX, w: 4, y: scheitelY - 36, r: 56, boden: ebene, durch: false });
+      objekte.push({ art: "ring", x: scheitelX, w: 4, y: scheitelY - 36, r: 56, boden: ebene, durch: false, zone });
       muenzReihe(scheitelX - 40, scheitelY - 36, scheitelX + 40, scheitelY - 36, 0, 3, true);
     } else {
       const n = 3;
@@ -308,7 +370,26 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     cursor = ende;
   }
 
+  const SEGMENTE = {
+    strand: { flach: 6, luecke: 2, kicker: 1, hoch: 1 },
+    dschungel: { flach: 5, luecke: 2, hoch: 1.5, treppe: 1, kicker: 1 },
+    eis: { flach: 5, luecke: 2, treppe: 1.5, hoch: 1, kicker: 1 },
+    hoelle: { flach: 5, luecke: 3, kicker: 1.5, treppe: 1 },
+    himmel: { flach: 4, luecke: 4, hoch: 1, kicker: 1 },
+    weltall: { flach: 5, luecke: 3, kicker: 1.5, hoch: 1 },
+  };
   function waehle() {
+    if (SEGMENTE[zone]) {
+      const g = { ...SEGMENTE[zone] };
+      // schwerer = mehr Sprünge
+      g.flach *= S.gewichte.flach / 4;
+      if (ebene > 200) g.treppe = 0;
+      if (ebene < -200) g.hoch = 0;
+      const e = Object.entries(g).filter(([, v]) => v > 0);
+      let r = Math.random() * e.reduce((a, [, v]) => a + v, 0);
+      for (const [k, v] of e) if ((r -= v) <= 0) return k;
+      return "flach";
+    }
     if (zone === "park") {
       const r = Math.random();
       return r < 0.4 ? "flach" : r < 0.65 ? "funbox" : r < 0.85 ? "treppe" : "kicker";
@@ -328,7 +409,11 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   function erzeuge() {
     while (cursor < kamX + W + 900) {
-      if (cursor > zoneBis) neueZone();
+      // nach Zonenschild oder Portal erst ein Stück flach, damit nichts in der Luft steht
+      if (cursor > zoneBis && neueZone()) {
+        flach(Math.max(460, ganz(...S.flachLang)), false);
+        continue;
+      }
       // die Show kommt in der zweiten Hälfte der Zone
       if (showOffen && cursor > zoneBis - 2400) {
         show();
@@ -365,6 +450,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       if (o.art === "kiste" && x >= o.x && x <= o.x + o.w) l.push({ y: o.y - o.h, art: "kiste", f: o });
       else if (o.art === "rail" && x >= o.x0 && x <= o.x1) l.push({ y: lerp(o.y0, o.y1, (x - o.x0) / (o.x1 - o.x0)), art: "rail", f: o });
       else if (o.art === "kicker" && x >= o.x0 && x <= o.x1) l.push({ y: o.y - (o.h * (x - o.x0)) / (o.x1 - o.x0), art: "kicker", f: o });
+      else if (o.art === "pilz" && x >= o.x - 12 && x <= o.x + o.w + 12) l.push({ y: o.y - o.h + 2, art: "pilz", f: o });
     }
     return l;
   }
@@ -390,13 +476,58 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     for (const o of objekte) {
       if (o.art === "klein" && x > o.x - 6 && x < o.x + o.w + 6) l.push(o.y - o.h + (o.stil === "brett" ? 2 : 6));
       if (o.art === "scooter" && x > o.x - 4 && x < o.x + o.w + 4) l.push(o.y - o.h + 8);
+      if (o.art === "geysir" && x > o.x - 4 && x < o.x + o.w + 4) l.push(o.y - geysirHoehe(o) + 4);
+      if (o.art === "pilz" && x > o.x + 6 && x < o.x + o.w - 6) l.push(o.y - o.h + 12);
     }
     return l;
   }
 
+  // Lava-Geysir: blubbert, warnt, bricht aus (Zyklus 2,8 s)
+  function geysirHoehe(o) {
+    const k = o.phase % 2.8;
+    if (k < 2) return 12;
+    return 12 + 84 * Math.sin(((k - 2) / 0.8) * Math.PI);
+  }
+  // Physik am Spieler: Welt (Schwerkraft, Eis) und Board
+  function physik() {
+    const p = PHYSIK[zoneBeiSpieler()] || {};
+    return { g: p.g ?? 1, sprung: (p.sprung ?? 1) * bf.sprung, reibung: p.reibung ?? 1 };
+  }
+
   // ---------- Spiel ----------
   function zeigeStatus() {
+    if (zustand === "karte" || zustand === "garage") {
+      status(`● ${fp.muenzen} im Münzkonto · Board: ${board.name}`);
+      return;
+    }
     status(`● ${muenzenZahl} Münzen · ${Math.floor(meter)} m · ${ZONEN[zoneBeiSpieler()] || ""}  ${"♥".repeat(Math.max(0, leben))}`);
+    aufgabeLauf("muenzenLauf", muenzenZahl);
+    aufgabeLauf("meterLauf", Math.floor(meter));
+  }
+
+  // ---------- Aufgaben ----------
+  function aufgabeFertig(a) {
+    fp.muenzen += a.lohn;
+    popup(`Aufgabe geschafft! +${a.lohn} ●`, "#5fc39c", true);
+    fp.aufgaben = fp.aufgaben.filter((x) => x !== a);
+    fp.aufgaben.push(neueAufgabe(fp, WELTEN));
+    speichern(fp);
+  }
+  // zählt mit (z. B. Kickflips)
+  function aufgabe(typ, n = 1) {
+    for (const a of [...fp.aufgaben]) {
+      if (a.typ !== typ || a.lauf) continue;
+      a.stand += n;
+      if (a.stand >= a.ziel) aufgabeFertig(a);
+    }
+  }
+  // bester Wert in einem Lauf (z. B. Münzen in einem Lauf)
+  function aufgabeLauf(typ, wert) {
+    for (const a of [...fp.aufgaben]) {
+      if (a.typ !== typ) continue;
+      a.stand = Math.max(a.stand, wert);
+      if (a.stand >= a.ziel) aufgabeFertig(a);
+    }
   }
   function popup(text, farbe = "#f5d97a", gross = false) {
     popups.push({ text, x: kamX + SPIELER_X, y: sp.y - 110, t: 0, farbe, gross });
@@ -406,7 +537,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (zustand !== "laeuft" || sp.sturz || !sp.amBoden) return;
     if (sp.boost > 0) return; // auf dem Boost-Streifen trägt dich der Kicker
     grindEnde();
-    sp.vy = -SPRUNG + (sp.auf?.art === "rail" ? 60 : 0);
+    sp.vy = -SPRUNG * physik().sprung + (sp.auf?.art === "rail" ? 60 : 0);
     sp.amBoden = false;
     sp.halten = true;
     sp.haltZeit = 0;
@@ -427,7 +558,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function grindEnde() {
     const g = sp.grindTrick;
     sp.grindTrick = null;
-    if (g && g.t > 0.3 && !sp.sturz) belohnung(GRIND_TRICKS[g.art].muenzen, GRIND_TRICKS[g.art].name, "#9fd0ff");
+    if (g && g.t > 0.3 && !sp.sturz) {
+      belohnung(GRIND_TRICKS[g.art].muenzen, GRIND_TRICKS[g.art].name, "#9fd0ff");
+      aufgabe("grindtrick");
+    }
   }
   function trick(art) {
     if (zustand !== "laeuft" || sp.sturz || sp.amBoden || sp.trick) return;
@@ -448,6 +582,18 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
 
   function landen(fl, wx) {
+    if (fl.art === "pilz") {
+      // Pilz federt: hoch hinaus, Tricks laufen weiter
+      sp.y = fl.y;
+      sp.vy = -SPRUNG * 1.32 * physik().sprung;
+      sp.halten = false;
+      sp.sprungSchnitt = false;
+      fl.f.gedrueckt = 0.5;
+      staub(wx, fl.y, 6);
+      belohnung(1, "Boing!", "#ff9fb0");
+      aufgabe("pilz");
+      return;
+    }
     if (fl.art === "treppe") {
       if (unverwundbar > 0) {
         // nach dem Neustart: auf die unterste Stufe setzen statt Sturz
@@ -472,13 +618,15 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     sp.vy = 0;
     sp.amBoden = true;
     sp.auf = fl;
-    if (tempo > S.max * 1.05 && !sp.nachBoost) sp.nachBoost = 1.4; // nach Boost-Sprung noch kurz schnell
+    if (tempo > maxT() * 1.05 && !sp.nachBoost) sp.nachBoost = 1.4; // nach Boost-Sprung noch kurz schnell
     sp.halten = false;
     sp.sprungSchnitt = false;
     staub(wx, fl.y, 8);
     let bonus = 0;
     const texte = [];
     if (sp.kombi.length) {
+      for (const k of sp.kombi) aufgabe(k);
+      aufgabeLauf("combo", sp.kombi.length);
       bonus += sp.kombi.reduce((a, k) => a + TRICKS[k].muenzen, 0) * sp.kombi.length;
       texte.push(sp.kombi.map((k) => TRICKS[k].name).join(" + ") + (sp.kombi.length > 1 ? ` ×${sp.kombi.length}` : ""));
       sp.kombi = [];
@@ -490,10 +638,12 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         if (t.art === "treppe" && ab.x <= t.x0 + 4 && wx >= t.x1) {
           bonus += t.n >= 7 ? 3 : t.n >= 5 ? 2 : 1;
           texte.push(`${t.n}-Stair`);
+          if (t.n >= 5) aufgabe("treppe");
         }
         if (t.art === "luecke" && ab.x <= t.x0 && wx >= t.x1) {
           bonus += 1;
           texte.push("Gap");
+          aufgabe("gap");
         }
       }
     }
@@ -509,6 +659,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (fl.art === "rail") {
       texte.push(fl.f.luecke ? "Gap-Grind" : fl.f.treppe ? "Handrail" : fl.f.stil === "ledge" ? "Ledge" : fl.f.stil === "bank" ? "Bank-Grind" : "Grind");
       bonus += fl.f.luecke ? 3 : fl.f.treppe ? 2 : 1;
+      aufgabe("grind");
+      if (fl.f.stil === "auto") aufgabe("auto");
     }
     if (texte.length) belohnung(bonus, texte.join(" + "), fl.art === "rail" ? "#9fd0ff" : "#f5d97a", texte.length > 1);
   }
@@ -535,15 +687,16 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const vorher = sp.schub.t;
       sp.schub.t += dt;
       if (vorher < SCHUB_DAUER * 0.5 && sp.schub.t >= SCHUB_DAUER * 0.5 && sp.amBoden) {
-        tempo = Math.max(tempo, Math.min(S.max, tempo + S.schub * (1 - 0.65 * (tempo / S.max))));
+        tempo = Math.max(tempo, Math.min(maxT(), tempo + S.schub * bf.schub * (1 - 0.65 * (tempo / maxT()))));
         staub(kamX + SPIELER_X - 22, sp.y, 2);
       }
       if (sp.schub.t >= SCHUB_DAUER || !sp.amBoden) sp.schub = null;
     }
     if (!sp.schub && schubHalten && sp.amBoden && !sp.sturz && sp.auf?.art !== "rail") sp.schub = { t: 0 };
     // Rollwiderstand am Boden, kaum in der Luft; bergauf langsamer, Geländer bergab schneller
+    const P = physik();
     if (sp.amBoden && !sp.sturz) {
-      tempo -= (S.reibung + tempo * 0.045) * dt;
+      tempo -= (S.reibung * P.reibung + tempo * 0.045 * (P.reibung < 1 ? 0.55 : 1)) * dt;
       const f = sp.auf?.f;
       if (sp.auf?.art === "rampe" || sp.auf?.art === "rail") {
         const sinus = Math.sin(Math.atan2(f.y1 - f.y0, f.x1 - f.x0));
@@ -552,7 +705,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     } else tempo -= tempo * 0.02 * dt;
     // über dem Höchsttempo (nach Boost): erst kurz halten, dann sanft auslaufen
     if (sp.nachBoost > 0) sp.nachBoost = Math.max(0, sp.nachBoost - dt);
-    else if (tempo > S.max && sp.amBoden && !sp.boost) tempo -= (tempo - S.max) * 1.4 * dt;
+    else if (tempo > maxT() && sp.amBoden && !sp.boost) tempo -= (tempo - maxT()) * 1.4 * dt;
     if (sp.nachBoost > 0 && sp.amBoden) tempo += (S.reibung + tempo * 0.045) * dt * 0.85; // kaum Rollwiderstand
     tempo = Math.max(0, Math.min(BOOST_TEMPO, tempo));
     const vorherX = kamX;
@@ -564,6 +717,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     erzeuge();
     const wx = kamX + SPIELER_X;
     welt(dt, wx, vorherX + SPIELER_X);
+    spur(wx);
 
     // Münzen einsammeln
     for (const m of muenzen) {
@@ -649,7 +803,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     } else {
       const vorherY = sp.y;
       sp.haltZeit += dt;
-      const g = SCHWERKRAFT;
+      const g = SCHWERKRAFT * P.g;
       sp.vy += g * dt;
       sp.y += sp.vy * dt;
       if (sp.vy > 0) {
@@ -683,8 +837,21 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         const dy = Math.abs(sp.y - 36 - o.y);
         if (dy < o.r - 12) {
           for (let i = 0; i < 14; i++) teilchen.push({ art: "funke", x: o.x, y: o.y + zufall(-o.r, o.r), vx: zufall(-200, 200), vy: zufall(-200, 100), t: 0, leben: 0.6, r: 3 });
-          belohnung(5, "Feuerring!", "#ff9f40", true);
+          belohnung(5, o.zone === "himmel" ? "Lichtring!" : o.zone === "weltall" ? "Plasmaring!" : o.zone === "eis" ? "Polarring!" : "Feuerring!", "#ff9f40", true);
+          aufgabe("ring");
         } else if (dy < o.r + 16) sturz("Heiß!");
+      }
+      if (o.art === "geysir") {
+        o.phase += dt;
+        if (!sp.sturz && wx > o.x - 4 && wx < o.x + o.w + 4 && sp.y > o.y - geysirHoehe(o) + 4) sturz("Lava!");
+      }
+      if (o.art === "pilz" && o.gedrueckt > 0) o.gedrueckt = Math.max(0, o.gedrueckt - dt);
+    }
+    // durchs Portal in die nächste Welt
+    for (const d of deko) {
+      if (d.art === "portal" && !d.durch && wx >= d.x) {
+        d.durch = true;
+        betreteWelt(d.idx, d.x);
       }
     }
     // Boost-Streifen
@@ -702,6 +869,33 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     // Tauben fliegen auf, wenn man näher kommt
     for (const d of deko) if (d.art === "tauben" && !d.auf && d.x - wx < 230 && d.x - wx > -40) d.auf = 0.001;
     for (const d of deko) if (d.art === "tauben" && d.auf) d.auf += dt;
+  }
+
+  function betreteWelt(idx, x) {
+    aktWelt = idx;
+    weltAnfangX = x;
+    const w = WELTEN[idx % WELTEN.length];
+    const neu = idx < WELTEN.length && idx > fp.welten;
+    if (neu) {
+      fp.welten = idx;
+      fp.muenzen += 10;
+      speichern(fp);
+    }
+    banner = { titel: w.name, unter: neu ? "Neue Welt freigeschaltet! +10 ●" : `Welt ${(idx % WELTEN.length) + 1}`, t: 0, farbe: w.farbe };
+    for (const a of [...fp.aufgaben]) if (a.typ === "welt" && idx >= a.ziel) aufgabeFertig(a);
+  }
+
+  // Spur hinter besonderen Boards
+  function spur(wx) {
+    if (!board.spur || sp.sturz || tempo < 60) return;
+    const y = sp.y - 6;
+    const a = board.spur;
+    if (a === "regenbogen") teilchen.push({ art: "spur", form: "regenbogen", x: wx - 30, y: y - 6, vx: -40, vy: 0, t: 0, leben: 0.45, r: 2 });
+    else if (a === "neon") teilchen.push({ art: "spur", form: "linie", farbe: Math.random() < 0.5 ? "#5ff7e4" : "#ff3ea5", x: wx - 30, y: y - zufall(0, 6), vx: -zufall(60, 120), vy: 0, t: 0, leben: 0.35, r: 2 });
+    else if (a === "feuer") teilchen.push({ art: "spur", form: "flamme", x: wx - 28 + zufall(-4, 4), y, vx: -zufall(30, 90), vy: -zufall(40, 110), t: 0, leben: 0.4, r: zufall(3, 6) });
+    else if (a === "schnee" && Math.random() < 0.6) teilchen.push({ art: "spur", form: "punkt", farbe: "#ffffff", x: wx - 26, y, vx: -zufall(40, 120), vy: zufall(-30, 30), t: 0, leben: 0.6, r: zufall(1.5, 3) });
+    else if (a === "funkeln" && Math.random() < 0.5) teilchen.push({ art: "spur", form: "stern", farbe: "#ffe28a", x: wx - 26 + zufall(-8, 8), y: y - zufall(0, 14), vx: -zufall(20, 80), vy: zufall(-20, 20), t: 0, leben: 0.5, r: zufall(2, 4) });
+    else if (a === "hover") teilchen.push({ art: "spur", form: "punkt", farbe: "#7fb8ff", x: wx + zufall(-24, 24), y: sp.y + 1, vx: -zufall(20, 60), vy: zufall(10, 40), t: 0, leben: 0.35, r: zufall(1.5, 3) });
   }
 
   function ebeneUnter(x) {
@@ -726,101 +920,74 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     tempo *= 0.4;
   }
 
+  // Münzen des Laufs aufs Konto (einmal pro Lauf)
+  function abrechnen() {
+    if (abgerechnet) return;
+    abgerechnet = true;
+    fp.muenzen += muenzenZahl;
+    fp.weiteste = Math.max(fp.weiteste || 0, Math.floor(meter));
+    speichern(fp);
+  }
   function ende() {
     zustand = "ende";
+    abrechnen();
     const neuer = ergebnis({ punkte: muenzenZahl });
-    nachricht(`<p class="big">Game Over</p><p>${muenzenZahl} Münzen · ${Math.floor(meter)} m${neuer ? " · neuer Highscore!" : ""}</p><p class="small">Leertaste oder Klick für ein neues Spiel</p>`);
+    const w = WELTEN[aktWelt % WELTEN.length];
+    nachricht(`<p class="big">Game Over</p><p>${muenzenZahl} Münzen · ${Math.floor(meter)} m · bis ${w.name}${neuer ? " · neuer Highscore!" : ""}</p><p>Münzkonto: <b>${fp.muenzen} ●</b></p><p><button type="button" class="btn" data-skate="karte">Zur Karte</button></p><p class="small">Leertaste oder Klick: nochmal fahren</p>`);
+    kartenKnopf();
+  }
+  // Knopf „Zur Karte“ im Overlay
+  function kartenKnopf() {
+    document.querySelector('#stage-msg [data-skate="karte"]')?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      zeigeKarte();
+    });
+  }
+  function zeigeKarte() {
+    if (zustand === "laeuft" || zustand === "pause") abrechnen();
+    zustand = "karte";
+    nachricht(null);
+    wahlWelt = Math.min(fp.welten, wahlWelt);
+    zeigeStatus();
+  }
+  function starteLauf() {
+    if (wahlWelt > fp.welten) return;
+    fp.startWelt = wahlWelt;
+    speichern(fp);
+    zustand = "laeuft";
+    neu();
+    nachricht(null);
   }
 
   // ---------- Zeichnen ----------
-  function zeichneHimmel(t) {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#07060d");
-    g.addColorStop(0.55, "#181332");
-    g.addColorStop(1, "#33264f");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-    for (const s of sterne) {
-      ctx.globalAlpha = 0.45 + 0.4 * Math.sin(t / 700 + s.p);
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    // Mond mit Schein
-    const mg = ctx.createRadialGradient(780, 90, 10, 780, 90, 110);
-    mg.addColorStop(0, "rgba(245, 230, 184, 0.35)");
-    mg.addColorStop(1, "rgba(245, 230, 184, 0)");
-    ctx.fillStyle = mg;
-    ctx.fillRect(660, 0, 240, 220);
-    ctx.fillStyle = "#f5e6b8";
-    ctx.beginPath();
-    ctx.arc(780, 90, 30, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "rgba(200, 185, 140, 0.35)";
-    [[770, 82, 6], [792, 100, 4], [784, 76, 3]].forEach(([x, y, r]) => {
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  }
-
-  function zeichneStadt(t) {
-    for (const e of ebenen) {
-      const off = (kamX * e.f) % e.breite;
-      const basis = H + 40 - kamY * 0 - (kamY + H * 0.68) * e.f * 0.6;
-      for (const rep of [0, e.breite]) {
-        for (const h of e.liste) {
-          const x = h.x - off + rep;
-          if (x > W || x + h.b < 0) continue;
-          const top = basis - h.h - 120;
-          ctx.fillStyle = e.farbe;
-          ctx.fillRect(x, top, h.b, H - top + 40);
-          if (h.antenne) {
-            ctx.fillRect(x + h.b / 2 - 1, top - 18, 2, 18);
-            ctx.fillStyle = Math.sin(t / 400 + h.x) > 0 ? "#e5566f" : "#5a2030";
-            ctx.fillRect(x + h.b / 2 - 2, top - 20, 4, 4);
-          }
-          for (const [fx, fy, p] of h.fenster) {
-            ctx.fillStyle = p > 0.85 ? "rgba(159, 208, 255, 0.55)" : `rgba(245, 217, 122, ${0.25 + p * 0.35})`;
-            ctx.fillRect(x + fx, top + fy, 7, 9);
-          }
-        }
-      }
-    }
-    // leichter Dunst über der Stadt
-    const d = ctx.createLinearGradient(0, H * 0.55, 0, H);
-    d.addColorStop(0, "rgba(51, 38, 79, 0)");
-    d.addColorStop(1, "rgba(51, 38, 79, 0.55)");
-    ctx.fillStyle = d;
-    ctx.fillRect(0, H * 0.55, W, H * 0.45);
-  }
-
   // Welt: Dächer, Treppen, Rampen (in Weltkoordinaten)
   function zeichneWelt() {
     const unten = kamY + H + 60;
     for (const t of teile) {
       if (t.x1 < kamX - 20 || t.x0 > kamX + W + 20) continue;
       if (t.art === "luecke") {
-        if (t.zone !== "dach") {
+        // Boden rechts der Lücke kann tiefer liegen: Bake dort auf den echten Boden stellen
+        const rechts = teile.find((n) => n !== t && Math.abs(n.x0 - t.x1) < 1);
+        const rechtsY = rechts ? (rechts.y ?? rechts.y0) : t.y;
+        if (!STADT_ZONEN.includes(t.zone)) zeichneLuecke(ctx, t.zone, performance.now(), t.x0, t.x1, Math.max(t.y, rechtsY), unten);
+        else if (t.zone !== "dach") {
           // Baustelle: Warnbaken mit Blinklicht an beiden Kanten
-          for (const bx of [t.x0 - 10, t.x1 + 4]) {
+          for (const [bx, by] of [[t.x0 - 10, t.y], [t.x1 + 4, rechtsY]]) {
             for (let i = 0; i < 4; i++) {
               ctx.fillStyle = i % 2 ? "#ffffff" : "#e5566f";
-              ctx.fillRect(bx, t.y - 40 + i * 9, 6, 9);
+              ctx.fillRect(bx, by - 40 + i * 9, 6, 9);
             }
             const an = Math.floor(performance.now() / 350) % 2;
             ctx.fillStyle = an ? "#ffb347" : "#6a4416";
             ctx.beginPath();
-            ctx.arc(bx + 3, t.y - 44, 3.5, 0, Math.PI * 2);
+            ctx.arc(bx + 3, by - 44, 3.5, 0, Math.PI * 2);
             ctx.fill();
             if (an) {
-              const g = ctx.createRadialGradient(bx + 3, t.y - 44, 1, bx + 3, t.y - 44, 22);
+              const g = ctx.createRadialGradient(bx + 3, by - 44, 1, bx + 3, by - 44, 22);
               g.addColorStop(0, "rgba(255, 179, 71, 0.45)");
               g.addColorStop(1, "rgba(255, 179, 71, 0)");
               ctx.fillStyle = g;
-              ctx.fillRect(bx - 20, t.y - 66, 46, 44);
+              ctx.fillRect(bx - 20, by - 66, 46, 44);
             }
           }
         }
@@ -853,7 +1020,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.fillStyle = g;
       ctx.fill();
       // helle Oberkante
-      ctx.strokeStyle = t.art === "rampe" ? (t.zone === "park" ? "#f5d97a" : "#d4b8ff") : st.kante;
+      ctx.strokeStyle = t.art === "rampe" ? (t.zone === "park" ? "#f5d97a" : t.zone === "dach" || t.zone === "strasse" ? "#d4b8ff" : st.kante) : st.kante;
       ctx.lineWidth = 3;
       ctx.beginPath();
       if (t.art === "flach") {
@@ -883,6 +1050,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         for (let x = start; x < t.x1; x += 120) ctx.fillRect(x, t.y + 3, 2, 40);
         ctx.fillStyle = "rgba(255,255,255,0.12)";
         ctx.fillRect(t.x0, t.y + 3, t.x1 - t.x0, 5);
+      } else if (t.art === "flach" && t.zone !== "dach") {
+        bodenDetail(ctx, t.zone, performance.now(), t.x0, t.x1, t.y);
       } else if (t.art === "flach") {
         // Fugen, Dachkante
         ctx.fillStyle = "rgba(0,0,0,0.22)";
@@ -906,7 +1075,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const endY = t.y ?? t.y1;
       const danach = teile.find((n) => n !== t && Math.abs(n.x0 - t.x1) < 1);
       const danachY = danach ? (danach.y ?? danach.y0) : null;
-      if (!danach || danach.art === "luecke" || danachY > endY + 1) {
+      if ((!danach || danach.art === "luecke" || danachY > endY + 1) && t.zone !== "himmel") {
         ctx.fillStyle = "rgba(0,0,0,0.35)";
         ctx.fillRect(t.x1 - 4, endY + 3, 4, unten - endY);
         ctx.fillStyle = "rgba(255,255,255,0.08)";
@@ -1135,7 +1304,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   // Feuerring auf zwei Stangen, Flammen züngeln
   function zeichneRing(o, t) {
-    ctx.fillStyle = "#4a4458";
+    const rf = RING_FARBEN[o.zone];
+    ctx.fillStyle = rf ? rf[4] : "#4a4458";
     ctx.fillRect(o.x - 3, o.y + o.r, 6, o.boden - o.y - o.r);
     ctx.fillRect(o.x - 14, o.boden - 4, 28, 4);
     ctx.strokeStyle = "#8a6a3a";
@@ -1149,16 +1319,16 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const fy = o.y + Math.sin(a) * o.r;
       const fl = 6 + 6 * Math.abs(Math.sin(t / 70 + i * 1.7));
       const g = ctx.createRadialGradient(fx, fy - fl * 0.4, 1, fx, fy - fl * 0.4, fl);
-      g.addColorStop(0, "rgba(255, 245, 180, 0.95)");
-      g.addColorStop(0.4, "rgba(255, 160, 60, 0.85)");
-      g.addColorStop(1, "rgba(229, 60, 40, 0)");
+      g.addColorStop(0, rf ? rf[0] : "rgba(255, 245, 180, 0.95)");
+      g.addColorStop(0.4, rf ? rf[1] : "rgba(255, 160, 60, 0.85)");
+      g.addColorStop(1, rf ? rf[2] : "rgba(229, 60, 40, 0)");
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.ellipse(fx, fy - fl * 0.4, fl * 0.55, fl, 0, 0, Math.PI * 2);
       ctx.fill();
     }
     const glow = ctx.createRadialGradient(o.x, o.y, o.r * 0.3, o.x, o.y, o.r * 1.8);
-    glow.addColorStop(0, "rgba(255, 140, 50, 0.12)");
+    glow.addColorStop(0, rf ? rf[3] : "rgba(255, 140, 50, 0.12)");
     glow.addColorStop(1, "rgba(255, 140, 50, 0)");
     ctx.fillStyle = glow;
     ctx.fillRect(o.x - o.r * 2, o.y - o.r * 2, o.r * 4, o.r * 4);
@@ -1171,6 +1341,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const dx1 = d.x1 ?? d.x + (d.b || 120);
       if (dx1 < kamX - 40 || dx0 > kamX + W + 40) continue;
       if (vorn !== (d.art === "tauben")) continue;
+      if (zeichneWeltDeko(ctx, d, t)) continue;
       if (d.art === "laden") {
         const top = d.y - d.hoch;
         ctx.fillStyle = "#231f30";
@@ -1320,7 +1491,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         ctx.fillRect(d.x - 2, d.y - d.h - 3, 4, 4);
       } else if (d.art === "schild") {
         // Zonen-Schild
-        const text = ZONEN[d.zone].toUpperCase();
+        const text = (ZONEN[d.zone] || "").toUpperCase();
         ctx.font = '12px "Press Start 2P", monospace';
         const b = ctx.measureText(text).width + 30;
         ctx.fillStyle = "#3a3647";
@@ -1345,18 +1516,19 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
             x += flug * (140 + i * 30);
             y -= flug * (180 + i * 40) - flug * flug * 20;
           }
-          ctx.fillStyle = "#8d8aa0";
+          const vf = VOGEL[d.vogel || "taube"];
+          ctx.fillStyle = vf.koerper;
           ctx.beginPath();
           ctx.ellipse(x, y, 7, 5, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.beginPath();
           ctx.arc(x + 6, y - 4, 3.6, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "#f0a35e";
+          ctx.fillStyle = vf.schnabel;
           ctx.fillRect(x + 9, y - 4, 3, 1.6);
           if (flug) {
             const fl = Math.sin(t / 40 + i) * 8;
-            ctx.strokeStyle = "#a8a5ba";
+            ctx.strokeStyle = vf.fluegel;
             ctx.lineWidth = 2.4;
             ctx.beginPath();
             ctx.moveTo(x - 6, y - 2 - fl);
@@ -1380,9 +1552,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       const ox0 = o.x0 ?? o.x;
       const ox1 = o.x1 ?? o.x + o.w;
       if (ox1 < kamX - 20 || ox0 > kamX + W + 20) continue;
-      if (o.art === "klein") zeichneKlein(o);
-      else if (o.art === "kiste") zeichneKiste(o, t);
-      else if (o.art === "scooter") zeichneScooter(o, t);
+      if (o.art === "klein") zeichneKleinWelt(ctx, o, t) || zeichneKlein(o);
+      else if (o.art === "kiste") zeichneKisteWelt(ctx, o, t) || zeichneKiste(o, t);
+      else if (o.art === "scooter") zeichneMover(ctx, o, t) || zeichneScooter(o, t);
+      else if (o.art === "pilz") zeichnePilz(ctx, o, t, o.gedrueckt);
+      else if (o.art === "geysir") {
+        const k = o.phase % 2.8;
+        zeichneGeysir(ctx, o, t, geysirHoehe(o) - 12, k > 1.5 && k < 2 ? 1 : 0);
+      }
       else if (o.art === "booster") {
         // leuchtende Pfeile auf dem Boden
         const g = ctx.createLinearGradient(o.x0, 0, o.x1, 0);
@@ -1403,14 +1580,15 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         }
       } else if (o.art === "ring") zeichneRing(o, t);
       else if (o.art === "kicker") {
-        ctx.fillStyle = o.gross ? "#2f3a55" : "#3a3355";
+        const kz = KICKER_FARBE[teile.find((tt) => o.x0 >= tt.x0 && o.x0 <= tt.x1)?.zone];
+        ctx.fillStyle = kz ? kz[0] : o.gross ? "#2f3a55" : "#3a3355";
         ctx.beginPath();
         ctx.moveTo(o.x0, o.y);
         ctx.lineTo(o.x1, o.y - o.h);
         ctx.lineTo(o.x1, o.y);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = o.gross ? "#5fc39c" : "#f5d97a";
+        ctx.strokeStyle = o.gross ? "#5fc39c" : kz ? kz[1] : "#f5d97a";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(o.x0, o.y);
@@ -1442,6 +1620,16 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         ctx.fillRect(o.x0 + 4, o.y0 - 15, o.x1 - o.x0 - 8, 5);
         ctx.fillStyle = "#3a3542";
         for (const px of [o.x0 + 12, o.x1 - 16]) ctx.fillRect(px, o.y0 - 24, 3, 22);
+      } else if (o.art === "rail" && o.stil !== "rail") {
+        const posten = [o.x0 + 12, o.x1 - 12];
+        if (!o.luecke) posten.push((o.x0 + o.x1) / 2);
+        const pf = [];
+        for (const px of posten) {
+          const ry = lerp(o.y0, o.y1, (px - o.x0) / (o.x1 - o.x0));
+          const fl = flaechenBei(px).filter((f) => f.art !== "rail" && f.y > ry).sort((a, b) => a.y - b.y)[0];
+          if (fl) pf.push([px, ry, fl.y]);
+        }
+        zeichneRailWelt(ctx, o, t, pf);
       } else if (o.art === "rail") {
         // Pfosten bis zur Fläche darunter
         ctx.fillStyle = "#5d5974";
@@ -1522,7 +1710,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     }
     return pts;
   }
-  function zeichneBrett(winkel = 0) {
+  function zeichneBrett(winkel = 0, b = board) {
+    const sk = b.skin;
     const c = Math.cos(winkel);
     const s = Math.sin(winkel);
     const mitte = DECK_Y - DECK_DICKE / 2; // Drehachse = Deckmitte
@@ -1532,6 +1721,21 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     const flaeche = Math.abs(s) * DECK_BREITE; // sichtbare Breite der Deckfläche
 
     const achsen = () => {
+      if (b.hover) {
+        // Hoverboard: statt Rollen zwei leuchtende Schwebe-Düsen
+        const puls = 0.6 + 0.3 * Math.sin(performance.now() / 120);
+        for (const ax of [-17, 17]) {
+          const y = proj(-(DECK_DICKE / 2 + 1.6), 0);
+          ctx.fillStyle = "#3a4058";
+          ctx.fillRect(ax - 6, Math.min(y, proj(-DECK_DICKE / 2, 0)), 12, 2.4);
+          const g = ctx.createRadialGradient(ax, y + 4, 0.5, ax, y + 4, 9);
+          g.addColorStop(0, `rgba(190, 225, 255, ${puls})`);
+          g.addColorStop(1, "rgba(127, 184, 255, 0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(ax - 10, y - 4, 20, 16);
+        }
+        return;
+      }
       for (const ax of [-17, 17]) {
         // Höhe unter der Deckmitte: Grundplatte, Hänger, Achse
         const hB = -(DECK_DICKE / 2 + 1.4);
@@ -1542,7 +1746,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         ctx.fillRect(ax - 5.5, Math.min(proj(-DECK_DICKE / 2, 0), yB), 11, Math.abs(yB - proj(-DECK_DICKE / 2, 0)) + 0.6);
         // Lenkgummi (rot) und Hänger (Alu)
         const yG = lerp(yB, yA, 0.35);
-        ctx.fillStyle = "#e5566f";
+        ctx.fillStyle = sk.gummi;
         ctx.beginPath();
         ctx.ellipse(ax, yG, 2.4, 1.3, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -1564,10 +1768,11 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         rollen.forEach((ry, i) => {
           const hinten = i === 0 && Math.abs(rollen[1] - rollen[0]) < 0.5 ? false : i === 0;
           const rx = ax + (i === 0 ? 0.6 : 0);
+          if (hinten) ctx.globalAlpha = 0.8;
           const gr = ctx.createRadialGradient(rx - 1.2, ry - 1.2, 0.3, rx, ry, ROLLE_R);
-          gr.addColorStop(0, hinten ? "#d8d2c4" : "#fffaf0");
-          gr.addColorStop(0.75, hinten ? "#b9b2a2" : "#ebe3d2");
-          gr.addColorStop(1, hinten ? "#8f897b" : "#b7ae9b");
+          gr.addColorStop(0, sk.rolle[0]);
+          gr.addColorStop(0.75, sk.rolle[1]);
+          gr.addColorStop(1, sk.rolle[2]);
           ctx.fillStyle = gr;
           ctx.beginPath();
           ctx.arc(rx, ry, ROLLE_R, 0, Math.PI * 2);
@@ -1581,6 +1786,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
           ctx.beginPath();
           ctx.arc(rx, ry, 0.7, 0, Math.PI * 2);
           ctx.fill();
+          ctx.globalAlpha = 1;
         });
       }
     };
@@ -1598,11 +1804,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         ctx.closePath();
         if (unterseiteSichtbar) {
           const g = ctx.createLinearGradient(-35, 0, 35, 0);
-          g.addColorStop(0, "#b48ef0");
-          g.addColorStop(0.5, "#f5d97a");
-          g.addColorStop(1, "#e5566f");
+          sk.unten.forEach((f, i) => g.addColorStop(i / (sk.unten.length - 1), f));
           ctx.fillStyle = g;
-        } else ctx.fillStyle = "#1c1a22";
+        } else ctx.fillStyle = sk.grip;
         ctx.fill();
         if (!unterseiteSichtbar) {
           ctx.fillStyle = "rgba(255,255,255,0.07)";
@@ -1618,9 +1822,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       o.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       for (let i = u.length - 1; i >= 0; i--) ctx.lineTo(u[i][0], u[i][1]);
       ctx.closePath();
-      ctx.fillStyle = "#e3c497";
+      if (sk.leuchten) {
+        ctx.shadowColor = sk.leuchten;
+        ctx.shadowBlur = 8;
+      }
+      ctx.fillStyle = sk.kante;
       ctx.fill();
-      ctx.strokeStyle = "rgba(150, 100, 50, 0.55)";
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = sk.schicht;
       ctx.lineWidth = 0.35;
       for (const f of [0.35, 0.65]) {
         ctx.beginPath();
@@ -1818,6 +2027,41 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     teilchen = teilchen.filter((p) => (p.t += dt) < p.leben);
     for (const p of teilchen) {
       const k = p.t / p.leben;
+      if (p.art === "spur") {
+        const x = p.x + p.vx * p.t;
+        const y = p.y + p.vy * p.t;
+        ctx.globalAlpha = 1 - k;
+        if (p.form === "regenbogen") {
+          ["#ff6b6b", "#ffb347", "#ffe066", "#7be07b", "#6ab8ff", "#b48ef0"].forEach((f, i) => {
+            ctx.fillStyle = f;
+            ctx.fillRect(x, y + i * 2, 9, 2);
+          });
+        } else if (p.form === "linie") {
+          ctx.strokeStyle = p.farbe;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 20, y);
+          ctx.stroke();
+        } else if (p.form === "flamme") {
+          const g = ctx.createRadialGradient(x, y, 0, x, y, p.r * (1.4 - k));
+          g.addColorStop(0, "rgba(255, 240, 160, 0.95)");
+          g.addColorStop(0.5, "rgba(255, 120, 40, 0.8)");
+          g.addColorStop(1, "rgba(200, 40, 20, 0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(x - p.r * 1.5, y - p.r * 1.5, p.r * 3, p.r * 3);
+        } else if (p.form === "stern") {
+          ctx.fillStyle = p.farbe;
+          ctx.fillRect(x - p.r, y - 0.6, p.r * 2, 1.2);
+          ctx.fillRect(x - 0.6, y - p.r, 1.2, p.r * 2);
+        } else {
+          ctx.fillStyle = p.farbe;
+          ctx.beginPath();
+          ctx.arc(x, y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        continue;
+      }
       const x = p.x + p.vx * p.t;
       const y = p.y + p.vy * p.t + (p.art === "staub" || p.art === "boost" ? 0 : 700 * p.t * p.t);
       ctx.globalAlpha = 1 - k;
@@ -1860,8 +2104,22 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function zeichne(t, dt) {
     ctx.setTransform(skala, 0, 0, skala, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    zeichneHimmel(t);
-    zeichneStadt(t);
+    if (zustand === "karte") return zeichneKarte(t);
+    if (zustand === "garage") return zeichneGarage(t);
+    const bw = weltVonZone(zoneBeiSpieler());
+    if (bgAktuell === null) bgAktuell = bw;
+    if (bw !== bgAktuell) {
+      bgAlt = bgAktuell;
+      bgAktuell = bw;
+      bgMix = 0;
+    }
+    bgMix = Math.min(1, bgMix + dt / 1.4);
+    if (bgMix < 1 && bgAlt) {
+      zeichneHintergrund(ctx, bgAlt, t, kamX, kamY, W, H);
+      ctx.globalAlpha = bgMix;
+    }
+    zeichneHintergrund(ctx, bgAktuell, t, kamX, kamY, W, H);
+    ctx.globalAlpha = 1;
     ctx.save();
     ctx.translate(-kamX, -kamY);
     zeichneDeko(t, false);
@@ -1872,6 +2130,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     zeichneTeilchen(dt);
     zeichnePopups(dt);
     ctx.restore();
+    zeichneWetter(ctx, bgAktuell, t, kamX, W, H);
+    zeichneHud(t, dt);
     // Hinweis, solange man (fast) steht
     if (zustand === "laeuft" && tempo < 90 && !sp.sturz) {
       ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t / 260);
@@ -1882,7 +2142,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.globalAlpha = 1;
     }
     // Tempo-Linien bei hoher Geschwindigkeit
-    if (zustand === "laeuft" && tempo > S.max * 0.85) {
+    if (zustand === "laeuft" && tempo > maxT() * 0.85) {
       ctx.strokeStyle = "rgba(255,255,255,0.08)";
       ctx.lineWidth = 1.5;
       for (let i = 0; i < 6; i++) {
@@ -1894,6 +2154,407 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
         ctx.stroke();
       }
     }
+  }
+
+
+  // ---------- Anzeige im Spiel: Weg bis zur nächsten Welt, Welt-Banner ----------
+  function zeichneHud(t, dt) {
+    if (zustand !== "laeuft" && zustand !== "pause") return;
+    const w = WELTEN[aktWelt % WELTEN.length];
+    const n = WELTEN[(aktWelt + 1) % WELTEN.length];
+    const portal = deko.find((d) => d.art === "portal" && d.idx === aktWelt + 1);
+    const zielX = portal ? portal.x : weltAnfangX + WELT_PX + 220;
+    const wx = kamX + SPIELER_X;
+    const k = Math.max(0, Math.min(1, (wx - weltAnfangX) / Math.max(1, zielX - weltAnfangX)));
+    const bx = 350;
+    const bb = 260;
+    ctx.fillStyle = "rgba(10, 8, 18, 0.55)";
+    rund(bx - 44, 6, bb + 88, 40, 12);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
+    rund(bx, 16, bb, 8, 4);
+    ctx.fill();
+    ctx.fillStyle = w.farbe;
+    rund(bx, 16, Math.max(8, bb * k), 8, 4);
+    ctx.fill();
+    zeichneWeltSymbol(ctx, w.id, bx - 22, 20, 11, t);
+    zeichneWeltSymbol(ctx, n.id, bx + bb + 22, 20, 11, t);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#e9e6f4";
+    ctx.fillText(`noch ${Math.max(0, Math.ceil((zielX - wx) / 40))} m bis ${n.name}`, bx + bb / 2, 39);
+    if (banner) {
+      banner.t += dt;
+      const a = Math.min(1, banner.t / 0.3, Math.max(0, (3 - banner.t) / 0.6));
+      if (banner.t > 3) banner = null;
+      else {
+        ctx.globalAlpha = a;
+        ctx.textAlign = "center";
+        ctx.font = '22px "Press Start 2P", monospace';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = "#0b0a10";
+        ctx.strokeText(banner.titel.toUpperCase(), W / 2, 112);
+        ctx.fillStyle = banner.farbe;
+        ctx.fillText(banner.titel.toUpperCase(), W / 2, 112);
+        ctx.font = '11px "Press Start 2P", monospace';
+        ctx.lineWidth = 4;
+        ctx.strokeText(banner.unter, W / 2, 140);
+        ctx.fillStyle = "#f4f1f8";
+        ctx.fillText(banner.unter, W / 2, 140);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // ---------- Menüs (im Canvas gezeichnet): Weltkarte und Garage ----------
+  const SANS = "system-ui, -apple-system, Segoe UI, sans-serif";
+  function rund(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function panel(x, y, w, h) {
+    ctx.fillStyle = "rgba(14, 12, 24, 0.82)";
+    rund(x, y, w, h, 14);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  function knopf(x, y, w, h, text, aktion, an, farbe, unter) {
+    ctx.fillStyle = an ? farbe : "rgba(90, 86, 110, 0.6)";
+    rund(x, y, w, h, 12);
+    ctx.fill();
+    ctx.fillStyle = an ? "#0f0e13" : "#c8c4d6";
+    ctx.textAlign = "center";
+    ctx.font = `${h > 50 ? 15 : 11}px "Press Start 2P", monospace`;
+    ctx.fillText(text, x + w / 2, y + h / 2 + (unter ? -2 : 5));
+    if (unter) {
+      ctx.font = `12px ${SANS}`;
+      ctx.fillText(unter, x + w / 2, y + h / 2 + 18);
+    }
+    if (an) knoepfe.push({ x, y, w, h, aktion });
+  }
+  function umbrechen(text, x, y, breite, zeile) {
+    const woerter = text.split(" ");
+    let z = "";
+    for (const w of woerter) {
+      const test = z ? z + " " + w : w;
+      if (ctx.measureText(test).width > breite && z) {
+        ctx.fillText(z, x, y);
+        y += zeile;
+        z = w;
+      } else z = test;
+    }
+    if (z) ctx.fillText(z, x, y);
+    return y;
+  }
+  function schloss(x, y, s = 1) {
+    ctx.fillStyle = "#c8c4d6";
+    ctx.strokeStyle = "#c8c4d6";
+    ctx.lineWidth = 2.4 * s;
+    ctx.beginPath();
+    ctx.arc(x, y - 3 * s, 5 * s, Math.PI, 0);
+    ctx.stroke();
+    ctx.fillRect(x - 7 * s, y - 3 * s, 14 * s, 11 * s);
+    ctx.fillStyle = "#14111c";
+    ctx.fillRect(x - 1 * s, y, 2 * s, 4 * s);
+  }
+  function kopfzeile(titel, unter) {
+    ctx.textAlign = "left";
+    ctx.font = '18px "Press Start 2P", monospace';
+    ctx.fillStyle = "#f5d97a";
+    ctx.fillText(titel, 28, 46);
+    ctx.font = `13px ${SANS}`;
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText(unter, 28, 68);
+    ctx.textAlign = "right";
+    ctx.font = '15px "Press Start 2P", monospace';
+    ctx.fillStyle = "#ffd65a";
+    ctx.fillText(`${fp.muenzen}`, W - 28, 46);
+    const mx = W - 28 - ctx.measureText(`${fp.muenzen}`).width - 16;
+    const mg = ctx.createLinearGradient(mx - 8, 32, mx + 8, 48);
+    mg.addColorStop(0, "#fff3a8");
+    mg.addColorStop(0.5, "#ffc93a");
+    mg.addColorStop(1, "#c48a12");
+    ctx.fillStyle = mg;
+    ctx.beginPath();
+    ctx.arc(mx, 40, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#a06d0a";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.font = `13px ${SANS}`;
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText(`Board: ${board.name}`, W - 28, 68);
+  }
+  const KNOTEN = WELTEN.map((_, i) => ({ x: 96 + i * 128, y: 182 + (i % 2 ? 34 : -26) }));
+
+  function zeichneKarte(t) {
+    knoepfe = [];
+    const w = WELTEN[wahlWelt];
+    zeichneHintergrund(ctx, w.id, t, t * 0.05, -H * 0.68, W, H);
+    ctx.fillStyle = "rgba(8, 6, 16, 0.5)";
+    ctx.fillRect(0, 0, W, H);
+    kopfzeile("STICK-SKATER", "Weltkarte · je weiter du fährst, desto mehr Welten");
+    // Weg zwischen den Welten
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    for (let i = 0; i < KNOTEN.length - 1; i++) {
+      const a = KNOTEN[i];
+      const b = KNOTEN[i + 1];
+      const frei = i + 1 <= fp.welten;
+      ctx.strokeStyle = frei ? "#f5d97a" : "rgba(255,255,255,0.25)";
+      ctx.setLineDash([10, 9]);
+      ctx.lineDashOffset = frei ? -t / 40 : 0;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + (i % 2 ? -30 : 30), b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    WELTEN.forEach((welt, i) => {
+      const { x, y } = KNOTEN[i];
+      const frei = i <= fp.welten;
+      const gew = i === wahlWelt;
+      const r = gew ? 34 + Math.sin(t / 300) * 1.5 : 27;
+      if (gew) {
+        const g = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2);
+        g.addColorStop(0, welt.farbe + "88");
+        g.addColorStop(1, welt.farbe + "00");
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r * 2, y - r * 2, r * 4, r * 4);
+      }
+      ctx.fillStyle = "rgba(20, 17, 28, 0.92)";
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = frei ? welt.farbe : "#5a566a";
+      ctx.lineWidth = gew ? 4 : 3;
+      ctx.stroke();
+      ctx.globalAlpha = frei ? 1 : 0.3;
+      zeichneWeltSymbol(ctx, welt.id, x, y, r * 0.62, t);
+      ctx.globalAlpha = 1;
+      if (!frei) schloss(x + r * 0.62, y + r * 0.5, 1);
+      ctx.textAlign = "center";
+      ctx.font = `${gew ? "bold " : ""}13px ${SANS}`;
+      ctx.fillStyle = frei ? "#f4f1f8" : "#8a8698";
+      ctx.fillText(welt.name, x, y + r + 20);
+      knoepfe.push({ x: x - 44, y: y - 44, w: 88, h: 100, aktion: () => (wahlWelt = i) });
+    });
+    // Infos zur gewählten Welt
+    const frei = wahlWelt <= fp.welten;
+    panel(24, 300, 400, 156);
+    ctx.textAlign = "left";
+    ctx.font = '13px "Press Start 2P", monospace';
+    ctx.fillStyle = w.farbe;
+    ctx.fillText(`${wahlWelt + 1}. ${w.name.toUpperCase()}`, 44, 332);
+    ctx.font = `15px ${SANS}`;
+    ctx.fillStyle = "#e9e6f4";
+    umbrechen(w.kurz, 44, 360, 360, 21);
+    ctx.font = `13px ${SANS}`;
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText(`Weiteste Fahrt: ${fp.weiteste || 0} m · ${fp.welten + 1} von ${WELTEN.length} Welten offen`, 44, 414);
+    ctx.fillStyle = frei ? "#5fc39c" : "#c8c4d6";
+    ctx.fillText(frei ? (wahlWelt === 0 ? "Startwelt · hier beginnt alles" : "Freigeschaltet ✓ · hier kannst du starten") : `Gesperrt: fahr in einem Lauf durch ${WELTEN[wahlWelt - 1].name} bis hierher`, 44, 438);
+    // Aufgaben
+    panel(436, 300, 316, 156);
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = "#f5d97a";
+    ctx.fillText("AUFGABEN", 454, 326);
+    fp.aufgaben.slice(0, 3).forEach((a, j) => {
+      const y0 = 352 + j * 36;
+      ctx.textAlign = "left";
+      ctx.font = `13px ${SANS}`;
+      ctx.fillStyle = "#e9e6f4";
+      let text = a.text;
+      while (ctx.measureText(text).width > 230 && text.length > 8) text = text.slice(0, -2);
+      if (text !== a.text) text = text.trimEnd() + "…";
+      ctx.fillText(text, 454, y0);
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#ffd65a";
+      ctx.fillText(`+${a.lohn} ●`, 736, y0);
+      ctx.fillStyle = "rgba(255,255,255,0.14)";
+      rund(454, y0 + 7, 220, 6, 3);
+      ctx.fill();
+      ctx.fillStyle = "#5fc39c";
+      const anteil = a.typ === "welt" ? (a.stand >= a.ziel ? 1 : 0) : Math.min(1, a.stand / a.ziel);
+      rund(454, y0 + 7, Math.max(6, 220 * anteil), 6, 3);
+      ctx.fill();
+      ctx.font = `11px ${SANS}`;
+      ctx.fillStyle = "#c9c3e0";
+      ctx.fillText(a.typ === "welt" ? "" : `${Math.min(a.stand, a.ziel)}/${a.ziel}`, 736, y0 + 14);
+    });
+    knopf(766, 300, 170, 72, "▶ LOS", starteLauf, frei, "#5fc39c", "Leertaste");
+    knopf(766, 384, 170, 40, "BOARDS", () => (zustand = "garage"), true, "#b48ef0");
+    ctx.textAlign = "center";
+    ctx.font = `12px ${SANS}`;
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText(grob ? "Welt antippen" : "← → Welt · B Boards", 851, 448);
+  }
+
+  function boardAktion() {
+    const b = BOARDS[wahlBoard];
+    if (fp.board === b.id) return;
+    if (!fp.boards.includes(b.id)) {
+      if (fp.muenzen < b.preis) return;
+      fp.muenzen -= b.preis;
+      fp.boards.push(b.id);
+    }
+    fp.board = b.id;
+    board = b;
+    bf = boardFaktoren(b);
+    speichern(fp);
+    zeigeStatus();
+  }
+
+  // Board von unten gesehen (wie an der Wand im Skateshop)
+  function deckUnterseite(cx, cy, l, br, b, t) {
+    const sk = b.skin;
+    const x0 = cx - l / 2;
+    const r = br / 2;
+    const form = () => {
+      ctx.beginPath();
+      ctx.moveTo(x0 + r, cy - r);
+      ctx.lineTo(x0 + l - r, cy - r);
+      ctx.arc(x0 + l - r, cy, r, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(x0 + r, cy + r);
+      ctx.arc(x0 + r, cy, r, Math.PI / 2, Math.PI * 1.5);
+      ctx.closePath();
+    };
+    if (sk.leuchten) {
+      ctx.shadowColor = sk.leuchten;
+      ctx.shadowBlur = 22 + 6 * Math.sin(t / 400);
+    }
+    form();
+    ctx.fillStyle = sk.kante;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.save();
+    form();
+    ctx.clip();
+    const g = ctx.createLinearGradient(x0, 0, x0 + l, 0);
+    sk.unten.forEach((f, i) => g.addColorStop(i / (sk.unten.length - 1), f));
+    ctx.fillStyle = g;
+    ctx.fillRect(x0 + 4, cy - r + 4, l - 8, br - 8);
+    // Grafik: Streifen und Stern
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    for (let i = 0; i < 5; i++) ctx.fillRect(x0 + l * 0.18 + i * 14, cy - r, 6, br);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      const rr = i % 2 ? 9 : 22;
+      ctx.lineTo(cx + 40 + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    }
+    ctx.fill();
+    ctx.font = '12px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(20, 17, 28, 0.75)";
+    ctx.fillText(b.name.toUpperCase(), cx - 50, cy + 5);
+    ctx.restore();
+    // Achsen von unten
+    for (const ax of [x0 + l * 0.2, x0 + l * 0.8]) {
+      if (b.hover) {
+        const g2 = ctx.createRadialGradient(ax, cy, 2, ax, cy, 30);
+        g2.addColorStop(0, "rgba(190, 225, 255, 0.9)");
+        g2.addColorStop(1, "rgba(127, 184, 255, 0)");
+        ctx.fillStyle = g2;
+        ctx.fillRect(ax - 30, cy - 30, 60, 60);
+        continue;
+      }
+      ctx.fillStyle = "#8d8a99";
+      ctx.fillRect(ax - 9, cy - r - 6, 18, br + 12);
+      ctx.fillStyle = sk.rolle[1];
+      for (const wy of [cy - r - 10, cy + r - 2]) {
+        rund(ax - 12, wy, 24, 12, 4);
+        ctx.fill();
+      }
+    }
+  }
+  const SPUR_NAME = { neon: "Neon-Streifen", feuer: "Flammen", schnee: "Schneeflocken", funkeln: "Goldfunkeln", regenbogen: "Regenbogen", hover: "Schwebeglühen" };
+  function zeichneGarage(t) {
+    knoepfe = [];
+    zeichneHintergrund(ctx, WELTEN[Math.min(wahlWelt, fp.welten)].id, t, t * 0.05, -H * 0.68, W, H);
+    ctx.fillStyle = "rgba(8, 6, 16, 0.62)";
+    ctx.fillRect(0, 0, W, H);
+    kopfzeile("GARAGE", "Boards kaufen mit Münzen aus deinen Läufen");
+    const b = BOARDS[wahlBoard];
+    const hat = fp.boards.includes(b.id);
+    const aktiv = fp.board === b.id;
+    // Vorschau auf einem Podest
+    const sp0 = ctx.createRadialGradient(360, 200, 10, 360, 200, 230);
+    sp0.addColorStop(0, "rgba(255, 245, 210, 0.2)");
+    sp0.addColorStop(1, "rgba(255, 245, 210, 0)");
+    ctx.fillStyle = sp0;
+    ctx.fillRect(120, 70, 480, 250);
+    deckUnterseite(360, 165, 330, 78, b, t);
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(360, 292, 130, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.translate(360, 290 + (b.hover ? Math.sin(t / 400) * 3 - 5 : 0));
+    ctx.scale(3, 3);
+    zeichneBrett(0, b);
+    ctx.restore();
+    // Name, Werte, Kaufen
+    ctx.textAlign = "left";
+    ctx.font = '16px "Press Start 2P", monospace';
+    ctx.fillStyle = "#f4f1f8";
+    ctx.fillText(b.name.toUpperCase(), 600, 122);
+    [["Tempo", "tempo"], ["Sprung", "sprung"], ["Schub", "schub"]].forEach(([l, k], i) => {
+      ctx.font = `14px ${SANS}`;
+      ctx.fillStyle = "#c9c3e0";
+      ctx.fillText(l, 600, 158 + i * 28);
+      for (let j = 0; j < 5; j++) {
+        ctx.fillStyle = j < b.werte[k] ? "#f5d97a" : "rgba(255,255,255,0.15)";
+        rund(680 + j * 40, 148 + i * 28, 34, 11, 4);
+        ctx.fill();
+      }
+    });
+    ctx.font = `13px ${SANS}`;
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText(b.hover ? "Schwebt statt zu rollen · Spur: Schwebeglühen" : b.spur ? `Spur: ${SPUR_NAME[b.spur]}` : "Ohne Spur", 600, 248);
+    if (aktiv) knopf(600, 264, 300, 48, "AUSGEWÄHLT ✓", null, false, "#5fc39c");
+    else if (hat) knopf(600, 264, 300, 48, "AUSWÄHLEN", boardAktion, true, "#5fc39c");
+    else if (fp.muenzen >= b.preis) knopf(600, 264, 300, 48, `KAUFEN · ${b.preis} ●`, boardAktion, true, "#ffd65a");
+    else knopf(600, 264, 300, 48, `NOCH ${b.preis - fp.muenzen} ● NÖTIG`, null, false, "#ffd65a");
+    // alle Boards
+    BOARDS.forEach((bo, i) => {
+      const x = 24 + i * 114;
+      const y = 330;
+      const gew = i === wahlBoard;
+      ctx.fillStyle = gew ? "rgba(40, 34, 64, 0.95)" : "rgba(14, 12, 24, 0.82)";
+      rund(x, y, 104, 112, 12);
+      ctx.fill();
+      ctx.strokeStyle = gew ? "#f5d97a" : "rgba(255,255,255,0.1)";
+      ctx.lineWidth = gew ? 2.5 : 1;
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(x + 52, y + 50);
+      ctx.scale(1.25, 1.25);
+      zeichneBrett(0, bo);
+      ctx.restore();
+      ctx.textAlign = "center";
+      ctx.font = `13px ${SANS}`;
+      ctx.fillStyle = "#f4f1f8";
+      ctx.fillText(bo.name, x + 52, y + 78);
+      ctx.font = `12px ${SANS}`;
+      const besitzt = fp.boards.includes(bo.id);
+      ctx.fillStyle = fp.board === bo.id ? "#5fc39c" : besitzt ? "#c9c3e0" : "#ffd65a";
+      ctx.fillText(fp.board === bo.id ? "✓ aktiv" : besitzt ? "gekauft" : `${bo.preis} ●`, x + 52, y + 98);
+      knoepfe.push({ x, y, w: 104, h: 112, aktion: () => (wahlBoard = i) });
+    });
+    knopf(24, 88, 150, 36, "← KARTE", zeigeKarte, true, "#9fd0ff");
+    ctx.textAlign = "center";
+    ctx.font = `12px ${SANS}`;
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText(grob ? "Board antippen, dann kaufen oder auswählen" : "← → wählen · Enter kaufen/auswählen · Esc zurück zur Karte", W / 2, 466);
   }
 
   function kameraNachfuehren(dt) {
@@ -1923,8 +2584,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   let statusZeit = 0;
 
   function los() {
-    if (zustand === "ende") neu();
-    if (zustand !== "laeuft") {
+    if (zustand === "ende") return starteLauf();
+    if (zustand === "karte") return starteLauf();
+    if (zustand === "pause") {
       zustand = "laeuft";
       nachricht(null);
     }
@@ -1932,7 +2594,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function pause() {
     if (zustand !== "laeuft") return;
     zustand = "pause";
-    nachricht(`<p class="big">Pause</p><p class="small">Leertaste oder Klick zum Weiterfahren</p>`);
+    nachricht(`<p class="big">Pause</p><p><button type="button" class="btn" data-skate="karte">Zur Karte</button></p><p class="small">Leertaste oder Klick zum Weiterfahren</p>`);
+    kartenKnopf();
   }
 
   // ---------- Eingabe ----------
@@ -1941,6 +2604,23 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     const k = e.key;
     if ([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "W", "s", "S", "a", "A", "d", "D"].includes(k)) e.preventDefault();
     if (e.repeat) return;
+    const links = k === "ArrowLeft" || k === "a" || k === "A";
+    const rechts = k === "ArrowRight" || k === "d" || k === "D";
+    if (zustand === "karte") {
+      if (links) wahlWelt = Math.max(0, wahlWelt - 1);
+      else if (rechts) wahlWelt = Math.min(WELTEN.length - 1, wahlWelt + 1);
+      else if (k === " " || k === "Enter" || k === "ArrowUp") starteLauf();
+      else if (k === "b" || k === "B") zustand = "garage";
+      return;
+    }
+    if (zustand === "garage") {
+      if (links) wahlBoard = Math.max(0, wahlBoard - 1);
+      else if (rechts) wahlBoard = Math.min(BOARDS.length - 1, wahlBoard + 1);
+      else if (k === " " || k === "Enter") boardAktion();
+      else if (k === "Escape" || k === "b" || k === "B" || k === "k" || k === "K") zeigeKarte();
+      return;
+    }
+    if ((k === "k" || k === "K") && (zustand === "pause" || zustand === "ende")) return zeigeKarte();
     if (k === "p" || k === "P" || k === "Escape") return zustand === "laeuft" ? pause() : null;
     if (zustand !== "laeuft") {
       if (k === " " || k === "Enter" || k === "ArrowUp") los();
@@ -1978,8 +2658,15 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
   let zeiger = null;
   const onDown = (e) => {
-    if (zustand !== "laeuft") return los();
     const r = canvas.getBoundingClientRect();
+    if (zustand === "karte" || zustand === "garage") {
+      const lx = ((e.clientX - r.left) / r.width) * W;
+      const ly = ((e.clientY - r.top) / r.height) * H;
+      const kn = [...knoepfe].reverse().find((b) => lx >= b.x && lx <= b.x + b.w && ly >= b.y && ly <= b.y + b.h);
+      kn?.aktion?.();
+      return;
+    }
+    if (zustand !== "laeuft") return los();
     const links = e.clientX - r.left < r.width * 0.4;
     zeiger = { x: e.clientX, y: e.clientY, warAmBoden: sp.amBoden, gewischt: false, schieben: links };
     if (links) {
@@ -2016,16 +2703,18 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   canvas.addEventListener("pointercancel", onUp);
   const ausOverlay = overlayKlick(() => zustand !== "laeuft" && los());
 
-  zustand = "bereit";
+  zustand = "karte";
   neu();
   passeAufloesung();
-  nachricht(`<p class="big">Stick-Skater</p><p>Dächer, Skatepark, Innenstadt: Treppen und Lücken überspringen, grinden, Scooter-Kids ausweichen, mit Boost über Autos und durch den Feuerring. Es zählen nur Münzen, Tricks und Sprünge bringen Bonus-Münzen.</p><p><b>→</b> oder <b>D</b> schiebt an (halten = weiter schieben), <b>Leertaste</b> springt. Handy: links tippen = anschieben, rechts = springen.</p><p class="small">${S.leben} Leben · Leertaste, ↑ oder Klick zum Start</p>`);
+  zeigeStatus();
   raf = requestAnimationFrame(loop);
   document.fonts?.load('12px "Press Start 2P"');
 
   return {
     pause,
     stop() {
+      if (zustand === "laeuft" || zustand === "pause") abrechnen();
+      speichern(fp);
       cancelAnimationFrame(raf);
       ro.disconnect();
       window.removeEventListener("keydown", onKeyDown);
