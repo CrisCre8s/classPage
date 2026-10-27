@@ -1,3 +1,4 @@
 [
-  { "datum": "2026-10-28", "fach": "WPF (Stahl) und Sozialkunde" }
+  { "datum": "2026-10-28", "fach": "WPF (Stahl) und Sozialkunde" },
+  { "datum": "2026-11-03", "fach": "Programmieren (C#)", "thema": "Konstruktor aufrufen · Klassenvariablen und static · Properties mit get; set;" }
 ]
