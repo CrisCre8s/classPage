@@ -12,7 +12,7 @@ export const KATALOG = [
     // grobe Schätzung der Spielstärke je Stufe (nicht gegen gewertete Spieler gemessen)
     stufenInfo: { leicht: "ca. 400 Elo", mittel: "ca. 900 Elo", schwer: "ca. 1400 Elo" } },
   { id: "bits", kat: "klassiker", name: "Bits & Bugs", kurz: "Bits sammeln, Bugs ausweichen", text: "Sammle als Pixel-Computer alle Bits ein. Mit dem Debugger jagst du die Bugs.", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
-  { id: "snake", kat: "klassiker", name: "Snake", kurz: "Bits fressen, länger werden", text: "Friss Bits und werde länger. Nicht in dich selbst beißen.", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
+  { id: "snake", kat: "klassiker", name: "Snake", kurz: "Bits fressen, länger werden", text: "Friss Bits und werde länger. Nicht in dich selbst beißen. Seltene Power-ups: Zeitlupe und Geist (kurz durch dich selbst).", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
   { id: "minen", kat: "klassiker", name: "Bug-Sucher", kurz: "Alle Felder ohne Bug aufdecken", text: "Decke alle Felder auf, unter denen kein Bug steckt. Die Zahlen verraten, wie viele Bugs angrenzen.", tasten: "Tippen: aufdecken · Rechtsklick/lange drücken: Flagge", wertung: "zeit" },
   { id: "z2048", kat: "klassiker", name: "2048", kurz: "Zweierpotenzen zusammenschieben", text: "Schiebe gleiche Zahlen zusammen, bis du 2048 erreichst. Zweierpotenzen, wie im Speicher.", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
   { id: "vier", kat: "klassiker", name: "Vier in einer Reihe", kurz: "Vier Steine in eine Reihe bringen", text: "Lass deine Steine fallen und bring vier in eine Reihe, waagerecht, senkrecht oder diagonal.", tasten: "Spalte antippen · Tastatur: ← → und Enter", wertung: "siege" },
