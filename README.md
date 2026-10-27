@@ -63,7 +63,7 @@ steht dort „gerade nicht verfügbar“.
 ├── main.js         # Einstieg Hub
 ├── spiele.html     # Spiele-Seite
 ├── spiele.js       # Einstieg Spiele
-├── games/          # die 13 Spiele (Liste in games/katalog.js)
+├── games/          # die 14 Spiele (Liste in games/katalog.js)
 ├── shell.js        # gemeinsam: Sterne, POWER, Void
 ├── vite.config.js  # baut beide Seiten
 ├── lks.js          # Leistungskontrollen aus lks.json
@@ -79,7 +79,7 @@ steht dort „gerade nicht verfügbar“.
 
 ## Spiele
 
-Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 13 Spiele, jeweils in
+Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 14 Spiele, jeweils in
 **Leicht, Mittel und Schwer**. Name, Beschreibung und Kategorie stehen zentral in
 `games/katalog.js`. Auf der Spieleseite stehen die Lernspiele oben, die Klassiker
 darunter. Der Hub zeigt nur drei Lernspiele als Vorschau, die ganze Fläche führt zur
@@ -104,6 +104,7 @@ Spieleseite.
 - **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker)
 - **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
 - **Stick-Skater** (`games/skate.js`, `skate-welten.js`, `skate-fortschritt.js`): Weltkarte mit 7 Welten (Stadt, Sonnenstrand, Dschungel, Eiswelt, Hölle, Himmel, Mond), die man durch Weiterfahren freischaltet (alle 450 m ein Portal); je Welt eigene Hindernisse und Physik (Eis rutscht, Himmel und Mond mit weniger Schwerkraft, Pilze federn, Lava-Geysire); Garage mit 8 Boards (Werte Tempo/Sprung/Schub, Spuren), gekauft mit dem Münzkonto; 3 Aufgaben mit Bonus-Münzen; Fortschritt im localStorage (Schlüssel `skate-fortschritt-v1`). In der Stadt die Zonen „Über den Dächern“, „Skatepark“ (Funboxen, Ledges, Publikum) und „Innenstadt“ (Läden, Autos, Scooter-Kids, Baustellen); Boost-Sprünge über Autos und durch den Feuerring; Highscore = Münzen (Tricks und Sprünge geben Bonus-Münzen); Tempo nur durch Anschieben
+- **Schlagzeug** (`games/schlagzeug.js`): Bass, Snare, drei Toms, Hi-Hat (zu/offen), Crash und Ride mit Tastatur, Maus oder Finger; alle Klänge werden per Web Audio im Browser erzeugt (keine Sounddateien); frei spielen mit Metronom (60–180 BPM) oder Rhythmus-Challenge mit Notenband (Leicht 80, Mittel 96, Schwer 112 BPM), Highscore = Punkte
 
 **Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`).
 Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabellen aus
