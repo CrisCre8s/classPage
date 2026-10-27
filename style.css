@@ -2320,3 +2320,10 @@ body.game-on .stage-help {
 .faint {
   color: var(--faint);
 }
+
+/* Schieberegler in der Leiste unter dem Spielfeld (z. B. Tempo beim Schlagzeug) */
+.stage-tools input[type="range"] {
+  width: 140px;
+  accent-color: #b48ef0;
+  cursor: pointer;
+}

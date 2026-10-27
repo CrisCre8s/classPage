@@ -160,6 +160,33 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.fillRect(105, 76, 4, 4);
     ctx.fillRect(125, 76, 4, 4);
   }
+  if (spiel === "schlagzeug") {
+    // kleines Schlagzeug: Bass, zwei Toms, Snare, Becken
+    ctx.fillStyle = "#8a1f45";
+    ctx.beginPath();
+    ctx.arc(120, 82, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#efe9dc";
+    ctx.beginPath();
+    ctx.arc(120, 82, 22, 0, Math.PI * 2);
+    ctx.fill();
+    for (const [x, y, w] of [[98, 46, 16], [142, 46, 16], [68, 74, 18], [176, 70, 20]]) {
+      ctx.fillStyle = x === 68 ? "#c9cbd4" : "#8a1f45";
+      ctx.fillRect(x - w, y, w * 2, x === 176 ? 30 : 14);
+      ctx.fillStyle = "#efe9dc";
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = gelb;
+    for (const [x, y, r] of [[52, 34, 22], [192, 38, 24], [36, 62, 15]]) {
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, 4, -0.08, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#3a3550";
+    ctx.fillRect(0, 110, 240, 3);
+  }
   const textBild = (oben, gross, unten) => {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";

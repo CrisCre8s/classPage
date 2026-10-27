@@ -14,6 +14,7 @@ const LADER = {
   vier: () => import("./games/vier.js"),
   mauer: () => import("./games/mauer.js"),
   skate: () => import("./games/skate.js"),
+  schlagzeug: () => import("./games/schlagzeug.js"),
   binaer: () => import("./games/binaer.js"),
   subnetz: () => import("./games/subnetz.js"),
   befehle: () => import("./games/befehle.js"),
