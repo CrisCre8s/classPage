@@ -1,0 +1,30 @@
+Schlagzeug-Samples (Ordner black-pearl und red-zeppelin)
+=========================================================
+
+Quelle: AVL-Drumkits 1.1
+Created by: Glen MacArthur 2015
+Website: http://www.bandshed.net/avldrumkits/
+Contact: info@bandshed.net
+Bezogen über: https://github.com/oramics/sampled (DRUMS/avl-drumkits-1.1)
+
+Lizenz: CC-BY-SA 3.0 – http://creativecommons.org/licenses/by-sa/3.0/
+
+Originaltext der Lizenz-Datei:
+
+  CC-BY-SA with the following exception:
+
+  The by-sa condition is imperative if you modify the samples
+  themselves or create new sample libraries with this licensed product.
+  However, produced music and other non-sample-library works can be
+  licensed freely.
+
+  Attribution means keeping all authors information and this readme-file or
+  its content in the release
+
+  If you want to create a fork, a modified version, of this sample library
+  you have to release and distribute it under a different name.
+
+Änderungen für diese Seite: eine Auswahl der Samples (je Instrument die
+Anschlagstärken 3–5), von WAV in MP3 (mono, 96 kbit/s) umgewandelt und die
+Stille am Ende gekürzt. Diese Dateien stehen weiterhin unter CC-BY-SA 3.0.
+Die Kit-Namen „Black Pearl“ und „Red Zeppelin“ stammen aus den AVL-Drumkits.

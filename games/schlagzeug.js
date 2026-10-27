@@ -1,8 +1,9 @@
 // Schlagzeug: Trommeln und Becken mit der Tastatur, der Maus oder dem Finger spielen.
 // Frei spielen (mit Metronom) oder Rhythmus-Challenge: Noten laufen auf eine Linie zu.
-// Alle Klänge werden im Browser erzeugt (Web Audio), es gibt keine Sounddateien.
+// Vier Kits (zwei echte Aufnahmen, zwei erzeugte, siehe schlagzeug-klang.js), Tasten frei belegbar.
+import { KITS, erstelleKlang } from "./schlagzeug-klang.js";
 
-export const HILFE = "Q Crash · A Hi-Hat · W Hi-Hat offen · S Snare · D Tom 1 · F Tom 2 · G Standtom · R Ride · Leertaste oder B Bass · M Metronom · Maus/Finger: Trommel antippen · Challenge: Enter startet";
+export const HILFE = "Standard: Q Crash · A Hi-Hat · W Hi-Hat offen · S Snare · D Tom 1 · F Tom 2 · G Standtom · R Ride · Leertaste oder B Bass · „Tasten ändern“ belegt sie neu · M Metronom · Maus/Finger: antippen · Challenge: Enter startet · Akustik-Samples: AVL-Drumkits von Glen MacArthur, CC BY-SA 3.0";
 
 const W = 960;
 const H = 540;
@@ -24,7 +25,26 @@ const SPUREN = [
 const SPUR_VON = { hihatOffen: "hihat" };
 const spurIndex = (pad) => SPUREN.findIndex((s) => s.pad === (SPUR_VON[pad] || pad));
 
-const TASTEN = { q: "crash", a: "hihat", w: "hihatOffen", s: "snare", d: "tom1", f: "tom2", g: "floor", r: "ride", " ": "kick", b: "kick" };
+const STANDARD_TASTEN = { q: "crash", a: "hihat", w: "hihatOffen", s: "snare", d: "tom1", f: "tom2", g: "floor", r: "ride", " ": "kick", b: "kick" };
+const TASTEN_KEY = "schlagzeug:tasten";
+const KIT_KEY = "schlagzeug:kit";
+const GESPERRT = ["Enter", "Escape", "Tab", "m"]; // bleiben für Start, Abbrechen und Metronom
+const PAD_NAMEN = { crash: "Crash", ride: "Ride", hihat: "Hi-Hat zu", hihatOffen: "Hi-Hat offen", snare: "Snare", tom1: "Tom 1", tom2: "Tom 2", floor: "Standtom", kick: "Bass" };
+const BELEG_REIHENFOLGE = ["crash", "ride", "hihat", "hihatOffen", "snare", "tom1", "tom2", "floor", "kick"];
+// Anzeige einer Taste
+function tastenText(k) {
+  const sonder = { " ": "LEER", ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", Shift: "SHIFT", Control: "STRG", Alt: "ALT", Backspace: "⌫", CapsLock: "CAPS" };
+  return sonder[k] || (k.length === 1 ? k.toUpperCase() : k.slice(0, 5).toUpperCase());
+}
+function ladeTasten() {
+  try {
+    const t = JSON.parse(localStorage.getItem(TASTEN_KEY) || "null");
+    if (t && typeof t === "object" && Object.keys(t).length) return t;
+  } catch {
+    /* Standard */
+  }
+  return { ...STANDARD_TASTEN };
+}
 
 // Takte für die Challenge: 16 Schritte (Sechzehntel). x = Schlag, o = Hi-Hat offen
 const T = (o) => o;
@@ -74,130 +94,50 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   const ro = new ResizeObserver(passeAufloesung);
   ro.observe(canvas);
 
-  // ---------- Klang (Web Audio) ----------
-  let ac = null;
-  let master = null;
-  let rauschen = null;
-  let offeneHihat = null;
-  function audio() {
-    if (!ac) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ac = new AC();
-      const comp = ac.createDynamicsCompressor();
-      comp.threshold.value = -12;
-      comp.ratio.value = 4;
-      master = ac.createGain();
-      master.gain.value = 0.85;
-      master.connect(comp);
-      comp.connect(ac.destination);
-      const len = ac.sampleRate * 2;
-      rauschen = ac.createBuffer(1, len, ac.sampleRate);
-      const d = rauschen.getChannelData(0);
-      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  // ---------- Klang ----------
+  const klang = erstelleKlang();
+  const audio = () => klang.audio();
+  let kit = (() => {
+    try {
+      const k = localStorage.getItem(KIT_KEY);
+      if (KITS.some((x) => x.id === k)) return k;
+    } catch {
+      /* Standard */
     }
-    if (ac.state === "suspended") ac.resume();
-    return ac;
-  }
-  function huelle(g, t, spitze, dauer, anstieg = 0.002) {
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(spitze, t + anstieg);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
-  }
-  function geraeusch(t, dauer, typ, freq, q, spitze) {
-    const s = ac.createBufferSource();
-    s.buffer = rauschen;
-    const f = ac.createBiquadFilter();
-    f.type = typ;
-    f.frequency.value = freq;
-    f.Q.value = q;
-    const g = ac.createGain();
-    huelle(g, t, spitze, dauer);
-    s.connect(f).connect(g).connect(master);
-    s.start(t, Math.random() * 1.5);
-    s.stop(t + dauer + 0.05);
-    return g;
-  }
-  function ton(t, typ, f0, f1, dauer, spitze, fall) {
-    const o = ac.createOscillator();
-    o.type = typ;
-    o.frequency.setValueAtTime(f0, t);
-    o.frequency.exponentialRampToValueAtTime(f1, t + fall);
-    const g = ac.createGain();
-    huelle(g, t, spitze, dauer);
-    o.connect(g).connect(master);
-    o.start(t);
-    o.stop(t + dauer + 0.05);
-    return g;
-  }
-  // metallischer Klang aus sechs Rechteck-Schwingungen (wie bei klassischen Drumcomputern)
-  function metall(t, dauer, spitze, basis, hochpass) {
-    const g = ac.createGain();
-    huelle(g, t, spitze, dauer, 0.001);
-    const bp = ac.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 10000;
-    bp.Q.value = 0.7;
-    const hp = ac.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = hochpass;
-    for (const r of [2, 3, 4.16, 5.43, 6.79, 8.21]) {
-      const o = ac.createOscillator();
-      o.type = "square";
-      o.frequency.value = basis * r * (0.995 + Math.random() * 0.01);
-      o.connect(bp);
-      o.start(t);
-      o.stop(t + dauer + 0.05);
+    return KITS[0].id;
+  })();
+  let kitLaedt = false;
+  function waehleKit(id) {
+    kit = id;
+    try {
+      localStorage.setItem(KIT_KEY, id);
+    } catch {
+      /* egal */
     }
-    bp.connect(hp).connect(g).connect(master);
-    return g;
+    if (klang.kitBereit(id)) return;
+    kitLaedt = true;
+    zeigeStatus();
+    klang.ladeKit(id).then((ok) => {
+      kitLaedt = false;
+      if (!ok) status("Samples konnten nicht geladen werden, es klingt nach dem Elektro-Kit");
+      else zeigeStatus();
+    });
   }
-  const v = () => 0.88 + Math.random() * 0.12; // etwas Lebendigkeit
-  const KLANG = {
-    kick: (t) => {
-      ton(t, "sine", 165, 44, 0.5, 1.0 * v(), 0.11);
-      geraeusch(t, 0.02, "lowpass", 2500, 0.7, 0.3);
-    },
-    snare: (t) => {
-      geraeusch(t, 0.24, "highpass", 1300, 0.7, 0.55 * v());
-      geraeusch(t, 0.12, "bandpass", 3800, 1, 0.3);
-      ton(t, "triangle", 230, 165, 0.13, 0.5 * v(), 0.06);
-    },
-    hihat: (t) => {
-      if (offeneHihat) {
-        // geschlossene Hi-Hat stoppt die offene
-        offeneHihat.gain.cancelScheduledValues(t);
-        offeneHihat.gain.setTargetAtTime(0.0001, t, 0.01);
-        offeneHihat = null;
-      }
-      metall(t, 0.06, 0.32 * v(), 40, 7000);
-    },
-    hihatOffen: (t) => {
-      offeneHihat = metall(t, 0.5, 0.28 * v(), 40, 7000);
-    },
-    tom1: (t) => {
-      ton(t, "sine", 270, 195, 0.45, 0.85 * v(), 0.22);
-      geraeusch(t, 0.05, "lowpass", 3000, 0.7, 0.12);
-    },
-    tom2: (t) => {
-      ton(t, "sine", 205, 148, 0.5, 0.85 * v(), 0.25);
-      geraeusch(t, 0.05, "lowpass", 2600, 0.7, 0.12);
-    },
-    floor: (t) => {
-      ton(t, "sine", 140, 92, 0.7, 0.95 * v(), 0.3);
-      geraeusch(t, 0.06, "lowpass", 2000, 0.7, 0.14);
-    },
-    crash: (t) => {
-      metall(t, 1.9, 0.26 * v(), 52, 5000);
-      geraeusch(t, 1.7, "highpass", 6000, 0.5, 0.22);
-    },
-    ride: (t) => {
-      metall(t, 1.2, 0.13 * v(), 61, 6500);
-      ton(t, "sine", 830, 815, 0.7, 0.07, 0.6);
-      geraeusch(t, 0.08, "highpass", 8000, 0.5, 0.08);
-    },
-    klick: (t, betont) => ton(t, "square", betont ? 1760 : 1180, betont ? 1760 : 1180, 0.035, betont ? 0.22 : 0.13, 0.03),
-  };
+  // Tastenbelegung
+  let tasten = ladeTasten();
+  let belegen = false; // Modus „Tasten ändern“
+  let belegPad = null; // wartet auf eine Taste für dieses Teil
+  const tasteVon = (pad) => Object.keys(tasten).filter((k) => tasten[k] === pad);
+  const tastenLabel = (pad) => tasteVon(pad).map(tastenText).join("/") || "–";
+  function belege(pad, taste) {
+    for (const k of Object.keys(tasten)) if (tasten[k] === pad) delete tasten[k];
+    tasten[taste] = pad;
+    try {
+      localStorage.setItem(TASTEN_KEY, JSON.stringify(tasten));
+    } catch {
+      /* egal */
+    }
+  }
 
   // ---------- Zustand ----------
   let modus = "frei"; // frei | takt
@@ -221,7 +161,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   let besteCombo = 0;
   let zaehl = { perfekt: 0, gut: 0, ok: 0, verpasst: 0, falsch: 0 };
 
-  const jetzt = () => (ac ? ac.currentTime : performance.now() / 1000);
+  const jetzt = () => klang.jetzt();
 
   function liedBauen() {
     const def = TAKTE[STUFE];
@@ -250,7 +190,10 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   }
 
   function zeigeStatus() {
-    if (modus === "frei") status(`Frei spielen · Metronom ${metronomAn ? `an (${bpm} BPM)` : "aus"}`);
+    const kitName = KITS.find((k) => k.id === kit).name.replace(/ \(.*\)/, "");
+    if (kitLaedt) status(`Kit ${kitName} lädt …`);
+    else if (belegen) status(belegPad ? `Taste für ${PAD_NAMEN[belegPad]} drücken` : "Tasten ändern: Teil wählen");
+    else if (modus === "frei") status(`Frei spielen · ${kitName} · Metronom ${metronomAn ? `an (${bpm} BPM)` : "aus"}`);
     else {
       const gespielt = zaehl.perfekt + zaehl.gut + zaehl.ok + zaehl.verpasst;
       const quote = gespielt ? Math.round(((zaehl.perfekt + zaehl.gut + zaehl.ok) / gespielt) * 100) : 100;
@@ -290,7 +233,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   function schlag(pad) {
     if (!audio()) return;
     const t = jetzt();
-    KLANG[pad](t);
+    klang.spiele(kit, pad);
     if (pad === "hihat") hihatOffen = false;
     if (pad === "hihatOffen") hihatOffen = true;
     const anim = pad === "hihatOffen" ? "hihat" : pad;
@@ -335,8 +278,8 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
 
   // ---------- Metronom und Ablauf (läuft auf der Audio-Uhr) ----------
   const takt = setInterval(() => {
-    if (!ac) return;
-    const t = ac.currentTime;
+    const t = klang.zeit;
+    if (t === null) return;
     const laeuft = zustand === "laeuft";
     if (laeuft || (modus === "frei" && metronomAn)) {
       const schlagLaenge = 60 / (laeuft ? taktBpm : bpm);
@@ -344,7 +287,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       while (naechsterKlick < t + 0.12) {
         if (!laeuft || naechsterKlick <= liedEnde + 0.01) {
           const betont = klickZaehler % 4 === 0;
-          KLANG.klick(naechsterKlick, betont);
+          klang.klick(naechsterKlick, betont);
           letzterKlick = { zeit: naechsterKlick, betont };
         }
         naechsterKlick += schlagLaenge;
@@ -389,6 +332,8 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     if (inEllipse(k.ride.x, k.ride.y, k.ride.r + 8, 30)) return "ride";
     return null;
   }
+
+  const kitFarben = () => KITS.find((k) => k.id === kit).farben;
 
   // ---------- Zeichnen ----------
   function rund(x, y, w, h, r) {
@@ -460,10 +405,11 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       g.addColorStop(0.55, "#a2a4af");
       g.addColorStop(1, "#4e505b");
     } else {
-      g.addColorStop(0, "#3a0d22");
-      g.addColorStop(0.32, "#b8325e");
-      g.addColorStop(0.5, "#8a1f45");
-      g.addColorStop(1, "#2a0818");
+      const f = kitFarben();
+      g.addColorStop(0, f[0]);
+      g.addColorStop(0.32, f[1]);
+      g.addColorStop(0.5, f[2]);
+      g.addColorStop(1, f[3]);
     }
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -586,9 +532,10 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     ctx.stroke();
     // Kessel (Rand)
     const g = ctx.createRadialGradient(-20, -30, 10, 0, 0, k.r);
-    g.addColorStop(0, "#c43a68");
-    g.addColorStop(0.7, "#8a1f45");
-    g.addColorStop(1, "#3a0d22");
+    const kf = kitFarben();
+    g.addColorStop(0, kf[1]);
+    g.addColorStop(0.7, kf[2]);
+    g.addColorStop(1, kf[0]);
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(0, 0, k.r, 0, Math.PI * 2);
@@ -616,12 +563,13 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     ctx.arc(0, 0, k.r - 9, 0, Math.PI * 2);
     ctx.fill();
     // Logo der Klasse auf dem Resonanzfell
-    ctx.strokeStyle = "#8a1f45";
+    const logo = KITS.find((x) => x.id === kit).logo;
+    ctx.strokeStyle = logo === "#d8d2ea" ? "#2a2738" : logo;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(0, -4, 46, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.fillStyle = "#8a1f45";
+    ctx.fillStyle = logo === "#d8d2ea" ? "#2a2738" : logo;
     ctx.textAlign = "center";
     ctx.font = '13px "Press Start 2P", monospace';
     ctx.fillText("H-FI24", 0, -10);
@@ -714,20 +662,69 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     trommel("snare", k.snare, "chrom", t);
     hihat(t);
     // Tasten-Schilder
-    const schild = (pad, x, y, text) => tastenSchild(x, y, text, farbeVon(pad), (schwung[pad === "hihatOffen" ? "hihat" : pad] || 0) > 0.5);
-    schild("crash", k.crash.x, k.crash.y - 26, "Q");
-    schild("ride", k.ride.x, k.ride.y - 28, "R");
-    schild("hihat", k.hihat.x - 14, k.hihat.y - 30, "A");
-    schild("hihat", k.hihat.x + 16, k.hihat.y - 30, "W");
-    schild("snare", k.snare.x, k.snare.y + k.snare.h + 26, "S");
-    schild("tom1", k.tom1.x, k.tom1.y + k.tom1.h / 2 + 6, "D");
-    schild("tom2", k.tom2.x, k.tom2.y + k.tom2.h / 2 + 6, "F");
-    schild("floor", k.floor.x, k.floor.y + k.floor.h / 2 + 8, "G");
-    schild("kick", k.kick.x, k.kick.y + 50, "LEER");
+    const blink = Math.floor(performance.now() / 260) % 2;
+    const schild = (pad, x, y) => {
+      const an = belegPad === pad ? blink : (schwung[pad === "hihatOffen" ? "hihat" : pad] || 0) > 0.5;
+      tastenSchild(x, y, belegPad === pad ? "?" : tastenLabel(pad), farbeVon(pad), an);
+    };
+    schild("crash", k.crash.x, k.crash.y - 26);
+    schild("ride", k.ride.x, k.ride.y - 28);
+    // Hi-Hat: zwei Schilder nebeneinander (zu / offen)
+    ctx.font = '11px "Press Start 2P", monospace';
+    const bz = Math.max(24, ctx.measureText(tastenLabel("hihat")).width + 12);
+    const bo = Math.max(24, ctx.measureText(tastenLabel("hihatOffen")).width + 12);
+    schild("hihat", k.hihat.x - (bz + bo + 6) / 2 + bz / 2, k.hihat.y - 30);
+    schild("hihatOffen", k.hihat.x + (bz + bo + 6) / 2 - bo / 2, k.hihat.y - 30);
+    schild("snare", k.snare.x, k.snare.y + k.snare.h + 26);
+    schild("tom1", k.tom1.x, k.tom1.y + k.tom1.h / 2 + 6);
+    schild("tom2", k.tom2.x, k.tom2.y + k.tom2.h / 2 + 6);
+    schild("floor", k.floor.x, k.floor.y + k.floor.h / 2 + 8);
+    schild("kick", k.kick.x, k.kick.y + 50);
   }
 
   // Notenband oben: Noten laufen von rechts auf die Linie zu (Challenge) bzw. eigene Schläge laufen nach links weg
+  // Kacheln zum Neubelegen (ersetzen das Notenband, solange „Tasten ändern“ aktiv ist)
+  const KACHELN = BELEG_REIHENFOLGE.map((pad, i) => ({ pad, x: 24 + (i % 3) * 232, y: 44 + Math.floor(i / 3) * 44, w: 220, h: 36 }));
+  const STANDARD_KNOPF = { x: 730, y: 88, w: 206, h: 36 };
+  function zeichneBelegen() {
+    ctx.fillStyle = "rgba(8, 7, 14, 0.88)";
+    rund(12, 6, W - 24, 182, 12);
+    ctx.fill();
+    ctx.textAlign = "left";
+    ctx.font = "14px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillStyle = "#f5d97a";
+    ctx.fillText(belegPad ? `Jetzt die neue Taste für ${PAD_NAMEN[belegPad]} drücken (Esc: abbrechen)` : "Tasten ändern: Teil anklicken (hier oder am Schlagzeug), dann neue Taste drücken", 24, 30);
+    const blink = Math.floor(performance.now() / 260) % 2;
+    for (const k of KACHELN) {
+      const aktiv = belegPad === k.pad;
+      const hov = maus && maus.x >= k.x && maus.x <= k.x + k.w && maus.y >= k.y && maus.y <= k.y + k.h;
+      ctx.fillStyle = aktiv ? "rgba(245, 217, 122, 0.18)" : hov ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.05)";
+      rund(k.x, k.y, k.w, k.h, 8);
+      ctx.fill();
+      ctx.strokeStyle = aktiv ? "#f5d97a" : farbeVon(k.pad) + "66";
+      ctx.lineWidth = aktiv ? 2 : 1;
+      ctx.stroke();
+      ctx.textAlign = "left";
+      ctx.font = "14px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillStyle = farbeVon(k.pad);
+      ctx.fillText(PAD_NAMEN[k.pad], k.x + 12, k.y + 23);
+      tastenSchild(k.x + k.w - 34, k.y + 18, aktiv ? "?" : tastenLabel(k.pad), farbeVon(k.pad), aktiv && blink);
+    }
+    const s = STANDARD_KNOPF;
+    const hov = maus && maus.x >= s.x && maus.x <= s.x + s.w && maus.y >= s.y && maus.y <= s.y + s.h;
+    ctx.fillStyle = hov ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)";
+    rund(s.x, s.y, s.w, s.h, 8);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.font = "14px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillStyle = "#c9c3e0";
+    ctx.fillText("Standard wiederherstellen", s.x + s.w / 2, s.y + 23);
+    ctx.font = "12px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillStyle = "#8a8698";
+    ctx.fillText("Enter, Esc, Tab und M sind reserviert", s.x + s.w / 2, s.y + 58);
+  }
   function zeichneBand(t, dt) {
+    if (belegen) return zeichneBelegen();
     const oben = 12;
     const sh = 20;
     ctx.fillStyle = "rgba(8, 7, 14, 0.8)";
@@ -744,7 +741,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       ctx.textAlign = "right";
       ctx.font = '9px "Press Start 2P", monospace';
       ctx.fillStyle = "#8a8698";
-      ctx.fillText(s.taste, 132, y + 14);
+      ctx.fillText(s.pad === "hihat" ? `${tastenLabel("hihat")}/${tastenLabel("hihatOffen")}` : tastenLabel(s.pad), 132, y + 14);
     });
     const unten = oben + 6 + SPUREN.length * sh;
     // Taktstriche
@@ -866,7 +863,19 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     if (e.target.closest?.("input, select, textarea, button")) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-    const pad = TASTEN[k];
+    if (belegen) {
+      e.preventDefault();
+      if (k === "Escape") {
+        if (belegPad) belegPad = null;
+        else setzeBelegen(false);
+      } else if (belegPad && !GESPERRT.includes(k) && k !== "Unidentified" && k !== "Dead") {
+        belege(belegPad, k);
+        belegPad = null;
+      }
+      zeigeStatus();
+      return;
+    }
+    const pad = tasten[k];
     if (pad || k === "Enter" || k === "m") e.preventDefault();
     if (e.repeat) return;
     if (pad) {
@@ -875,9 +884,31 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     }
     if (k === "m") return setzeMetronom(!metronomAn);
     if (k === "Enter" && modus === "takt" && zustand !== "laeuft") starteChallenge();
+    if (k === "Escape" && belegen) setzeBelegen(false);
   };
+  let maus = null;
+  const logisch = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  };
+  const drin = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
   const onDown = (e) => {
     const r = canvas.getBoundingClientRect();
+    if (belegen) {
+      const p = logisch(e);
+      const kachel = KACHELN.find((k) => drin(p, k));
+      if (drin(p, STANDARD_KNOPF)) {
+        tasten = { ...STANDARD_TASTEN };
+        try {
+          localStorage.removeItem(TASTEN_KEY);
+        } catch {
+          /* egal */
+        }
+        belegPad = null;
+      } else belegPad = kachel ? kachel.pad : padBei(p.x, p.y) || belegPad;
+      zeigeStatus();
+      return;
+    }
     const pad = padBei(((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H);
     if (pad) {
       e.preventDefault();
@@ -886,8 +917,9 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     }
   };
   const onMove = (e) => {
-    const r = canvas.getBoundingClientRect();
-    canvas.style.cursor = padBei(((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H) ? "pointer" : "default";
+    maus = logisch(e);
+    const ueberKachel = belegen && (KACHELN.some((k) => drin(maus, k)) || drin(maus, STANDARD_KNOPF));
+    canvas.style.cursor = ueberKachel || padBei(maus.x, maus.y) ? "pointer" : "default";
   };
   window.addEventListener("keydown", onKeyDown);
   canvas.addEventListener("pointerdown", onDown);
@@ -903,6 +935,11 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   // ---------- Leiste unter dem Schlagzeug ----------
   tools.hidden = false;
   tools.innerHTML = `
+    <label class="tools-feld"><span>Kit</span>
+      <select class="tools-select" data-dr="kit">
+        ${KITS.map((k) => `<option value="${k.id}"${k.id === kit ? " selected" : ""}>${k.name}</option>`).join("")}
+      </select>
+    </label>
     <label class="tools-feld"><span>Modus</span>
       <select class="tools-select" data-dr="modus">
         <option value="frei">Frei spielen</option>
@@ -913,19 +950,37 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     <label class="tools-feld" data-dr="tempo-feld"><span>Tempo</span>
       <input type="range" min="60" max="180" step="5" value="${bpm}" data-dr="tempo" aria-label="Tempo des Metronoms in BPM">
       <span class="num" data-dr="tempo-wert">${bpm} BPM</span>
-    </label>`;
+    </label>
+    <button type="button" class="more" data-dr="belegen" aria-pressed="false">Tasten ändern</button>`;
   const el = (n) => tools.querySelector(`[data-dr="${n}"]`);
   function setzeMetronom(an) {
     if (modus !== "frei") return;
     metronomAn = an;
     if (an && audio()) {
-      naechsterKlick = ac.currentTime + 0.05;
+      naechsterKlick = klang.jetzt() + 0.05;
       klickZaehler = 0;
     }
     el("metronom").textContent = `Metronom: ${an ? "an" : "aus"} (M)`;
     el("metronom").setAttribute("aria-pressed", String(an));
     zeigeStatus();
   }
+  function setzeBelegen(an) {
+    belegen = an;
+    belegPad = null;
+    el("belegen").textContent = an ? "Fertig" : "Tasten ändern";
+    el("belegen").setAttribute("aria-pressed", String(an));
+    if (an && zustand === "laeuft") zeigeBereit();
+    zeigeStatus();
+  }
+  el("belegen").addEventListener("click", (e) => {
+    setzeBelegen(!belegen);
+    e.currentTarget.blur();
+  });
+  el("kit").addEventListener("change", (e) => {
+    waehleKit(e.target.value);
+    e.target.blur();
+    canvas.focus({ preventScroll: true });
+  });
   el("modus").addEventListener("change", (e) => {
     modus = e.target.value;
     e.target.blur();
@@ -953,6 +1008,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   el("tempo").addEventListener("change", (e) => e.target.blur());
 
   passeAufloesung();
+  waehleKit(kit); // Samples schon beim Öffnen laden
   zeigeStatus();
   raf = requestAnimationFrame(loop);
   document.fonts?.load('12px "Press Start 2P"');
@@ -971,7 +1027,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       canvas.removeEventListener("pointermove", onMove);
       msg.removeEventListener("click", onMsg);
       canvas.style.cursor = "";
-      ac?.close();
+      klang.schliessen();
     },
   };
 }
