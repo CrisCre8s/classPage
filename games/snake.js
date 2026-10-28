@@ -12,10 +12,10 @@ const POWER_CHANCE = 0.2; // pro gefressenem Bit
 const POWER_ABSTAND = 4; // mindestens so viele Bits zwischen zwei Power-ups
 const POWER_LIEGT = 8; // Sekunden, bis ein Power-up wieder verschwindet
 
-// quadratisches Feld: so ist die Schlange in alle Richtungen gleich schnell am Rand
-// (bei 24 × 16 wirkte sie nach oben/unten schneller, weil das Feld dort kürzer war)
-const SP = 20;
-const ZE = 20;
+// Felder quadratisch (T × T), die Schlange gleitet flüssig von Feld zu Feld:
+// gleiche Strecke in Pixeln pro Sekunde in jede Richtung
+const SP = 24;
+const ZE = 16;
 const START_Y = ZE / 2;
 const T = 24;
 const W = SP * T;
@@ -33,7 +33,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const ctx = passeCanvas(canvas, W, H);
 
   let schlange, dir, warteschlange, futter, steine, punkte, tempo, zustand, raf, zuletzt, akku;
-  let item, effekt, seitPower; // liegendes Power-up, aktive Wirkung { art, rest }, Bits seit dem letzten
+  let item, effekt, seitPower;
+  let vorher = []; // Lage der Glieder vor dem letzten Schritt (zum flüssigen Zeichnen) // liegendes Power-up, aktive Wirkung { art, rest }, Bits seit dem letzten
 
   const frei = (x, y) =>
     !schlange.some((t) => t.x === x && t.y === y) && !steine.some((s) => s.x === x && s.y === y) && !(item && item.x === x && item.y === y) && !(futter && futter.x === x && futter.y === y);
@@ -63,6 +64,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   function neu() {
     schlange = [{ x: 6, y: START_Y }, { x: 5, y: START_Y }, { x: 4, y: START_Y }];
+    vorher = schlange.map((t) => ({ ...t }));
     dir = { ...RICHTUNG.rechts };
     warteschlange = [];
     steine = [];
@@ -107,6 +109,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ende();
       return;
     }
+    vorher = schlange.map((t) => ({ ...t }));
     schlange.unshift({ x, y });
     if (item && gleich(item, { x, y })) {
       effekt = { art: item.art, rest: POWER[item.art].dauer };
@@ -205,11 +208,37 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     const endetBald = effekt && effekt.rest < 1.2 && Math.floor(t / 110) % 2;
     // als Geist halb durchsichtig (Überlappungen sieht man dann)
     ctx.globalAlpha = geist && !endetBald ? 0.55 : 1;
-    schlange.forEach((teil, i) => {
+    // Zwischenstand seit dem letzten Schritt (0 … 1): jedes Glied gleitet von seinem
+    // alten zu seinem neuen Feld, mit genau der gleichen Geschwindigkeit in jede Richtung
+    const k = zustand === "laeuft" || zustand === "pause" ? Math.min(1, akku) : 1;
+    const nah = (a, b) => a && b && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+    const lage = schlange.map((teil, i) => {
+      const alt = vorher[i];
+      if (!nah(alt, teil)) return { x: teil.x, y: teil.y };
+      return { x: alt.x + (teil.x - alt.x) * k, y: alt.y + (teil.y - alt.y) * k };
+    });
+    // Körper als durchgehendes Band: Kopf → Mitten der Felder → Schwanz
+    const pfad = [lage[0], ...schlange.slice(1), lage[lage.length - 1]];
+    ctx.strokeStyle = zeitlupe && !endetBald ? "#7fb8ff" : "#b48ef0";
+    ctx.lineWidth = T - 6;
+    ctx.lineCap = "square";
+    ctx.lineJoin = "miter";
+    ctx.beginPath();
+    pfad.forEach((p, i) => {
+      const x = p.x * T + T / 2;
+      const y = p.y * T + T / 2;
+      const davor = pfad[i - 1];
+      // über den Rand (ohne Wände) nicht quer über das Feld verbinden
+      if (!i || Math.abs(p.x - davor.x) > 1.01 || Math.abs(p.y - davor.y) > 1.01) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    for (let i = lage.length - 1; i >= 0; i--) {
+      const teil = lage[i];
       if (zeitlupe && !endetBald) ctx.fillStyle = i === 0 ? "#ffffff" : i % 2 ? "#a8d4ff" : "#7fb8ff";
       else ctx.fillStyle = i === 0 ? "#ffffff" : i % 2 ? "#c8a2ff" : "#b48ef0";
       ctx.fillRect(teil.x * T + 2, teil.y * T + 2, T - 4, T - 4);
-    });
+    }
     ctx.globalAlpha = 1;
     // Restzeit der Wirkung als Leiste oben
     if (effekt) {
@@ -221,9 +250,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       symbol(effekt.art, W / 2 - 51, 13, 6, t);
     }
     // Augen am Kopf, quer zur Laufrichtung
-    const k = schlange[0];
-    const mx = k.x * T + T / 2 + dir.x * 4;
-    const my = k.y * T + T / 2 + dir.y * 4;
+    const kopf = lage[0];
+    const mx = kopf.x * T + T / 2 + dir.x * 4;
+    const my = kopf.y * T + T / 2 + dir.y * 4;
     ctx.fillStyle = "#0f0e13";
     for (const s of [-1, 1]) ctx.fillRect(mx - dir.y * 4 * s - 1.5, my + dir.x * 4 * s - 1.5, 3, 3);
   }
