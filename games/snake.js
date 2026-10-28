@@ -12,8 +12,11 @@ const POWER_CHANCE = 0.2; // pro gefressenem Bit
 const POWER_ABSTAND = 4; // mindestens so viele Bits zwischen zwei Power-ups
 const POWER_LIEGT = 8; // Sekunden, bis ein Power-up wieder verschwindet
 
-const SP = 24;
-const ZE = 16;
+// quadratisches Feld: so ist die Schlange in alle Richtungen gleich schnell am Rand
+// (bei 24 × 16 wirkte sie nach oben/unten schneller, weil das Feld dort kürzer war)
+const SP = 20;
+const ZE = 20;
+const START_Y = ZE / 2;
 const T = 24;
 const W = SP * T;
 const H = ZE * T;
@@ -59,14 +62,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
 
   function neu() {
-    schlange = [{ x: 6, y: 8 }, { x: 5, y: 8 }, { x: 4, y: 8 }];
+    schlange = [{ x: 6, y: START_Y }, { x: 5, y: START_Y }, { x: 4, y: START_Y }];
     dir = { ...RICHTUNG.rechts };
     warteschlange = [];
     steine = [];
     // Hindernisse nicht in der Startreihe
     while (steine.length < S.hindernisse) {
       const s = { x: 2 + Math.floor(Math.random() * (SP - 4)), y: 1 + Math.floor(Math.random() * (ZE - 2)) };
-      if (s.y !== 8 && frei(s.x, s.y)) steine.push(s);
+      if (s.y !== START_Y && frei(s.x, s.y)) steine.push(s);
     }
     punkte = 0;
     tempo = S.tempo;
