@@ -1,12 +1,14 @@
 // Snake: Bits fressen, länger werden, nicht in sich selbst (oder die Wand) beißen.
 import { richtungsEingabe, overlayKlick, RICHTUNG } from "./eingabe.js";
 
-export const HILFE = "Pfeiltasten, WASD oder Wischen · Leertaste: Start/Pause · Power-ups: Uhr = 5 s Zeitlupe, Geist = 5 s durch dich selbst";
+export const HILFE = "Pfeiltasten, WASD oder Wischen · Leertaste: Start/Pause · Power-ups: Uhr = 5 s Zeitlupe, Geist = 5 s durch dich selbst, Portal (Mittel/Schwer) = 5 s durch die Wände";
 
 // Power-ups (erscheinen selten nach dem Fressen, verschwinden nach einer Weile wieder)
 const POWER = {
   langsam: { name: "Zeitlupe", farbe: "#7fb8ff", dauer: 5 },
   geist: { name: "Geist", farbe: "#e9e3ff", dauer: 5 },
+  // nur wo Wände tödlich sind (Mittel, Schwer): 5 s durch die Wand und auf der anderen Seite heraus
+  wand: { name: "Portal", farbe: "#5fc39c", dauer: 5 },
 };
 const POWER_CHANCE = 0.2; // pro gefressenem Bit
 const POWER_ABSTAND = 4; // mindestens so viele Bits zwischen zwei Power-ups
@@ -58,7 +60,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       y = Math.floor(Math.random() * ZE);
     } while (!frei(x, y) && n++ < 500);
     if (n >= 500) return;
-    item = { x, y, art: Math.random() < 0.5 ? "langsam" : "geist", rest: POWER_LIEGT };
+    const arten = S.waende ? ["langsam", "geist", "wand"] : ["langsam", "geist"];
+    item = { x, y, art: arten[Math.floor(Math.random() * arten.length)], rest: POWER_LIEGT };
     seitPower = 0;
   }
 
@@ -92,7 +95,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (warteschlange.length) dir = warteschlange.shift();
     let x = schlange[0].x + dir.x;
     let y = schlange[0].y + dir.y;
-    if (!S.waende) {
+    if (!S.waende || effekt?.art === "wand") {
       x = (x + SP) % SP;
       y = (y + ZE) % ZE;
     }
@@ -147,6 +150,26 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx, cy - r + 6);
       ctx.stroke();
+    } else if (art === "wand") {
+      // Portal: zwei Ringe mit Pfeil hindurch
+      ctx.strokeStyle = POWER.wand.farbe;
+      ctx.lineWidth = 2.5;
+      const d = Math.sin(t / 300) * 1;
+      for (const s of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(cx + s * (r * 0.55 + d), cy, r * 0.28, r * 0.9, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = POWER.wand.farbe;
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.45, cy - 2);
+      ctx.lineTo(cx + r * 0.15, cy - 2);
+      ctx.lineTo(cx + r * 0.15, cy - 5);
+      ctx.lineTo(cx + r * 0.6, cy);
+      ctx.lineTo(cx + r * 0.15, cy + 5);
+      ctx.lineTo(cx + r * 0.15, cy + 2);
+      ctx.lineTo(cx - r * 0.45, cy + 2);
+      ctx.fill();
     } else {
       const sw = Math.sin(t / 250) * 1.5;
       ctx.fillStyle = POWER.geist.farbe;
@@ -179,9 +202,21 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.fillStyle = "#16141c";
     for (let x = 0; x < SP; x++) for (let y = 0; y < ZE; y++) if ((x + y) % 2) ctx.fillRect(x * T, y * T, T, T);
     if (S.waende) {
-      ctx.strokeStyle = "#4a4166";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(1, 1, W - 2, H - 2);
+      const portal = effekt?.art === "wand";
+      const endet = portal && effekt.rest < 1.2 && Math.floor(t / 110) % 2;
+      if (portal && !endet) {
+        // Wand ist offen: grün gestrichelt und laufend
+        ctx.strokeStyle = POWER.wand.farbe;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 8]);
+        ctx.lineDashOffset = -t / 30;
+        ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
+        ctx.setLineDash([]);
+      } else {
+        ctx.strokeStyle = "#4a4166";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, W - 2, H - 2);
+      }
     }
     ctx.fillStyle = "#3a3550";
     for (const s of steine) ctx.fillRect(s.x * T + 2, s.y * T + 2, T - 4, T - 4);
@@ -308,7 +343,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   zustand = "bereit";
   neu();
-  nachricht(`<p class="big">Snake</p><p>Friss die gelben Bits${S.waende ? ", die Wand ist tabu" : ", du kannst durch die Wände"}. Manchmal taucht ein Power-up auf: Uhr = 5 s Zeitlupe, Geist = 5 s durch dich selbst.</p><p class="small">Pfeiltaste, Wischen oder Klick zum Start</p>`);
+  nachricht(`<p class="big">Snake</p><p>Friss die gelben Bits${S.waende ? ", die Wand ist tabu" : ", du kannst durch die Wände"}. Manchmal taucht ein Power-up auf: Uhr = 5 s Zeitlupe, Geist = 5 s durch dich selbst${S.waende ? ", Portal = 5 s durch die Wände" : ""}.</p><p class="small">Pfeiltaste, Wischen oder Klick zum Start</p>`);
   raf = requestAnimationFrame(loop);
 
   return {
