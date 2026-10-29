@@ -2064,7 +2064,8 @@ body.game-on .stage-help {
     font-size: 13px;
   }
   .stage[data-game="schach"] .tools-feld:has([data-s="modus"]),
-  .stage[data-game="schach"] .tools-feld[data-s="eroe-feld"] {
+  .stage[data-game="schach"] .tools-feld[data-s="eroe-feld"],
+  .stage[data-game="schach"] .tools-feld[data-s="lernart-feld"] {
     grid-column: 1 / -1;
   }
   .stage[data-game="schach"] .tools-feld[hidden] { display: none; }
