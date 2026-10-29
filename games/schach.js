@@ -1,8 +1,9 @@
-// Schach gegen den Computer. Du spielst Weiß.
-import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe } from "./schach-engine.js";
+// Schach gegen den Computer (du spielst Weiß) und ein Lernmodus für Eröffnungen.
+import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe, feldName } from "./schach-engine.js";
+import { EROEFFNUNGEN, sanDeutsch, sanZuZug } from "./schach-eroeffnungen.js";
 import { EFFEKTE, erzeuge as erzeugeEffekt, zeichne as zeichneEffekt, wackeln, bewegung } from "./schach-effekte.js";
 
-export const HILFE = "Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
+export const HILFE = "Modus „Eröffnungen lernen“: die Züge der gewählten Eröffnung nachspielen, mit Erklärung und Tipps · Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
 
 const Z = 80; // Feldgröße
 const N = Z * 8;
@@ -154,17 +155,19 @@ function premoveZiele(p, sq) {
   });
   const t = p.toUpperCase();
   if (t === "P") {
-    add(r - 1, c);
-    if (r === 6) add(r - 2, c);
-    add(r - 1, c - 1);
-    add(r - 1, c + 1);
+    const v = farbe(p) === "w" ? -1 : 1;
+    add(r + v, c);
+    if (r === (v < 0 ? 6 : 1)) add(r + 2 * v, c);
+    add(r + v, c - 1);
+    add(r + v, c + 1);
   } else if (t === "N") [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]].forEach(([a, b]) => add(r + a, c + b));
   else if (t === "B") strahl([[-1, -1], [-1, 1], [1, -1], [1, 1]]);
   else if (t === "R") strahl([[-1, 0], [1, 0], [0, -1], [0, 1]]);
   else if (t === "Q") strahl([[-1, -1], [-1, 1], [1, -1], [1, 1], [-1, 0], [1, 0], [0, -1], [0, 1]]);
   else if (t === "K") {
     for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) add(r + a, c + b);
-    if (sq === 60) out.push(62, 58); // Rochade
+    if (sq === 60 && p === "K") out.push(62, 58); // Rochade
+    if (sq === 4 && p === "k") out.push(6, 2);
   }
   return out;
 }
@@ -212,12 +215,41 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   let ziehen = false; // wird sie gerade gezogen?
   let zugPunkt = { x: 0, y: 0 }; // Zeigerposition in Brett-Einheiten
 
+  // Lernmodus: Eröffnungen nachspielen
+  let modus = "partie"; // partie | lernen
+  let lernSeite = "w"; // welche Farbe man lernt (im Lernmodus und beim Weiterspielen danach)
+  let lernPartie = false; // nach einer Eröffnung gegen den Computer weiterspielen
+  let gedreht = false; // Brett aus Sicht von Schwarz
+  let eroe = EROEFFNUNGEN[0];
+  let lernIndex = 0; // nächster Halbzug der Eröffnung
+  let lernFehler = 0;
+  let fehlerHier = 0; // Fehlversuche beim aktuellen Zug (steuert die Tipps)
+  let falsch = null; // { from, to, bis } kurz rot markierter falscher Zug
+  let tippPfeil = null; // { from, to } eingeblendeter Lösungszug
+  let lernText = "";
+  let eigeneZeile = ""; // Erklärung zum eigenen, richtigen Zug (bleibt stehen, wenn der Gegner antwortet)
+  let lernSitzung = 0; // verhindert, dass ein verspäteter Gegenzug in eine neu gestartete Übung gerät
+  const meine = () => (modus === "lernen" || lernPartie ? lernSeite : "w");
+
   const worker = new Worker(new URL("./schach-worker.js", import.meta.url), { type: "module" });
 
   const sicht = () => (ansicht === null ? { pos, zug: letzter } : stellungen[ansicht]);
   const sichtKey = () => (ansicht === null ? "live" : ansicht);
 
   function zeichneFigur(p, x, y, gross = 1) {
+    if (gedreht) {
+      // Brett ist um 180° gedreht: die Figur selbst wieder aufrecht stellen
+      ctx.save();
+      ctx.translate(x + Z / 2, y + Z / 2);
+      ctx.rotate(Math.PI);
+      ctx.translate(-x - Z / 2, -y - Z / 2);
+      zeichneFigurAufrecht(p, x, y, gross);
+      ctx.restore();
+      return;
+    }
+    zeichneFigurAufrecht(p, x, y, gross);
+  }
+  function zeichneFigurAufrecht(p, x, y, gross) {
     if (!PIXEL_SAETZE[stil]) {
       const g = Z * 0.9 * gross;
       const bild = raster(stil, p, Math.round(g * skala));
@@ -255,10 +287,31 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       ctx.save();
       ctx.translate(versatz[0], versatz[1]);
     }
+    if (gedreht) {
+      ctx.save();
+      ctx.translate(N, N);
+      ctx.rotate(Math.PI);
+    }
     zeichneBrett(t);
     const key = sichtKey();
     for (const e of effekte) if (e.fuer === key) zeichneEffekt(ctx, e, t, zeichneFigur, Z, "oben");
+    if (gedreht) {
+      ctx.restore();
+      zeichneKoordinaten(BRETT[STILE.find((s) => s.id === stil).brett]);
+    }
     if (versatz) ctx.restore();
+  }
+  // Beschriftung der Reihen und Linien (beim gedrehten Brett nach dem Zurückdrehen, damit sie lesbar bleibt)
+  function zeichneKoordinaten(brett) {
+    ctx.font = '11px "Press Start 2P", monospace';
+    ctx.fillStyle = brett.koord;
+    ctx.textBaseline = "top";
+    for (let i = 0; i < 8; i++) {
+      ctx.textAlign = "left";
+      ctx.fillText(String(gedreht ? i + 1 : 8 - i), 5, i * Z + 5);
+      ctx.textAlign = "right";
+      ctx.fillText((gedreht ? "hgfedcba" : "abcdefgh")[i], i * Z + Z - 5, N - 16);
+    }
   }
 
   function zeichneBrett(t) {
@@ -289,15 +342,14 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       ctx.fillStyle = FARBEN.schach;
       ctx.fillRect((k % 8) * Z, Math.floor(k / 8) * Z, Z, Z);
     }
-    // Koordinaten
-    ctx.font = '11px "Press Start 2P", monospace';
-    ctx.fillStyle = brett.koord;
-    ctx.textBaseline = "top";
-    for (let i = 0; i < 8; i++) {
-      ctx.textAlign = "left";
-      ctx.fillText(String(8 - i), 5, i * Z + 5);
-      ctx.textAlign = "right";
-      ctx.fillText("abcdefgh"[i], i * Z + Z - 5, N - 16);
+    // Koordinaten (beim gedrehten Brett erst nach dem Zurückdrehen, siehe zeichne)
+    if (!gedreht) zeichneKoordinaten(brett);
+    // Lernmodus: falscher Zug rot, Tipp-Pfeil grün
+    if (live && falsch && performance.now() < falsch.bis) {
+      for (const sq of [falsch.from, falsch.to]) {
+        ctx.fillStyle = "rgba(229, 86, 111, 0.45)";
+        ctx.fillRect((sq % 8) * Z, Math.floor(sq / 8) * Z, Z, Z);
+      }
     }
 
     // Figuren; die gerade gleitenden werden zuletzt obendrauf gezeichnet
@@ -311,9 +363,10 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       const k = (a.ease || ease)(roh);
       const x = ((a.from % 8) + ((a.to % 8) - (a.from % 8)) * k) * Z;
       const y = (Math.floor(a.from / 8) + (Math.floor(a.to / 8) - Math.floor(a.from / 8)) * k) * Z;
-      zeichneFigur(a.p, x, y - Math.sin(roh * Math.PI) * (a.hop ?? 7)); // kleiner „Hüpfer“
+      zeichneFigur(a.p, x, y - Math.sin(roh * Math.PI) * (a.hop ?? 7) * (gedreht ? -1 : 1)); // kleiner „Hüpfer“
     }
 
+    if (live && tippPfeil) zeichnePfeil(tippPfeil.from, tippPfeil.to);
     if (live) {
       for (const m of ziele) (p.b[m.to] || m.ep ? feldRahmen(m.to, FARBEN.ziel) : feldPunkt(m.to, FARBEN.ziel));
       for (const sq of preZiele) (p.b[sq] ? feldRahmen(sq, FARBEN.premoveZiel) : feldPunkt(sq, FARBEN.premoveZiel));
@@ -327,13 +380,38 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     if (gezogen >= 0 && p.b[gezogen]) {
       const ueber = feldBei(zugPunkt.x, zugPunkt.y);
       if (ueber >= 0 && ueber !== gezogen) feldRahmen(ueber, preZiele.length ? FARBEN.premoveZiel : "rgba(255,255,255,0.75)", 3);
-      zeichneFigur(p.b[gezogen], zugPunkt.x - Z / 2, zugPunkt.y - Z / 2 - 6, 1.12);
+      if (gedreht) zeichneFigur(p.b[gezogen], N - zugPunkt.x - Z / 2, N - zugPunkt.y - Z / 2 + 6, 1.12);
+      else zeichneFigur(p.b[gezogen], zugPunkt.x - Z / 2, zugPunkt.y - Z / 2 - 6, 1.12);
     }
     if (live && document.activeElement === canvas && !meineAnims.length && tastaturAktiv) {
       ctx.strokeStyle = FARBEN.cursor;
       ctx.lineWidth = 2;
       ctx.strokeRect((cursor % 8) * Z + 2, Math.floor(cursor / 8) * Z + 2, Z - 4, Z - 4);
     }
+  }
+
+  // Pfeil für den Tipp im Lernmodus
+  function zeichnePfeil(from, to) {
+    const mx = (sq) => (sq % 8) * Z + Z / 2;
+    const my = (sq) => Math.floor(sq / 8) * Z + Z / 2;
+    const x0 = mx(from);
+    const y0 = my(from);
+    const x1 = mx(to);
+    const y1 = my(to);
+    const w = Math.atan2(y1 - y0, x1 - x0);
+    const l = Math.hypot(x1 - x0, y1 - y0) - 18;
+    ctx.save();
+    ctx.translate(x0, y0);
+    ctx.rotate(w);
+    ctx.fillStyle = "rgba(95, 195, 156, 0.85)";
+    ctx.fillRect(0, -7, l - 14, 14);
+    ctx.beginPath();
+    ctx.moveTo(l + 8, 0);
+    ctx.lineTo(l - 20, -20);
+    ctx.lineTo(l - 20, 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 
   // Figur(en) gleiten lassen. vorher = Stellung vor dem Zug (für die geschlagene Figur)
@@ -423,6 +501,12 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
 
   function zeigeStatus() {
     if (vorbei) return;
+    if (modus === "lernen") {
+      const meinePly = eroe.zuege.filter((_, i) => (i % 2 === 0 ? "w" : "b") === lernSeite).length;
+      const geschafft = eroe.zuege.slice(0, lernIndex).filter((_, i) => (i % 2 === 0 ? "w" : "b") === lernSeite).length;
+      status(`${eroe.name} · ${geschafft} von ${meinePly} Zügen · Fehler ${lernFehler}`);
+      return;
+    }
     if (ansicht !== null) status(`Zug ${ansicht} von ${stellungen.length - 1} · → zurück zur Partie`);
     else if (denkt) status(premove ? "Computer denkt … · Premove gesetzt" : "Computer denkt …");
     else status(imSchach(pos) ? "Schach! Du bist am Zug" : "Du bist am Zug");
@@ -436,11 +520,11 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     let titel = "Remis";
     let text = `Remis durch ${e.typ}`;
     if (e.typ === "matt") {
-      titel = e.sieger === "w" ? "Schachmatt – gewonnen!" : "Schachmatt – verloren";
-      text = e.sieger === "w" ? "Du hast den Computer mattgesetzt." : "Der Computer hat dich mattgesetzt.";
+      titel = e.sieger === meine() ? "Schachmatt – gewonnen!" : "Schachmatt – verloren";
+      text = e.sieger === meine() ? "Du hast den Computer mattgesetzt." : "Der Computer hat dich mattgesetzt.";
     } else if (e.typ === "patt") text = "Patt: Keine Züge mehr, aber kein Schach.";
     status(titel);
-    ergebnis({ gewonnen: e.typ === "matt" && e.sieger === "w" });
+    if (!lernPartie) ergebnis({ gewonnen: e.typ === "matt" && e.sieger === "w" });
     nachricht(`<p class="big">${titel}</p><p>${text}</p><p class="small">Mit ← → kannst du die Partie nachspielen</p><p><button class="btn" type="button" data-neu>Neue Partie</button> <button class="btn btn-ghost" type="button" data-ansehen>Partie ansehen</button></p>`);
     document.querySelector("#stage-msg [data-neu]")?.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -481,7 +565,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
           preZiele = [];
           if (versuchePremove()) return;
           // eine für den Premove angetippte Figur bleibt ausgewählt
-          ziele = auswahl >= 0 && pos.b[auswahl] && farbe(pos.b[auswahl]) === "w" ? zuege(pos).filter((m) => m.from === auswahl) : [];
+          ziele = auswahl >= 0 && pos.b[auswahl] && farbe(pos.b[auswahl]) === meine() ? zuege(pos).filter((m) => m.from === auswahl) : [];
           if (!ziele.length) auswahl = -1;
           zeichne();
           zeigeStatus();
@@ -523,15 +607,17 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       zuAnsicht(null);
       return;
     }
-    const amZug = pos.zug === "w" && !denkt && !anims.length;
+    const amZug = pos.zug === meine() && !denkt && !anims.length;
+    if (modus === "lernen" && !amZug) return; // im Lernmodus keine Premoves
     if (amZug) {
       const passend = ziele.filter((m) => m.to === sq);
       if (passend.length) {
-        if (passend.length > 1) waehleUmwandlung(passend);
+        if (modus === "lernen") lernZug(passend.find((m) => m.umw === "Q") || passend[0]);
+        else if (passend.length > 1) waehleUmwandlung(passend);
         else fuehreAus(passend[0]);
         return;
       }
-      if (pos.b[sq] && farbe(pos.b[sq]) === "w") {
+      if (pos.b[sq] && farbe(pos.b[sq]) === meine()) {
         auswahl = sq === auswahl ? -1 : sq;
         ziele = auswahl >= 0 ? zuege(pos).filter((m) => m.from === auswahl) : [];
       } else {
@@ -547,7 +633,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       premove = { from: auswahl, to: sq };
       auswahl = -1;
       preZiele = [];
-    } else if (pos.b[sq] && farbe(pos.b[sq]) === "w" && sq !== auswahl) {
+    } else if (pos.b[sq] && farbe(pos.b[sq]) === meine() && sq !== auswahl) {
       auswahl = sq;
       preZiele = premoveZiele(pos.b[sq], sq);
       premove = null;
@@ -563,7 +649,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   function premoveLoeschen() {
     premove = null;
     preZiele = [];
-    if (pos.zug !== "w" || denkt) auswahl = -1;
+    if (pos.zug !== meine() || denkt) auswahl = -1;
     zeichne();
     zeigeStatus();
   }
@@ -600,8 +686,18 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   // ---------- Leiste unter dem Brett: Figurenstil + Nachspielen ----------
   tools.hidden = false;
   tools.innerHTML = `
+    <label class="tools-feld"><span>Modus</span>
+      <select class="tools-select" data-s="modus">
+        <option value="partie">Gegen den Computer</option>
+        <option value="lernen">Eröffnungen lernen</option>
+      </select>
+    </label>
+    <label class="tools-feld" data-s="eroe-feld" hidden><span>Eröffnung</span>
+      <select class="tools-select" data-s="eroe">${EROEFFNUNGEN.map((e) => `<option value="${e.id}">${e.name} (${e.seite === "w" ? "Weiß" : "Schwarz"})</option>`).join("")}</select>
+    </label>
+    <button type="button" class="more" data-s="tipp" hidden>Tipp</button>
     <label class="tools-feld"><span>Figuren</span>
-      <select class="tools-select">${STILE.map((s) => `<option value="${s.id}"${s.id === stil ? " selected" : ""}>${s.name}</option>`).join("")}</select>
+      <select class="tools-select" data-s="figuren">${STILE.map((s) => `<option value="${s.id}"${s.id === stil ? " selected" : ""}>${s.name}</option>`).join("")}</select>
     </label>
     <label class="tools-feld"><span>Schlagen</span>
       <select class="tools-select tools-effekt">${EFFEKTE.map((s) => `<option value="${s.id}"${s.id === effekt ? " selected" : ""}>${s.name}</option>`).join("")}</select>
@@ -613,7 +709,8 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       <button type="button" class="tools-btn" data-v="vor" aria-label="Zug vor">▶</button>
       <button type="button" class="tools-btn" data-v="ende" aria-label="Zur aktuellen Stellung">⏭</button>
     </div>
-    <button type="button" class="more tools-neu">Neue Partie</button>`;
+    <button type="button" class="more tools-neu">Neue Partie</button>
+    <div class="lern-box" data-s="box" hidden aria-live="polite"></div>`;
   const nrEl = tools.querySelector(".tools-nr");
   function zeigeVerlauf() {
     const n = stellungen.length - 1;
@@ -624,14 +721,181 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   }
   const schritt = { anfang: () => zuAnsicht(0), zurueck: () => zuAnsicht((ansicht ?? stellungen.length - 1) - 1), vor: () => ansicht !== null && zuAnsicht(ansicht + 1), ende: () => zuAnsicht(null) };
   tools.querySelectorAll("[data-v]").forEach((b) => b.addEventListener("click", () => schritt[b.dataset.v]()));
-  tools.querySelector(".tools-neu").addEventListener("click", () => neuePartie());
+  tools.querySelector(".tools-neu").addEventListener("click", () => (modus === "lernen" ? starteLernen(eroe.id) : neuePartie()));
+  const sEl = (n) => tools.querySelector(`[data-s="${n}"]`);
+  sEl("modus").addEventListener("change", (e) => {
+    e.target.blur();
+    if (e.target.value === "lernen") starteLernen(sEl("eroe").value);
+    else {
+      lernPartie = false;
+      neuePartie();
+    }
+  });
+  sEl("eroe").addEventListener("change", (e) => {
+    e.target.blur();
+    starteLernen(e.target.value);
+  });
+  sEl("tipp").addEventListener("click", (e) => {
+    e.currentTarget.blur();
+    tipp(true);
+  });
+
+  // ---------- Lernmodus ----------
+  const plyFarbe = (i) => (i % 2 === 0 ? "w" : "b");
+  const zugText = (i) => `${i % 2 === 0 ? `${i / 2 + 1}.` : `${Math.floor(i / 2) + 1}. …`} ${sanDeutsch(eroe.zuege[i][0])}`;
+  const FIGUR_NAME = { P: "Bauer", N: "Springer", B: "Läufer", R: "Turm", Q: "Dame", K: "König" };
+  function zeigeLernBox() {
+    const box = sEl("box");
+    box.hidden = modus !== "lernen";
+    if (box.hidden) return;
+    const liste = eroe.zuege
+      .map((_, i) => {
+        const gespielt = i < lernIndex;
+        const art = plyFarbe(i) === lernSeite ? "mein" : "gegner";
+        const text = gespielt ? sanDeutsch(eroe.zuege[i][0]) : plyFarbe(i) === lernSeite ? "?" : "…";
+        return `${i % 2 === 0 ? `<span class="lb-nr">${i / 2 + 1}.</span>` : ""}<span class="lb-zug ${art}${gespielt ? " ok" : ""}${i === lernIndex ? " jetzt" : ""}">${text}</span>`;
+      })
+      .join("");
+    box.innerHTML = `<p class="lb-kopf"><b>${eroe.name}</b> · du spielst ${lernSeite === "w" ? "Weiß" : "Schwarz"}</p><p class="lb-idee">${eroe.idee}</p><p class="lb-zuege">${liste}</p><p class="lb-text">${lernText}</p>`;
+  }
+  function starteLernen(id) {
+    eroe = EROEFFNUNGEN.find((e) => e.id === id) || EROEFFNUNGEN[0];
+    modus = "lernen";
+    lernPartie = false;
+    lernSeite = eroe.seite;
+    gedreht = lernSeite === "b";
+    sEl("modus").value = "lernen";
+    sEl("eroe").value = eroe.id;
+    sEl("eroe-feld").hidden = false;
+    sEl("tipp").hidden = false;
+    tools.querySelector(".tools-neu").textContent = "Von vorn";
+    neuePartie(true);
+    lernIndex = 0;
+    lernFehler = 0;
+    fehlerHier = 0;
+    eigeneZeile = "";
+    lernSitzung++;
+    lernText = lernSeite === "w" ? "Du hast Weiß und beginnst. Welcher Zug eröffnet diese Partie?" : "Du hast Schwarz. Weiß beginnt gleich, schau dir den Zug an.";
+    zeigeLernBox();
+    zeigeStatus();
+    naechsterLernschritt();
+  }
+  function naechsterLernschritt() {
+    if (modus !== "lernen") return;
+    tippPfeil = null;
+    fehlerHier = 0;
+    if (lernIndex >= eroe.zuege.length) return lernGeschafft();
+    if (plyFarbe(lernIndex) !== lernSeite) {
+      // die Gegenseite spielt ihren Buchzug
+      denkt = true;
+      const nr = lernIndex;
+      const sitzung = lernSitzung;
+      setTimeout(() => {
+        if (modus !== "lernen" || sitzung !== lernSitzung || nr !== lernIndex || vorbei) return;
+        const m = sanZuZug(pos, eroe.zuege[nr][0], zuege, feldName);
+        if (!m) return;
+        animiereZug(m, () => {
+          if (sitzung !== lernSitzung) return;
+          lernIndex = nr + 1;
+          denkt = false;
+          lernText = (eigeneZeile ? `${eigeneZeile}<br>` : "") + `<b>${zugText(nr)}</b>: ${eroe.zuege[nr][1]}` + (lernIndex < eroe.zuege.length ? ` <span class="lb-frage">Dein Zug!</span>` : "");
+          eigeneZeile = "";
+          zeigeLernBox();
+          zeigeStatus();
+          naechsterLernschritt();
+        });
+      }, 650);
+      return;
+    }
+    denkt = false;
+    zeichne();
+  }
+  function lernZug(m) {
+    const soll = sanZuZug(pos, eroe.zuege[lernIndex][0], zuege, feldName);
+    eigeneZeile = "";
+    if (soll && m.from === soll.from && m.to === soll.to) {
+      auswahl = -1;
+      ziele = [];
+      tippPfeil = null;
+      const nr = lernIndex;
+      const sitzung = lernSitzung;
+      denkt = true;
+      animiereZug(m, () => {
+        if (sitzung !== lernSitzung) return;
+        lernIndex = nr + 1;
+        denkt = false;
+        eigeneZeile = `<span class="lb-richtig">Richtig!</span> <b>${zugText(nr)}</b>: ${eroe.zuege[nr][1]}`;
+        lernText = eigeneZeile;
+        zeigeLernBox();
+        zeigeStatus();
+        naechsterLernschritt();
+      });
+      return;
+    }
+    // falscher Zug: nicht ausführen, kurz rot zeigen, Tipp geben
+    lernFehler++;
+    fehlerHier++;
+    falsch = { from: m.from, to: m.to, bis: performance.now() + 700 };
+    auswahl = -1;
+    ziele = [];
+    setTimeout(() => zeichne(), 720);
+    tipp(false);
+    zeigeStatus();
+  }
+  // Tipps werden deutlicher: Figur → Startfeld → ganzer Zug
+  function tipp(perKnopf) {
+    if (modus !== "lernen" || lernIndex >= eroe.zuege.length || plyFarbe(lernIndex) !== lernSeite || denkt) return;
+    const soll = sanZuZug(pos, eroe.zuege[lernIndex][0], zuege, feldName);
+    if (!soll) return;
+    if (perKnopf) fehlerHier++;
+    const figur = FIGUR_NAME[pos.b[soll.from].toUpperCase()];
+    const vorne = perKnopf ? "" : `<span class="lb-falsch">Nicht der Zug dieser Eröffnung.</span> `;
+    if (fehlerHier <= 1) lernText = `${vorne}Tipp: Es zieht ${figur === "Dame" ? "die" : "der"} ${figur}.`;
+    else if (fehlerHier === 2) {
+      lernText = `${vorne}Tipp: ${figur === "Dame" ? "Die" : "Der"} ${figur} auf ${feldName(soll.from)} ist dran.`;
+      auswahl = soll.from;
+      ziele = zuege(pos).filter((z) => z.from === soll.from);
+    } else {
+      lernText = `${vorne}Lösung: <b>${sanDeutsch(eroe.zuege[lernIndex][0])}</b> (grüner Pfeil). Spiel ihn nach.`;
+      tippPfeil = { from: soll.from, to: soll.to };
+    }
+    zeigeLernBox();
+    zeichne();
+  }
+  function lernGeschafft() {
+    const naechste = EROEFFNUNGEN[(EROEFFNUNGEN.indexOf(eroe) + 1) % EROEFFNUNGEN.length];
+    const lob = lernFehler === 0 ? "Fehlerfrei, stark!" : lernFehler <= 2 ? `Mit ${lernFehler} Fehler${lernFehler > 1 ? "n" : ""}, gut gemacht.` : `Mit ${lernFehler} Fehlern. Nochmal üben?`;
+    status(`${eroe.name} geschafft · Fehler ${lernFehler}`);
+    nachricht(`<p class="big">Geschafft!</p><p>${eroe.name}: ${lob}</p><p class="small">${eroe.idee}</p><p><button class="btn" type="button" data-l="nochmal">Nochmal</button> <button class="btn btn-ghost" type="button" data-l="weiter">Nächste: ${naechste.name}</button></p><p><button class="btn btn-ghost" type="button" data-l="spielen">Ab hier gegen den Computer spielen</button></p>`);
+    const knopf = (n, fn) =>
+      document.querySelector(`#stage-msg [data-l="${n}"]`)?.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        fn();
+      });
+    knopf("nochmal", () => starteLernen(eroe.id));
+    knopf("weiter", () => starteLernen(naechste.id));
+    knopf("spielen", () => {
+      // Stellung behalten, Modus wechseln: du spielst weiter deine Farbe
+      nachricht(null);
+      modus = "partie";
+      lernPartie = true;
+      sEl("modus").value = "partie";
+      sEl("eroe-feld").hidden = true;
+      sEl("tipp").hidden = true;
+      sEl("box").hidden = true;
+      tools.querySelector(".tools-neu").textContent = "Neue Partie";
+      if (pos.zug !== meine()) computerZieht();
+      else zeigeStatus();
+      zeichne();
+    });
+  }
   tools.querySelector(".tools-effekt").addEventListener("change", (e) => {
     effekt = e.target.value;
     try {
       localStorage.setItem(EFFEKT_KEY, effekt);
     } catch {}
   });
-  tools.querySelector(".tools-select:not(.tools-effekt)").addEventListener("change", (e) => {
+  tools.querySelector('[data-s="figuren"]').addEventListener("change", (e) => {
     stil = e.target.value;
     try {
       localStorage.setItem(STIL_KEY, stil);
@@ -640,7 +904,20 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     zeichne();
   });
 
-  function neuePartie() {
+  function neuePartie(fuerLernen = false) {
+    if (!fuerLernen) {
+      // zurück zum normalen Spiel gegen den Computer (du spielst Weiß)
+      modus = "partie";
+      lernPartie = false;
+      gedreht = false;
+      sEl("modus").value = "partie";
+      sEl("eroe-feld").hidden = true;
+      sEl("tipp").hidden = true;
+      sEl("box").hidden = true;
+      tools.querySelector(".tools-neu").textContent = "Neue Partie";
+    }
+    tippPfeil = null;
+    falsch = null;
     cancelAnimationFrame(raf);
     pos = ausFen(START);
     stellungen = [{ pos: klon(pos), zug: null }];
@@ -669,11 +946,15 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     return { x: ((e.clientX - r.left) / r.width) * N, y: ((e.clientY - r.top) / r.height) * N };
   };
   function feldBei(x, y) {
+    if (gedreht) {
+      x = N - x;
+      y = N - y;
+    }
     const c = Math.floor(x / Z);
     const row = Math.floor(y / Z);
     return c < 0 || c > 7 || row < 0 || row > 7 ? -1 : row * 8 + c;
   }
-  const eigeneFigur = (sq) => ansicht === null && !vorbei && pos.b[sq] && farbe(pos.b[sq]) === "w";
+  const eigeneFigur = (sq) => ansicht === null && !vorbei && pos.b[sq] && farbe(pos.b[sq]) === meine();
 
   const onDown = (e) => {
     if (e.button === 2) return;
@@ -746,13 +1027,15 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     if (k in wasd) {
       e.preventDefault();
       tastaturAktiv = true;
-      const n = cursor + wasd[k];
-      if (n >= 0 && n < 64 && !(k === "a" && cursor % 8 === 0) && !(k === "d" && cursor % 8 === 7)) cursor = n;
+      const n = cursor + wasd[k] * (gedreht ? -1 : 1);
+      const links = gedreht ? "d" : "a";
+      const rechts = gedreht ? "a" : "d";
+      if (n >= 0 && n < 64 && !(k === links && cursor % 8 === 0) && !(k === rechts && cursor % 8 === 7)) cursor = n;
       zeichne();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       tastaturAktiv = true;
-      if (vorbei) neuePartie();
+      if (vorbei) (modus === "lernen" ? starteLernen(eroe.id) : neuePartie());
       else feldGeklickt(cursor);
     } else if (e.key === "Escape") premoveLoeschen();
   };
