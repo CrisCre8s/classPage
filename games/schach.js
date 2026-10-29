@@ -3,7 +3,7 @@ import { ausFen, START, zuege, spieleZug, ende, imSchach, farbe, feldName } from
 import { EROEFFNUNGEN, sanDeutsch, sanZuZug } from "./schach-eroeffnungen.js";
 import { EFFEKTE, erzeuge as erzeugeEffekt, zeichne as zeichneEffekt, wackeln, bewegung } from "./schach-effekte.js";
 
-export const HILFE = "Modus „Eröffnungen lernen“: die Züge der gewählten Eröffnung nachspielen, mit Erklärung und Tipps · Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
+export const HILFE = "Stufe „Lernen“ bzw. Modus „Eröffnungen lernen“: die Züge der gewählten Eröffnung nachspielen, mit Erklärung und Tipps · Figur ziehen oder antippen, dann Zielfeld · Premove: schon ziehen, während der Computer denkt (Rechtsklick löscht) · ← → ↑ ↓: Züge nachspielen · Tastatur-Spiel: WASD + Enter";
 
 const Z = 80; // Feldgröße
 const N = Z * 8;
@@ -174,6 +174,9 @@ function premoveZiele(p, sq) {
 
 export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, ergebnis }) {
   const ctx = passeCanvas(canvas, N, N);
+  // Stufe „Lernen“: startet direkt mit den Eröffnungen; gespielt wird danach gegen „Leicht“
+  const lernStufe = stufe === "lernen";
+  const kiStufe = lernStufe ? "leicht" : stufe;
   // Auflösung an die echte Anzeigegröße anpassen: das Brett wird groß dargestellt,
   // die Zeichenfläche hat deshalb so viele Pixel wie auf dem Bildschirm (× Pixeldichte)
   let skala = 1; // Bildschirmpixel pro Brett-Einheit
@@ -524,7 +527,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       text = e.sieger === meine() ? "Du hast den Computer mattgesetzt." : "Der Computer hat dich mattgesetzt.";
     } else if (e.typ === "patt") text = "Patt: Keine Züge mehr, aber kein Schach.";
     status(titel);
-    if (!lernPartie) ergebnis({ gewonnen: e.typ === "matt" && e.sieger === "w" });
+    if (!lernPartie && !lernStufe) ergebnis({ gewonnen: e.typ === "matt" && e.sieger === "w" });
     nachricht(`<p class="big">${titel}</p><p>${text}</p><p class="small">Mit ← → kannst du die Partie nachspielen</p><p><button class="btn" type="button" data-neu>Neue Partie</button> <button class="btn btn-ghost" type="button" data-ansehen>Partie ansehen</button></p>`);
     document.querySelector("#stage-msg [data-neu]")?.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -556,7 +559,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     const start = performance.now();
     worker.onmessage = (e) => {
       if (e.data.id !== id || vorbei) return;
-      const warte = Math.max(0, (BEDENKZEIT[stufe] || 900) - (performance.now() - start));
+      const warte = Math.max(0, (BEDENKZEIT[kiStufe] || 900) - (performance.now() - start));
       setTimeout(() => {
         if (id !== anfrage || vorbei || !e.data.zug) return;
         animiereZug(e.data.zug, () => {
@@ -572,7 +575,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
         });
       }, warte);
     };
-    worker.postMessage({ pos: klon(pos), stufe, id });
+    worker.postMessage({ pos: klon(pos), stufe: kiStufe, id });
   }
 
   function fuehreAus(m) {
@@ -1057,6 +1060,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   zeigeVerlauf();
   zeichne();
   zeigeStatus();
+  if (lernStufe) starteLernen(EROEFFNUNGEN[0].id);
 
   return {
     pause() {},

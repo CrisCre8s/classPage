@@ -20,7 +20,9 @@ const LADER = {
   befehle: () => import("./games/befehle.js"),
   ports: () => import("./games/ports.js"),
 };
-const STUFEN = { leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
+const STUFEN = { lernen: "Lernen", leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
+// „Lernen“ gibt es nur bei Spielen, die einen Lernmodus haben (lernStufe im Katalog)
+const stufenFuer = (info) => Object.entries(STUFEN).filter(([id]) => id !== "lernen" || info.lernStufe);
 
 // ---------- Bestwerte (pro Gerät) ----------
 function lese(key, fallback) {
@@ -66,7 +68,7 @@ function karteHtml(s) {
         ${s.kat === "lernen" ? `<button class="lern-toggle" type="button" aria-expanded="false" aria-controls="lern-${s.id}"><span>So geht's</span><svg class="i" aria-hidden="true"><use href="#i-chev" /></svg></button>` : ""}
         ${s.stufen === false ? "" : `<div class="seg" role="radiogroup" aria-label="Schwierigkeit für ${esc(s.name)}">
           <span class="seg-pill" aria-hidden="true"></span>
-          ${Object.entries(STUFEN).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
+          ${stufenFuer(s).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
         </div>`}
         <div class="letzte" aria-label="Letzte ${LETZTE_ANZAHL} Ergebnisse"></div>
         <div class="game-foot">
@@ -301,7 +303,7 @@ async function lernhilfeUmschalten(spiel, knopf) {
     <div class="lern-foot">
       <p>Verstanden? Dann los:</p>
       <div class="lern-start">
-        ${Object.entries(STUFEN).map(([id, l]) => `<button class="btn${id === stufeVon(spiel) ? "" : " btn-ghost"}" type="button" data-level="${id}">${l}</button>`).join("")}
+        ${stufenFuer(info).map(([id, l]) => `<button class="btn${id === stufeVon(spiel) ? "" : " btn-ghost"}" type="button" data-level="${id}">${l}</button>`).join("")}
       </div>
     </div>`;
   karte(spiel).after(panel);
@@ -357,7 +359,7 @@ function initKarten() {
       pillZu(btn);
       zeigeBest(spiel);
       const info = k.querySelector(".game-stufe-info");
-      if (info) info.textContent = `Stärke ${STUFEN[btn.dataset.level]}: ${NACH_ID[spiel].stufenInfo[btn.dataset.level]}`;
+      if (info) info.textContent = btn.dataset.level === "lernen" ? "Lernen: Eröffnungen Zug für Zug am Brett üben" : `Stärke ${STUFEN[btn.dataset.level]}: ${NACH_ID[spiel].stufenInfo[btn.dataset.level]}`;
     };
     radios.forEach((r) => {
       r.addEventListener("click", () => waehle(r));
@@ -371,7 +373,7 @@ function initKarten() {
         }
       });
     });
-    waehle(radios[1]); // startet immer auf Mittel
+    waehle(radios.find((r) => r.dataset.level === "mittel") || radios[0]); // startet immer auf Mittel
 
     const lern = k.querySelector(".lern-toggle");
     lern?.addEventListener("click", () => lernhilfeUmschalten(spiel, lern));
