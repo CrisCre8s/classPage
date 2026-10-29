@@ -9,9 +9,10 @@ export const KATEGORIEN = [
 
 export const KATALOG = [
   { id: "pong", kat: "klassiker", name: "Ping-Pong", kurz: "Schläger gegen Schläger, bis 7", text: "Der Klassiker: Schläger gegen Schläger. Wer zuerst 7 Punkte hat, gewinnt.", tasten: "Maus, Finger, W/S oder ↑/↓", wertung: "siege" },
-  { id: "schach", kat: "klassiker", name: "Schach", kurz: "Du spielst Weiß gegen den Computer", text: "Du spielst Weiß gegen den Computer. Rochade, en passant und Umwandlung inklusive. Neu: Modus „Eröffnungen lernen“ mit 10 Eröffnungen, Erklärungen und Tipps.", tasten: "Figur ziehen oder antippen · Premove · ← → nachspielen", wertung: "siege",
+  { id: "schach", kat: "klassiker", name: "Schach", kurz: "Du spielst Weiß gegen den Computer", text: "Du spielst Weiß gegen den Computer. Rochade, en passant und Umwandlung inklusive. Neu: Stufe „Lernen“ mit 10 Eröffnungen, Erklärungen und Tipps.", tasten: "Figur ziehen oder antippen · Premove · ← → nachspielen", wertung: "siege",
     // grobe Schätzung der Spielstärke je Stufe (nicht gegen gewertete Spieler gemessen)
-    stufenInfo: { leicht: "ca. 400 Elo", mittel: "ca. 900 Elo", schwer: "ca. 1400 Elo" } },
+    lernStufe: true,
+    stufenInfo: { lernen: "Eröffnungen", leicht: "ca. 400 Elo", mittel: "ca. 900 Elo", schwer: "ca. 1400 Elo" } },
   { id: "bits", kat: "klassiker", name: "Bits & Bugs", kurz: "Bits sammeln, Bugs ausweichen", text: "Sammle als Pixel-Computer alle Bits ein. Mit dem Debugger jagst du die Bugs.", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
   { id: "snake", kat: "klassiker", name: "Snake", kurz: "Bits fressen, länger werden", text: "Friss Bits und werde länger. Nicht in dich selbst beißen. Seltene Power-ups: Zeitlupe, Geist (kurz durch dich selbst) und auf Mittel/Schwer das Portal (kurz durch die Wände).", tasten: "Pfeiltasten, WASD oder Wischen", wertung: "punkte" },
   { id: "minen", kat: "klassiker", name: "Bug-Sucher", kurz: "Alle Felder ohne Bug aufdecken", text: "Decke alle Felder auf, unter denen kein Bug steckt. Die Zahlen verraten, wie viele Bugs angrenzen.", tasten: "Tippen: aufdecken · Rechtsklick/lange drücken: Flagge", wertung: "zeit" },

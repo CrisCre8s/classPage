@@ -2033,6 +2033,69 @@ body.game-on .stage-help {
   body.game-on .stage-help {
     display: none;
   }
+
+  /* Schach am Handy: das Brett bekommt die volle Breite (quadratisch),
+     Lernkasten und Einstellungen stehen darunter, die Seite scrollt */
+  body.game-on .stage[data-game="schach"] {
+    height: auto;
+    min-height: 0;
+  }
+  body.game-on .stage[data-game="schach"] .stage-body {
+    flex: none;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+  .stage[data-game="schach"] .stage-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    padding-top: 12px;
+  }
+  .stage[data-game="schach"] .lern-box {
+    order: -1;
+    grid-column: 1 / -1;
+    padding: 12px 14px;
+  }
+  .stage[data-game="schach"] .tools-feld {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    min-width: 0;
+    font-size: 13px;
+  }
+  .stage[data-game="schach"] .tools-feld:has([data-s="modus"]),
+  .stage[data-game="schach"] .tools-feld[data-s="eroe-feld"] {
+    grid-column: 1 / -1;
+  }
+  .stage[data-game="schach"] .tools-feld[hidden] { display: none; }
+  .stage[data-game="schach"] .tools-select {
+    width: 100%;
+    min-width: 0;
+    text-overflow: ellipsis;
+  }
+  .stage[data-game="schach"] .tools-verlauf {
+    order: 1;
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+  .stage[data-game="schach"] .tools-verlauf .tools-btn { flex: 1; }
+  .stage[data-game="schach"] .stage-tools > .more {
+    order: 2;
+    justify-content: center;
+    height: 40px;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--control);
+    color: var(--text);
+  }
+  .stage[data-game="schach"] .stage-tools > .more[hidden] { display: none; }
+  .stage[data-game="schach"] [data-s="tipp"][hidden] ~ .tools-neu { grid-column: 1 / -1; }
+  /* Figuren und Schlagen sind Geschmackssache: ganz nach unten */
+  .stage[data-game="schach"] .tools-feld:has([data-s="figuren"]),
+  .stage[data-game="schach"] .tools-feld:has(.tools-effekt) {
+    order: 3;
+  }
 }
 
 /* ===== Lernspiele (HTML statt Canvas) ===== */
