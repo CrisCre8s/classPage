@@ -35,8 +35,11 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const ctx = passeCanvas(canvas, W, H);
 
   let schlange, dir, warteschlange, futter, steine, punkte, tempo, zustand, raf, zuletzt, akku;
-  let item, effekt, seitPower;
-  let vorher = []; // Lage der Glieder vor dem letzten Schritt (zum flüssigen Zeichnen) // liegendes Power-up, aktive Wirkung { art, rest }, Bits seit dem letzten
+  let item, effekt, seitPower; // liegendes Power-up, aktive Wirkung { art, rest }, Bits seit dem letzten
+  // dir = Richtung des Schritts, der gerade läuft (der Kopf gleitet schon dorthin);
+  // bewegt = Richtung des letzten ausgeführten Schritts (zum Prüfen auf Umdrehen)
+  let bewegt;
+  const DIREKT_BIS = 0.4; // so weit darf ein Schritt laufen, damit eine Eingabe noch sofort zählt
 
   const frei = (x, y) =>
     !schlange.some((t) => t.x === x && t.y === y) && !steine.some((s) => s.x === x && s.y === y) && !(item && item.x === x && item.y === y) && !(futter && futter.x === x && futter.y === y);
@@ -67,8 +70,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   function neu() {
     schlange = [{ x: 6, y: START_Y }, { x: 5, y: START_Y }, { x: 4, y: START_Y }];
-    vorher = schlange.map((t) => ({ ...t }));
     dir = { ...RICHTUNG.rechts };
+    bewegt = { ...dir };
     warteschlange = [];
     steine = [];
     // Hindernisse nicht in der Startreihe
@@ -92,7 +95,12 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
 
   function schritt() {
+    gehe();
+    bewegt = { ...dir };
+    // nächster Schritt: vorgemerkte Eingabe, sonst geradeaus
     if (warteschlange.length) dir = warteschlange.shift();
+  }
+  function gehe() {
     let x = schlange[0].x + dir.x;
     let y = schlange[0].y + dir.y;
     if (!S.waende || effekt?.art === "wand") {
@@ -112,7 +120,6 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ende();
       return;
     }
-    vorher = schlange.map((t) => ({ ...t }));
     schlange.unshift({ x, y });
     if (item && gleich(item, { x, y })) {
       effekt = { art: item.art, rest: POWER[item.art].dauer };
@@ -243,17 +250,19 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     const endetBald = effekt && effekt.rest < 1.2 && Math.floor(t / 110) % 2;
     // als Geist halb durchsichtig (Überlappungen sieht man dann)
     ctx.globalAlpha = geist && !endetBald ? 0.55 : 1;
-    // Zwischenstand seit dem letzten Schritt (0 … 1): jedes Glied gleitet von seinem
-    // alten zu seinem neuen Feld, mit genau der gleichen Geschwindigkeit in jede Richtung
-    const k = zustand === "laeuft" || zustand === "pause" ? Math.min(1, akku) : 1;
+    // Fortschritt des laufenden Schritts (0 … 1). Gezeichnet wird nach vorn: der Kopf gleitet
+    // von seinem Feld in Richtung des nächsten, jedes Glied zum Feld seines Vordermanns.
+    // So sieht man eine Eingabe sofort, und das Tempo ist in jede Richtung gleich.
+    const k = zustand === "laeuft" || zustand === "pause" ? Math.min(1, akku) : 0;
     const nah = (a, b) => a && b && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
     const lage = schlange.map((teil, i) => {
-      const alt = vorher[i];
-      if (!nah(alt, teil)) return { x: teil.x, y: teil.y };
-      return { x: alt.x + (teil.x - alt.x) * k, y: alt.y + (teil.y - alt.y) * k };
+      if (i === 0) return { x: teil.x + dir.x * k, y: teil.y + dir.y * k };
+      const ziel = schlange[i - 1];
+      if (!nah(ziel, teil)) return { x: teil.x, y: teil.y };
+      return { x: teil.x + (ziel.x - teil.x) * k, y: teil.y + (ziel.y - teil.y) * k };
     });
     // Körper als durchgehendes Band: Kopf → Mitten der Felder → Schwanz
-    const pfad = [lage[0], ...schlange.slice(1), lage[lage.length - 1]];
+    const pfad = [lage[0], ...schlange.slice(0, -1), lage[lage.length - 1]];
     ctx.strokeStyle = zeitlupe && !endetBald ? "#7fb8ff" : "#b48ef0";
     ctx.lineWidth = T - 6;
     ctx.lineCap = "square";
@@ -329,11 +338,18 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const aus1 = richtungsEingabe(canvas, {
     richtung(r) {
       const n = RICHTUNG[r];
-      const letzte = warteschlange.at(-1) || dir;
-      // nicht direkt umdrehen; max. 2 Eingaben vormerken
-      if (n.x === -letzte.x && n.y === -letzte.y) return;
-      if (n.x === letzte.x && n.y === letzte.y) return;
-      if (warteschlange.length < 2) warteschlange.push({ ...n });
+      const gleich = (a, b) => a.x === b.x && a.y === b.y;
+      const gegen = (a, b) => a.x === -b.x && a.y === -b.y;
+      // Direkte Steuerung: Ist der laufende Schritt erst am Anfang (oder steht das Spiel),
+      // wird er sofort in die neue Richtung gelenkt statt erst beim nächsten Feld
+      if (!warteschlange.length && (zustand !== "laeuft" || akku < DIREKT_BIS) && !gegen(n, bewegt)) {
+        if (!gleich(n, dir)) dir = { ...n };
+      } else {
+        const letzte = warteschlange.at(-1) || dir;
+        // nicht direkt umdrehen; max. 2 Eingaben vormerken
+        if (gegen(n, letzte) || gleich(n, letzte)) return;
+        if (warteschlange.length < 2) warteschlange.push({ ...n });
+      }
       if (zustand === "bereit") los();
     },
     leertaste: () => (zustand === "laeuft" ? pause() : los()),
