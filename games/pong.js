@@ -1,6 +1,6 @@
-// Ping-Pong gegen den Computer. Wer zuerst 7 Punkte hat, gewinnt.
+// Ping-Pong gegen den Computer oder zu zweit an einem Gerät. Wer zuerst 7 Punkte hat, gewinnt.
 
-export const HILFE = "Maus/Finger bewegen oder W/S bzw. ↑/↓ · Leertaste: Start/Pause";
+export const HILFE = "Maus/Finger bewegen oder W/S bzw. ↑/↓ · Leertaste: Start/Pause · zu zweit: links W/S, rechts ↑/↓, am Handy jede Hälfte ein Finger";
 
 const W = 800;
 const H = 480;
@@ -28,6 +28,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   let zustand = "bereit"; // bereit | laeuft | pause | punkt | ende
   let aufschlagNach = 1; // 1 = Richtung Computer
   let tasten = { hoch: false, runter: false };
+  // zu zweit: rechter Schläger mit ↑/↓ oder Finger auf der rechten Hälfte
+  let zweiSpieler = false;
+  let tasten2 = { hoch: false, runter: false };
+  cpu.ziel = null;
   let raf = 0;
   let zuletzt = 0;
   let wartenBis = 0;
@@ -46,7 +50,21 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
 
   function zeigeStand() {
-    status(`${punkte[0]} : ${punkte[1]}`);
+    status(zweiSpieler ? `Links ${punkte[0]} : ${punkte[1]} Rechts` : `${punkte[0]} : ${punkte[1]}`);
+  }
+  const modusKnoepfe = () =>
+    `<p class="pong-modus"><button class="btn${zweiSpieler ? " btn-ghost" : ""}" type="button" data-modus="cpu">Gegen Computer</button><button class="btn${zweiSpieler ? "" : " btn-ghost"}" type="button" data-modus="zwei">Zu zweit</button></p>`;
+  function zeigeMeldung(html) {
+    nachricht(html);
+    document.querySelectorAll("#stage-msg [data-modus]").forEach((b) =>
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        zweiSpieler = b.dataset.modus === "zwei";
+        punkte = [0, 0];
+        zustand = "ende";
+        los();
+      }),
+    );
   }
 
   // Wo kommt der Ball auf der Computerseite an? (für „Schwer“, mit Bandenabprallern)
@@ -76,10 +94,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (punkte[fuer] >= ZIEL) {
       zustand = "ende";
       const gewonnen = fuer === 0;
-      ergebnis({ gewonnen });
-      nachricht(
-        `<p class="big">${gewonnen ? "Gewonnen!" : "Verloren"}</p><p>${punkte[0]} : ${punkte[1]}</p><p class="small">Leertaste oder Klick für ein neues Spiel</p>`,
-      );
+      // zu zweit wird nichts in die Bestenliste geschrieben
+      if (!zweiSpieler) ergebnis({ gewonnen });
+      const titel = zweiSpieler ? (gewonnen ? "Links gewinnt!" : "Rechts gewinnt!") : gewonnen ? "Gewonnen!" : "Verloren";
+      zeigeMeldung(`<p class="big">${titel}</p><p>${punkte[0]} : ${punkte[1]}</p><p class="small">Leertaste oder Klick: nochmal so · oder Modus wählen</p>${modusKnoepfe()}`);
       return;
     }
     aufschlagNach = fuer === 0 ? 1 : -1;
@@ -98,14 +116,22 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (spieler.ziel != null) spieler.y += (spieler.ziel - SCHLAEGER_H / 2 - spieler.y) * Math.min(1, 0.35 * dt);
     spieler.y = Math.max(0, Math.min(H - SCHLAEGER_H, spieler.y));
 
+    if (zweiSpieler) {
+      if (tasten2.hoch) cpu.y -= tempo;
+      if (tasten2.runter) cpu.y += tempo;
+      if (cpu.ziel != null) cpu.y += (cpu.ziel - SCHLAEGER_H / 2 - cpu.y) * Math.min(1, 0.35 * dt);
+      cpu.y = Math.max(0, Math.min(H - SCHLAEGER_H, cpu.y));
+    }
     // Computer
     let zielY = H / 2;
     const kommt = ball.vx > 0 && ball.x > W * S.reagiertAb;
     if (kommt) zielY = (S.vorhersage ? vorhersageY() : ball.y) + BALL / 2 + cpu.versatz;
     const diff = zielY - (cpu.y + SCHLAEGER_H / 2);
     const max = S.cpu * dt * (kommt ? 1 : 0.5);
-    cpu.y += Math.max(-max, Math.min(max, diff));
-    cpu.y = Math.max(0, Math.min(H - SCHLAEGER_H, cpu.y));
+    if (!zweiSpieler) {
+      cpu.y += Math.max(-max, Math.min(max, diff));
+      cpu.y = Math.max(0, Math.min(H - SCHLAEGER_H, cpu.y));
+    }
 
     if (zustand !== "laeuft") return;
 
@@ -151,6 +177,11 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.textBaseline = "top";
     ctx.fillText(String(punkte[0]), W / 2 - 90, 28);
     ctx.fillText(String(punkte[1]), W / 2 + 90, 28);
+    if (zweiSpieler && zustand !== "laeuft") {
+      ctx.font = '10px "Press Start 2P", monospace';
+      ctx.fillText("W / S", 90, H - 30);
+      ctx.fillText("↑ / ↓", W - 90, H - 30);
+    }
 
     ctx.fillStyle = "#f2f2f3";
     ctx.fillRect(24, Math.round(spieler.y), SCHLAEGER_B, SCHLAEGER_H);
@@ -203,16 +234,28 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     const r = canvas.getBoundingClientRect();
     return ((e.clientY - r.top) / r.height) * H;
   }
+  // zu zweit: welche Hälfte gehört zu welchem Finger
+  const seiteVon = (e) => {
+    if (!zweiSpieler) return spieler;
+    const r = canvas.getBoundingClientRect();
+    return e.clientX - r.left < r.width / 2 ? spieler : cpu;
+  };
   const onMove = (e) => {
-    spieler.ziel = zeigerY(e);
+    if (zweiSpieler && e.pointerType !== "mouse" && e.buttons === 0) return;
+    seiteVon(e).ziel = zeigerY(e);
   };
   const onDown = (e) => {
-    spieler.ziel = zeigerY(e);
+    seiteVon(e).ziel = zeigerY(e);
     if (zustand !== "laeuft" && zustand !== "punkt") los();
   };
   const onKey = (e) => {
     const runter = e.type === "keydown";
-    if (["ArrowUp", "w", "W"].includes(e.key)) {
+    const rechts = zweiSpieler && (e.key === "ArrowUp" || e.key === "ArrowDown");
+    if (rechts) {
+      tasten2[e.key === "ArrowUp" ? "hoch" : "runter"] = runter;
+      cpu.ziel = null;
+      e.preventDefault();
+    } else if (["ArrowUp", "w", "W"].includes(e.key)) {
       tasten.hoch = runter;
       spieler.ziel = null;
       e.preventDefault();
@@ -236,7 +279,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   msg.addEventListener("click", onMsg);
 
   zeigeStand();
-  nachricht(`<p class="big">Ping-Pong</p><p>Erster bei ${ZIEL} Punkten gewinnt</p><p class="small">Leertaste oder Klick zum Start</p>`);
+  zeigeMeldung(`<p class="big">Ping-Pong</p><p>Erster bei ${ZIEL} Punkten gewinnt</p><p class="small">Leertaste oder Klick: gegen den Computer · zu zweit: links W/S, rechts ↑/↓</p>${modusKnoepfe()}`);
   raf = requestAnimationFrame(loop);
 
   return {

@@ -2,6 +2,8 @@
 // Wird erst geladen, wenn jemand „So geht's“ öffnet.
 import { BEFEHLE, SYSTEME } from "./befehle.js";
 import { PORTS } from "./ports.js";
+import { SCHICHTEN, KARTEN } from "./osi.js";
+import { PAARE } from "./memory.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const block = (titel, html) => `<section class="lh-block"><h4>${titel}</h4>${html}</section>`;
@@ -158,9 +160,154 @@ function ports() {
   ].join("");
 }
 
+
+// ---------- C#-Code ----------
+function csharp() {
+  return [
+    block(
+      "Klasse, Objekt, Konstruktor",
+      `<p>Eine <b>Klasse</b> ist der Bauplan, ein <b>Objekt</b> ist ein Exemplar davon. Der <b>Konstruktor</b> heißt wie die Klasse, hat keinen Rückgabetyp und läuft beim Erzeugen mit <code>new</code>.</p>${bsp([
+        "class Auto",
+        "{",
+        "    public string Marke;",
+        "    public Auto(string marke)   // Konstruktor",
+        "    {",
+        "        this.Marke = marke;     // this = dieses Objekt",
+        "    }",
+        "}",
+        "",
+        "Auto a = new Auto(\"VW\");     // Konstruktor aufrufen",
+      ])}
+       <p class="lh-klein">Sobald man einen eigenen Konstruktor schreibt, gibt es den leeren <code>new Auto()</code> nicht mehr automatisch. Mit <code>: this(…)</code> ruft ein Konstruktor einen anderen auf, mit <code>: base(…)</code> den der Basisklasse.</p>`,
+    ),
+    block(
+      "static und Klassenvariablen",
+      `<p>Was <code>static</code> ist, gehört zur <b>Klasse</b>, nicht zu einem einzelnen Objekt. Eine statische Variable (Klassenvariable) teilen sich alle Objekte.</p>${bsp([
+        "class Zaehler",
+        "{",
+        "    public static int Anzahl = 0;  // gibt es nur einmal",
+        "    public Zaehler() { Anzahl++; }",
+        "}",
+        "",
+        "new Zaehler(); new Zaehler();",
+        "Console.WriteLine(Zaehler.Anzahl);  // 2",
+      ])}
+       <ul class="lh-liste"><li>Aufruf über den Klassennamen: <code>Math.Max(1, 2)</code>, <code>Zaehler.Anzahl</code></li><li>Eine statische Methode kennt kein Objekt, also auch kein <code>this</code> und keine normalen Felder.</li><li><code>Main</code> ist static, weil beim Start noch kein Objekt existiert.</li></ul>`,
+    ),
+    block(
+      "Properties: get; set;",
+      `<p>Eine Property sieht von außen aus wie ein Feld, hat innen aber Methoden zum Lesen (<code>get</code>) und Schreiben (<code>set</code>).</p>${bsp([
+        "public string Name { get; set; }              // automatische Property",
+        "public int Alter { get; private set; }        // nur die Klasse darf schreiben",
+        "public string Id { get; init; }               // nur beim Erzeugen setzbar",
+        "",
+        "private int _stand;",
+        "public int Stand",
+        "{",
+        "    get { return _stand; }",
+        "    set { if (value >= 0) _stand = value; }   // value = neuer Wert",
+        "}",
+        "",
+        "public int Flaeche => Breite * Hoehe;         // nur lesen, wird berechnet",
+      ])}`,
+    ),
+    block(
+      "Typische Fallen",
+      `<ul class="lh-liste"><li><code>7 / 2</code> ist bei int <b>3</b>, der Rest fällt weg. <code>7 % 2</code> ist der Rest: 1.</li><li><code>"5" + "3"</code> ergibt <b>"53"</b>, Strings werden verkettet.</li><li>Arrays beginnen bei Index <b>0</b>.</li><li>Klassen sind Referenztypen: <code>b = a</code> kopiert nur den Verweis, beide zeigen auf dasselbe Objekt. <code>int</code> ist ein Werttyp und wird kopiert.</li></ul>`,
+    ),
+  ].join("");
+}
+
+// ---------- OSI-Sortierer ----------
+function osi() {
+  const beispiele = (nr) => KARTEN.filter((k) => k[1] === nr).map((k) => esc(k[0])).join(", ");
+  return [
+    block(
+      "Die 7 Schichten",
+      `<p class="lh-klein">Merksatz von oben (7) nach unten (1): <b>A</b>lle <b>D</b>eutschen <b>S</b>tudenten <b>T</b>rinken <b>V</b>erschiedene <b>S</b>orten <b>B</b>ier.</p>${tabelle(
+        ["Nr.", "Schicht", "Einheit", "Beispiele im Spiel"],
+        SCHICHTEN.map((s) => [s.nr, `${s.name}<br><small>${s.en}</small>`, s.pdu, beispiele(s.nr)]),
+      )}`,
+    ),
+    block(
+      "Faustregeln",
+      `<ul class="lh-liste"><li><b>Hub, Repeater, Kabel</b> → 1 (nur Signale)</li><li><b>Switch, Bridge, MAC</b> → 2 (Frames)</li><li><b>Router, IP</b> → 3 (Pakete)</li><li><b>TCP, UDP, Ports</b> → 4 (Segmente)</li><li>Fast alle Protokolle, die ein Programm direkt nutzt (HTTP, DNS, SMTP …) → 7</li></ul>`,
+    ),
+  ].join("");
+}
+
+// ---------- SQL-Sprint ----------
+function sql() {
+  return [
+    block(
+      "Aufbau einer Abfrage",
+      `<p>Die Reihenfolge der Teile ist fest:</p>${bsp([
+        "SELECT spalten          -- was soll angezeigt werden",
+        "FROM tabelle            -- woher",
+        "WHERE bedingung         -- welche Zeilen",
+        "GROUP BY spalte         -- zusammenfassen",
+        "HAVING bedingung        -- Bedingung für Gruppen",
+        "ORDER BY spalte DESC    -- sortieren (ASC = aufsteigend)",
+        "LIMIT 3                 -- nur die ersten 3",
+      ])}`,
+    ),
+    block(
+      "Bedingungen",
+      `${bsp([
+        "WHERE stadt = 'Berlin'              -- Text in einfachen Anführungszeichen",
+        "WHERE alter > 30 AND stadt <> 'Jena'",
+        "WHERE stadt IN ('Hamburg', 'Jena')",
+        "WHERE name LIKE 'M%'                -- % = beliebig viele Zeichen, _ = eins",
+        "WHERE eintritt BETWEEN 2017 AND 2020",
+        "WHERE b.id IS NULL",
+      ])}`,
+    ),
+    block(
+      "Zählen, Summen, Gruppen",
+      `${bsp(["SELECT COUNT(*) FROM kunden", "SELECT AVG(gehalt), MAX(gehalt) FROM mitarbeiter", "SELECT stadt, COUNT(*) FROM kunden GROUP BY stadt", "SELECT abteilung FROM mitarbeiter GROUP BY abteilung HAVING COUNT(*) > 2"])}<p class="lh-klein">COUNT, SUM, AVG usw. gehören nie in WHERE, sondern in SELECT oder HAVING.</p>`,
+    ),
+    block(
+      "Tabellen verbinden (JOIN)",
+      `${bsp(["SELECT k.name, b.produkt", "FROM bestellungen b", "JOIN kunden k ON b.kunde_id = k.id", "", "-- auch Zeilen ohne Partner: LEFT JOIN"])}<p class="lh-klein">k und b sind Kurznamen (Aliase) für die Tabellen.</p>`,
+    ),
+  ].join("");
+}
+
+// ---------- Logikgatter ----------
+function gatter() {
+  const tab = (name, sym, f) =>
+    `<div class="lh-gatter"><p><b>${name}</b> <span class="lh-symbol">${sym}</span></p>${tabelle(
+      ["A", "B", "Y"],
+      [[0, 0], [0, 1], [1, 0], [1, 1]].map(([a, b]) => [a, b, f(a, b)]),
+    )}</div>`;
+  return [
+    block(
+      "Die Grundgatter",
+      `<div class="lh-gatter-reihe">${tab("AND", "&", (a, b) => a & b)}${tab("OR", "≥1", (a, b) => a | b)}${tab("XOR", "=1", (a, b) => a ^ b)}</div>
+       <p><b>NOT</b> (Schaltzeichen „1“ mit Kreis am Ausgang) dreht den Wert um: 0 → 1, 1 → 0. Ein Gatter mit NOT dahinter heißt NAND, NOR oder XNOR.</p>`,
+    ),
+    block(
+      "So gehst du vor",
+      `<ul class="lh-liste"><li>Schau, in welchen Zeilen Y = 1 ist.</li><li>Nur in der letzten Zeile (alles 1)? → AND. In allen außer der ersten? → OR. Nur wenn A und B verschieden sind? → XOR.</li><li>Bei zwei Gattern hintereinander: erst das letzte Gatter überlegen, dann rückwärts.</li></ul>`,
+    ),
+  ].join("");
+}
+
+// ---------- Fachbegriff-Memory ----------
+function memory() {
+  return [1, 2, 3]
+    .map((s) => block(`${STUFE_NAME[s]} <span class="chip">${PAARE.filter((p) => p[2] === s).length}</span>`, tabelle(["Begriff", "Bedeutung"], PAARE.filter((p) => p[2] === s).map((p) => [esc(p[0]), esc(p[1])]), "lh-text")))
+    .join("");
+}
+
 export const LERNHILFE = {
   binaer: { titel: "So rechnest du um", inhalt: binaer },
   subnetz: { titel: "So berechnest du Subnetze", inhalt: subnetz },
   befehle: { titel: "Alle Befehle im Überblick", inhalt: befehle },
   ports: { titel: "Alle Ports im Überblick", inhalt: ports },
+  csharp: { titel: "C#-Grundlagen zum Nachlesen", inhalt: csharp },
+  osi: { titel: "Das OSI-Modell", inhalt: osi },
+  sql: { titel: "SQL-Abfragen im Überblick", inhalt: sql },
+  gatter: { titel: "Logikgatter und Wahrheitstabellen", inhalt: gatter },
+  memory: { titel: "Alle Begriffe im Überblick", inhalt: memory },
 };
