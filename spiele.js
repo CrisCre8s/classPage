@@ -19,6 +19,11 @@ const LADER = {
   subnetz: () => import("./games/subnetz.js"),
   befehle: () => import("./games/befehle.js"),
   ports: () => import("./games/ports.js"),
+  bloecke: () => import("./games/bloecke.js"),
+  flatter: () => import("./games/flatter.js"),
+  invasion: () => import("./games/invasion.js"),
+  sudoku: () => import("./games/sudoku.js"),
+  ttt: () => import("./games/ttt.js"),
   csharp: () => import("./games/csharp.js"),
   osi: () => import("./games/osi.js"),
   sql: () => import("./games/sql.js"),
@@ -364,7 +369,7 @@ function initKarten() {
       pillZu(btn);
       zeigeBest(spiel);
       const info = k.querySelector(".game-stufe-info");
-      if (info) info.textContent = btn.dataset.level === "lernen" ? "Lernen: Eröffnungen Zug für Zug am Brett üben" : `Stärke ${STUFEN[btn.dataset.level]}: ${NACH_ID[spiel].stufenInfo[btn.dataset.level]}`;
+      if (info) info.textContent = btn.dataset.level === "lernen" ? "Lernen: Eröffnungen Zug für Zug am Brett üben" : `${spiel === "schach" ? "Stärke " : ""}${STUFEN[btn.dataset.level]}: ${NACH_ID[spiel].stufenInfo[btn.dataset.level]}`;
     };
     radios.forEach((r) => {
       r.addEventListener("click", () => waehle(r));

@@ -3108,3 +3108,238 @@ body.game-on .stage-help {
   border: 1px solid var(--control);
   border-radius: 3px;
 }
+
+/* ===== Sudoku ===== */
+.sudoku,
+.ttt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.sudoku-feld {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  width: min(100%, 470px);
+  aspect-ratio: 1;
+  border: 2px solid #8a8698;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.sudoku-feld.verdeckt .sudoku-zelle {
+  color: transparent;
+}
+
+.sudoku-zelle {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: clamp(16px, 4.6vw, 24px);
+  color: var(--brand-line);
+  background: var(--surface);
+  border: 0;
+  border-right: 1px solid var(--raised-edge);
+  border-bottom: 1px solid var(--raised-edge);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sudoku-zelle:nth-child(9n) {
+  border-right: 0;
+}
+
+.sudoku-zelle:nth-child(n + 73) {
+  border-bottom: 0;
+}
+
+.sudoku-zelle.rand-r {
+  border-right: 2px solid #8a8698;
+}
+
+.sudoku-zelle.rand-u {
+  border-bottom: 2px solid #8a8698;
+}
+
+.sudoku-zelle.vorgabe {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sudoku-zelle.bereich {
+  background: #1a1922;
+}
+
+.sudoku-zelle.gleich {
+  background: #2a2438;
+}
+
+.sudoku-zelle.aktiv {
+  background: #3a3150;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.sudoku-zelle.konflikt {
+  color: var(--pill-neg-ink);
+  background: var(--pill-neg-bg);
+}
+
+.sudoku-feld.geloest .sudoku-zelle {
+  color: var(--pill-pos-ink);
+}
+
+.sudoku-notizen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  font-size: clamp(8px, 1.8vw, 11px);
+  line-height: 1;
+  color: var(--faint);
+}
+
+.sudoku-notizen span {
+  display: grid;
+  place-items: center;
+}
+
+.sudoku-pad {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 6px;
+  width: min(100%, 560px);
+}
+
+.sudoku-taste {
+  position: relative;
+  min-height: 48px;
+  padding: 0;
+  font-size: 20px;
+  background: var(--raised);
+  border: 1px solid var(--raised-edge);
+  border-radius: var(--radius);
+}
+
+.sudoku-taste small {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.sudoku-taste:hover,
+.sudoku-taste:focus-visible {
+  border-color: var(--brand-line);
+  outline: none;
+}
+
+.sudoku-taste.fertig {
+  opacity: 0.35;
+}
+
+.sudoku-notiz {
+  font-size: 12px;
+}
+
+.sudoku-notiz.an {
+  color: var(--ground);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .sudoku-pad {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .sudoku-notiz {
+    grid-column: span 1;
+  }
+}
+
+/* ===== Tic-Tac-Toe ===== */
+.ttt-zug {
+  min-height: 26px;
+  margin: 0;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.ttt-zug[data-ergebnis="X"] {
+  color: var(--pill-pos-ink);
+}
+
+.ttt-zug[data-ergebnis="O"] {
+  color: var(--pill-neg-ink);
+}
+
+.ttt-feld {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px;
+  width: min(100%, 360px);
+  aspect-ratio: 1;
+}
+
+.ttt-zelle {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(30px, 10vw, 48px);
+  background: var(--raised);
+  border: 1px solid var(--raised-edge);
+  border-radius: var(--radius);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.ttt-zelle:not(:disabled):hover,
+.ttt-zelle:not(:disabled):focus-visible {
+  border-color: var(--brand-line);
+  background: #24222c;
+  outline: none;
+  cursor: pointer;
+}
+
+.ttt-zelle:disabled {
+  cursor: default;
+}
+
+.ttt-zelle.ist-x {
+  color: var(--accent);
+}
+
+.ttt-zelle.ist-o {
+  color: var(--brand-line);
+}
+
+.ttt-zelle.sieg {
+  border-color: currentColor;
+  background: #2a2438;
+}
+
+.ttt-stand {
+  display: flex;
+  gap: 22px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.ttt-stand b {
+  margin-left: 4px;
+  color: var(--text);
+}
+
+.ttt-knoepfe {
+  min-height: 46px;
+}

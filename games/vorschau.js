@@ -280,4 +280,133 @@ export function zeichneVorschau(canvas, spiel) {
       ctx.fillText(o ? o[0] : "?", x + 25, y + 22);
     }
   }
+  if (spiel === "bloecke") {
+    // Brett mit Stapel, fallender T-Stein
+    const z = 11;
+    const ox = 65;
+    ctx.fillStyle = "#16141c";
+    ctx.fillRect(ox, 4, z * 10, z * 10);
+    const farben = { I: "#7fb8ff", O: gelb, T: "#b48ef0", S: "#5fc39c", Z: "#e5566f", L: "#f0a35e" };
+    const stapel = ["..........", "..........", "..........", "..........", "....T.....", "...TTT....", "..........", "Z.....OO.I", "ZZ.LL.OOSI", "SZLLLSSSSI"];
+    stapel.forEach((zeile, y) => [...zeile].forEach((c, x) => {
+      if (c === ".") return;
+      ctx.fillStyle = farben[c];
+      ctx.fillRect(ox + x * z + 1, 4 + y * z + 1, z - 2, z - 2);
+    }));
+    ctx.strokeStyle = "rgba(180,142,240,0.5)";
+    ctx.strokeRect(ox + 3 * z + 1.5, 4 + 8 * z + 1.5, z - 3, z - 3);
+    ctx.fillStyle = "#3a3550";
+    ctx.fillRect(ox - 2, 4, 2, z * 10);
+    ctx.fillRect(ox + z * 10, 4, 2, z * 10);
+  }
+  if (spiel === "flatter") {
+    ctx.fillStyle = "#2f2c3a";
+    for (const [x, oben, unten] of [[40, 38, 78], [150, 22, 64]]) {
+      ctx.fillRect(x, 0, 36, oben);
+      ctx.fillRect(x, unten, 36, 108 - unten);
+      ctx.fillStyle = "#3d3949";
+      ctx.fillRect(x - 3, oben - 7, 42, 7);
+      ctx.fillRect(x - 3, unten, 42, 7);
+      ctx.fillStyle = "#5fc39c";
+      for (let y = unten + 12; y < 104; y += 10) ctx.fillRect(x + 6, y, 3, 3);
+      for (let y = oben - 14; y > 0; y -= 10) ctx.fillRect(x + 6, y, 3, 3);
+      ctx.fillStyle = "#2f2c3a";
+    }
+    ctx.fillStyle = "#3a3550";
+    ctx.fillRect(0, 108, 240, 3);
+    // Pixel-Computer
+    ctx.fillStyle = "#e9e6ef";
+    ctx.fillRect(108, 48, 24, 16);
+    ctx.fillStyle = "#1a2a3a";
+    ctx.fillRect(111, 50, 18, 10);
+    ctx.fillStyle = "#7fe0b0";
+    ctx.fillRect(114, 53, 2, 3);
+    ctx.fillRect(123, 53, 2, 3);
+    ctx.fillStyle = lila;
+    ctx.fillRect(100, 50, 8, 3);
+    ctx.fillStyle = "#b9b4c6";
+    ctx.fillRect(114, 64, 12, 3);
+  }
+  if (spiel === "invasion") {
+    const kaefer = ["...XXXXX...", "X.XXXXXXX.X", ".XXXX.XXXX.", "XXXXX.XXXXX", ".XXXX.XXXX.", "X.XXX.XXX.X", "...XXXXX...", "....XXX....", "...X...X..."];
+    const reihen = [["#e5566f", 4], ["#f0a35e", 26], ["#5fc39c", 48]];
+    for (const [farbe, y] of reihen)
+      for (let c = 0; c < 6; c++) {
+        ctx.fillStyle = farbe;
+        kaefer.forEach((z, yy) => [...z].forEach((ch, xx) => ch === "X" && ctx.fillRect(40 + c * 28 + xx * 2, y + yy * 2, 2, 2)));
+      }
+    ctx.fillStyle = "#44a282";
+    ctx.fillRect(36, 84, 30, 8);
+    ctx.fillRect(174, 84, 30, 8);
+    ctx.fillStyle = lila;
+    ctx.fillRect(108, 104, 24, 7);
+    ctx.strokeStyle = gelb;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(120, 97, 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#e5566f";
+    ctx.beginPath();
+    ctx.arc(120, 72, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (spiel === "sudoku") {
+    const z = 12;
+    const ox = 66;
+    const oy = 6;
+    const zahlen = "5 3 . . 7 . . . . 6 . . 1 9 5 . . . . 9 8 . . . . 6 . 8 . . . 6 . . . 3 4 . . 8 . 3 . . 1 7 . . . 2 . . . 6 . 6 . . . . 2 8 . . . . 4 1 9 . . 5 . . . . 8 . . 7 9".split(" ");
+    ctx.fillStyle = "#16141c";
+    ctx.fillRect(ox, oy, z * 9, z * 9);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = '7px "Press Start 2P", monospace';
+    zahlen.forEach((v, i) => {
+      if (v === ".") return;
+      ctx.fillStyle = i % 7 === 3 ? lila : weiss;
+      ctx.fillText(v, ox + (i % 9) * z + z / 2 + 0.5, oy + Math.floor(i / 9) * z + z / 2 + 1);
+    });
+    for (let i = 0; i <= 9; i++) {
+      ctx.fillStyle = i % 3 === 0 ? "#8a8698" : "#2a292f";
+      ctx.fillRect(ox + i * z - (i % 3 === 0 ? 1 : 0), oy, i % 3 === 0 ? 2 : 1, z * 9);
+      ctx.fillRect(ox, oy + i * z - (i % 3 === 0 ? 1 : 0), z * 9, i % 3 === 0 ? 2 : 1);
+    }
+  }
+  if (spiel === "ttt") {
+    const z = 34;
+    const ox = 69;
+    const oy = 8;
+    ctx.fillStyle = "#3a3550";
+    ctx.fillRect(ox + z - 1, oy, 3, z * 3);
+    ctx.fillRect(ox + 2 * z - 1, oy, 3, z * 3);
+    ctx.fillRect(ox, oy + z - 1, z * 3, 3);
+    ctx.fillRect(ox, oy + 2 * z - 1, z * 3, 3);
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    const x = (c, r) => {
+      ctx.strokeStyle = gelb;
+      ctx.beginPath();
+      ctx.moveTo(ox + c * z + 9, oy + r * z + 9);
+      ctx.lineTo(ox + c * z + z - 9, oy + r * z + z - 9);
+      ctx.moveTo(ox + c * z + z - 9, oy + r * z + 9);
+      ctx.lineTo(ox + c * z + 9, oy + r * z + z - 9);
+      ctx.stroke();
+    };
+    const o = (c, r) => {
+      ctx.strokeStyle = lila;
+      ctx.beginPath();
+      ctx.arc(ox + c * z + z / 2, oy + r * z + z / 2, 10, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+    x(0, 0);
+    x(1, 1);
+    o(2, 0);
+    o(0, 2);
+    x(2, 2);
+    ctx.strokeStyle = weiss;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ox + 6, oy + 6);
+    ctx.lineTo(ox + 3 * z - 6, oy + 3 * z - 6);
+    ctx.stroke();
+  }
 }
