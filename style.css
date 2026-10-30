@@ -3343,3 +3343,11 @@ body.game-on .stage-help {
 .ttt-knoepfe {
   min-height: 46px;
 }
+
+/* Modus-Wahl im Overlay (Ping-Pong, Vier in einer Reihe) */
+.pong-modus {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
