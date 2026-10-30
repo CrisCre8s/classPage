@@ -85,7 +85,7 @@ erscheinen ab dem zweiten Tag, die volle Woche nach 7 Tagen.
 ├── main.js         # Einstieg Hub
 ├── spiele.html     # Spiele-Seite
 ├── spiele.js       # Einstieg Spiele
-├── games/          # die 24 Spiele (Liste in games/katalog.js)
+├── games/          # die 26 Spiele (Liste in games/katalog.js)
 ├── shell.js        # gemeinsam: Sterne, POWER, Void
 ├── vite.config.js  # baut beide Seiten
 ├── lks.js          # Leistungskontrollen aus lks.json
@@ -104,7 +104,7 @@ erscheinen ab dem zweiten Tag, die volle Woche nach 7 Tagen.
 
 ## Spiele
 
-Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 24 Spiele, die meisten in
+Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 26 Spiele, die meisten in
 **Leicht, Mittel und Schwer**. Name, Beschreibung und Kategorie stehen zentral in
 `games/katalog.js`. Auf der Spieleseite stehen die Lernspiele oben, die Klassiker
 darunter. Der Hub zeigt nur drei Lernspiele als Vorschau, die ganze Fläche führt zur
@@ -131,6 +131,8 @@ Spieleseite.
 - **Stick-Skater** (`games/skate.js`, `skate-welten.js`, `skate-fortschritt.js`): Weltkarte mit 7 Welten (Stadt, Sonnenstrand, Dschungel, Eiswelt, Hölle, Himmel, Mond), die man durch Weiterfahren freischaltet (alle 450 m ein Portal); je Welt eigene Hindernisse und Physik (Eis rutscht, Himmel und Mond mit weniger Schwerkraft, Pilze federn, Lava-Geysire); Garage mit 8 Boards (Werte Tempo/Sprung/Schub, Spuren), gekauft mit dem Münzkonto; 3 Aufgaben mit Bonus-Münzen; Fortschritt im localStorage (Schlüssel `skate-fortschritt-v1`). In der Stadt die Zonen „Über den Dächern“, „Skatepark“ (Funboxen, Ledges, Publikum) und „Innenstadt“ (Läden, Autos, Scooter-Kids, Baustellen); Boost-Sprünge über Autos und durch den Feuerring; Highscore = Münzen (Tricks und Sprünge geben Bonus-Münzen); Tempo nur durch Anschieben
 - **Block-Stapler** (`games/bloecke.js`): fallende Steine zu vollen Reihen, mit Vorschau, Halten, Geisterstein und Wandsprung beim Drehen; Start-Level 1 / 4 / 8; ↓ halten lässt den Stein zügig Reihe für Reihe fallen; volle Reihen zerfallen mit Lichtblitz in Pixel und Nullen/Einsen („Doppel!“, „Vierer!“ mit Wackeln)
 - **Flatter-PC** (`games/flatter.js`): Pixel-Computer fliegt durch Lücken zwischen Serverschränken, eine Taste; ein Modus, alle 10 Schränke ein neuer Abschnitt (schneller, engere Lücken)
+- **Billard** (`games/billard.js`, Physik und 8-Ball-Regeln in `games/billard-physik.js`, Computer in `games/billard-ki.js`): Pooltisch in voller Auflösung, Zielen per Zeigen/Antippen, Stoßen durch Zurückziehen; Ziellinie mit Geisterkugel und Laufrichtung (auf Schwer kürzer); Fouls (Weiße versenkt, keine oder falsche Kugel zuerst) geben Ball in der Hand; der Computer sucht Lochstöße über die Geisterkugel, rechnet die besten mit derselben Physik voraus und streut je Stufe beim Stoß; Modus „Zu zweit“ in der Werkzeugleiste (wird nicht gewertet)
+- **Bubble Shooter** (`games/bubble.js`): Blasen im Wabenraster, ab drei gleichen Farben platzen sie, lose Gruppen fallen (doppelte Punkte); nach 7 / 5 / 4 Fehlschüssen schiebt sich oben eine neue Reihe ein; 4 / 5 / 6 Farben, Ziellinie lang / bis zur Bande / kurz; jede Farbe hat zusätzlich ein Zeichen; geräumtes Feld gibt Bonus und ein neues, volleres Feld
 - **Bug-Invasion** (`games/invasion.js`): Bugs in Reihen mit dem Debugger abschießen, Firewalls als Deckung, Bonus-Bug, Wellen
 - **Sudoku** (`games/sudoku.js`): Generator mit eindeutiger Lösung, 40 / 32 / 26 Vorgaben, Notizen, Bestzeit; jede falsche Zahl kostet ein Leben (5 / 4 / 3)
 - **Tic-Tac-Toe** (`games/ttt.js`): Leicht macht Fehler, Mittel blockt immer, Schwer rechnet per Minimax alles durch (unschlagbar); Effekte: Siegerlinie mit Konfetti, Niederlage wackelt rot, Remis als graue Welle

@@ -362,6 +362,56 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.fillRect(ox - 2, 4, 2, z * 10);
     ctx.fillRect(ox + z * 10, 4, 2, z * 10);
   }
+  if (spiel === "billard") {
+    const kreis = (x, y, r, f) => {
+      ctx.fillStyle = f;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    ctx.fillStyle = "#5a3220";
+    ctx.fillRect(14, 10, 212, 100);
+    ctx.fillStyle = "#145a49";
+    ctx.fillRect(22, 18, 196, 84);
+    ctx.fillStyle = "#1f8a6e";
+    ctx.fillRect(25, 21, 190, 78);
+    for (const [x, y] of [[23, 19], [120, 17], [217, 19], [23, 101], [120, 103], [217, 101]]) kreis(x, y, 6, "#07070a");
+    // Dreieck aus Kugeln
+    const farben = ["#f2c230", "#2f6fe0", "#e0393c", "#7a4bc0", "#17161c", "#f07f1d", "#1f9a57", "#9a2a3a", "#f2c230", "#2f6fe0"];
+    let i = 0;
+    for (let r = 0; r < 4; r++) for (let k = 0; k <= r; k++) kreis(150 + r * 8.5, 60 + (k - r / 2) * 9.4, 4.4, farben[i++]);
+    kreis(70, 60, 4.4, "#f4f1e8");
+    // Ziellinie und Queue
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    for (let x = 78; x < 142; x += 6) ctx.fillRect(x, 59.5, 3, 1);
+    ctx.fillStyle = "#d9b77e";
+    ctx.fillRect(12, 59, 50, 2);
+    ctx.fillStyle = "#f3ead6";
+    ctx.fillRect(58, 59, 4, 2);
+  }
+  if (spiel === "bubble") {
+    const farben = ["#e5566f", "#f5d97a", "#5fc39c", "#7fb8ff", "#c8a2ff"];
+    const kreis = (x, y, f) => {
+      ctx.fillStyle = f;
+      ctx.beginPath();
+      ctx.arc(x, y, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fillRect(x - 3, y - 3.5, 2.5, 2);
+    };
+    ctx.fillStyle = "#2a2638";
+    ctx.fillRect(40, 0, 160, 6);
+    const muster = [[0, 0, 1, 1, 2, 3, 3, 4, 4, 0, 1], [3, 0, 2, 2, 4, 3, 1, 4, 0, 1], [3, 3, 2, 4, 4, 1, 1, 0, 0, 2], [1, 3, 4, 0, 1, 2], [1, 0, -1, -1, -1, 2, 2]];
+    muster.forEach((zeile, r) => zeile.forEach((f, c) => f >= 0 && kreis(48 + c * 14 + (r % 2 ? 7 : 0), 13 + r * 12, farben[f])));
+    // Ziellinie, Kanone, Linie unten
+    ctx.fillStyle = "rgba(127,184,255,0.6)";
+    for (let k = 0; k < 6; k++) ctx.fillRect(120 - k * 4.5, 100 - k * 8, 2, 2);
+    ctx.fillStyle = "rgba(229,86,111,0.5)";
+    for (let x = 40; x < 200; x += 8) ctx.fillRect(x, 94, 5, 1);
+    ctx.fillStyle = "#a39cc0";
+    ctx.fillRect(116, 100, 8, 10);
+    kreis(120, 110, farben[3]);
+  }
   if (spiel === "flatter") {
     ctx.fillStyle = "#2f2c3a";
     for (const [x, oben, unten] of [[40, 38, 78], [150, 22, 64]]) {
