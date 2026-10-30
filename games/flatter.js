@@ -13,6 +13,7 @@ const RACK_B = 64;
 
 // Ein Modus: alle 10 Serverschränke beginnt ein neuer Abschnitt, schneller und mit engeren Lücken
 const PRO_ABSCHNITT = 10;
+const BANNER_DAUER = 0.9; // Sekunden, die der Abschnitts-Hinweis sichtbar ist
 function werte(a) {
   return {
     luecke: Math.max(118, 178 - a * 9),
@@ -73,7 +74,7 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
         if (punkte % PRO_ABSCHNITT === 0) {
           abschnitt++;
           S = werte(abschnitt);
-          banner = { t: 0, text: `ABSCHNITT ${abschnitt + 1}` };
+          banner = { t: 0, text: `ABSCHNITT ${abschnitt + 1} · SCHNELLER` };
         }
         zeigeStatus();
         for (let i = 0; i < 6; i++) funken.push({ x: PC_X, y: pc.y + PC_H / 2, vx: -40 - Math.random() * 80, vy: (Math.random() - 0.5) * 120, t: 0.5 });
@@ -209,16 +210,17 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
     ctx.fillStyle = "#8a8698";
     ctx.fillText(`ABSCHNITT ${abschnitt + 1}`, W / 2, 94);
     if (banner) {
-      const k = banner.t / 1.6;
-      ctx.globalAlpha = k < 0.15 ? k / 0.15 : k > 0.75 ? (1 - k) / 0.25 : 1;
-      ctx.fillStyle = "rgba(15,14,19,0.75)";
-      ctx.fillRect(0, H / 2 - 52, W, 84);
+      // Kleiner, dezenter Hinweis unter der Fortschrittsanzeige
+      const k = banner.t / BANNER_DAUER;
+      const a = k < 0.15 ? k / 0.15 : k > 0.6 ? (1 - k) / 0.4 : 1;
+      const y = 116 - (1 - Math.min(1, k / 0.15)) * 4;
+      ctx.font = '7px "Press Start 2P", monospace';
+      const b = ctx.measureText(banner.text).width + 16;
+      ctx.globalAlpha = a * 0.85;
+      ctx.fillStyle = "rgba(15,14,19,0.6)";
+      ctx.fillRect(W / 2 - b / 2, y - 11, b, 16);
       ctx.fillStyle = farbe;
-      ctx.font = '20px "Press Start 2P", monospace';
-      ctx.fillText(banner.text, W / 2, H / 2 - 12);
-      ctx.fillStyle = "#f2f2f3";
-      ctx.font = '9px "Press Start 2P", monospace';
-      ctx.fillText("SCHNELLER · ENGER", W / 2, H / 2 + 14);
+      ctx.fillText(banner.text, W / 2, y);
       ctx.globalAlpha = 1;
     }
     ctx.restore();
@@ -231,7 +233,7 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
     if (zustand === "laeuft") schritt(dt);
     else if (zustand === "bereit") pc.y = H / 2 - 40 + Math.sin(t / 300) * 8;
     if (wackel > 0) wackel -= dt;
-    if (banner && zustand === "laeuft" && (banner.t += dt) > 1.6) banner = null;
+    if (banner && zustand === "laeuft" && (banner.t += dt) > BANNER_DAUER) banner = null;
     zeichne(t / 1000);
   }
   function los() {
