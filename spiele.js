@@ -222,6 +222,7 @@ function beenden() {
   tools.hidden = true;
   document.getElementById("game-canvas").hidden = false;
   nachricht(null);
+  rangAus();
 }
 
 async function starten(spiel) {
@@ -274,13 +275,154 @@ async function starten(spiel) {
         neu = alt == null || zeit < alt;
         if (neu) schreibe(key, Math.round(zeit));
       }
+      if (info.wertung === "punkte") rangErgebnis(punkte);
+      if (info.wertung === "zeit" && gewonnen) rangErgebnis(zeit);
       zeigeBest(spiel);
       return neu;
     },
   });
   laufendes = { spiel, stufe, inst };
+  rangStart(spiel, stufe);
   einpassen();
   if (!modul.DOM) canvas.focus({ preventScroll: true });
+}
+
+// ---------- Klassen-Bestenliste ----------
+// Ablauf: beim Spielstart gibt es vom Server eine Spielmarke. Nach jeder Runde mit Ergebnis kann man es
+// freiwillig mit Namen eintragen; dafür wird die Marke verbraucht und gleich eine neue für die nächste Runde geholt.
+// Der Server prüft, ob Ergebnis und Spieldauer zusammenpassen (siehe api/bestenliste.js).
+const RANG_NAME = "spiele:rang:name";
+let rang = null;
+const rangEl = () => document.getElementById("stage-rang");
+const rangStufe = (spiel, stufe) => (NACH_ID[spiel].stufen === false ? "alle" : stufe);
+const rangWert = (spiel, wert) => (NACH_ID[spiel].wertung === "zeit" ? `${formatZeit(wert)} min` : `${Number(wert).toLocaleString("de-DE")} Pkt`);
+
+async function holeMarke(spiel, stufe) {
+  try {
+    const r = await fetch("/api/bestenliste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktion: "start", spiel, stufe }) });
+    const d = await r.json();
+    return d.ok ? d.marke : null;
+  } catch {
+    return null;
+  }
+}
+function rangAus() {
+  rang = null;
+  const el = rangEl();
+  el.hidden = true;
+  el.innerHTML = "";
+}
+function rangStart(spiel, stufe) {
+  rangAus();
+  if (NACH_ID[spiel].wertung === "siege") return;
+  const s = rangStufe(spiel, stufe);
+  rang = { spiel, stufe: s, marke: holeMarke(spiel, s), offen: null, liste: [], meldung: "" };
+  ladeRangliste(rang);
+}
+async function ladeRangliste(r) {
+  try {
+    const res = await fetch(`/api/bestenliste?spiel=${encodeURIComponent(r.spiel)}&stufe=${encodeURIComponent(r.stufe)}`);
+    const d = await res.json();
+    if (rang !== r || !d.ok) return;
+    r.liste = d.liste;
+    r.aktiv = true;
+    zeichneRang();
+  } catch {
+    // ohne Speicher (z. B. lokal) bleibt der Bereich einfach unsichtbar
+  }
+}
+function zeichneRang() {
+  const r = rang;
+  const el = rangEl();
+  if (!r?.aktiv) return;
+  el.hidden = false;
+  const stufeName = r.stufe === "alle" ? "" : STUFEN[r.stufe];
+  const name = lese(RANG_NAME, "");
+  const liste = r.liste.length
+    ? `<ol class="rang-liste">${r.liste.map((e) => `<li${r.meinPlatz === e.platz ? ' class="mein"' : ""}><span class="rang-platz num">${e.platz}.</span><span class="rang-name">${esc(e.name)}</span><span class="rang-wert num">${rangWert(r.spiel, e.wert)}</span></li>`).join("")}</ol>`
+    : `<p class="rang-leer">Noch keine Einträge. Der erste Platz ist frei!</p>`;
+  const form = r.offen
+    ? `<form class="rang-form" novalidate>
+        <p>Dein Ergebnis: <b class="num">${rangWert(r.spiel, r.offen.wert)}</b>. In die Klassen-Bestenliste eintragen?</p>
+        <div class="rang-eingabe">
+          <label class="sr-only" for="rang-name">Name</label>
+          <input id="rang-name" class="rang-input" name="name" maxlength="16" autocomplete="nickname" placeholder="Name oder Spitzname" value="${esc(name)}" />
+          <button class="btn" type="submit">Eintragen</button>
+          <button class="more" type="button" data-rang="nein">Nein danke</button>
+        </div>
+      </form>`
+    : "";
+  el.innerHTML = `
+    <div class="rang-kopf"><h2 id="rang-titel">Klassen-Bestenliste</h2>${stufeName ? `<span class="chip">${stufeName}</span>` : ""}</div>
+    ${form}
+    ${r.meldung ? `<p class="rang-meldung${r.fehler ? " fehler" : ""}" role="status">${esc(r.meldung)}</p>` : ""}
+    ${liste}
+    <p class="rang-regel">Eintragen ist freiwillig. Es zählen nur echte Runden: Der Server prüft, ob Ergebnis und Spieldauer zusammenpassen. Pro Name zählt der beste Wert, unpassende Namen werden gelöscht.</p>`;
+  el.querySelector(".rang-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    rangEintragen(el.querySelector(".rang-input").value);
+  });
+  el.querySelector('[data-rang="nein"]')?.addEventListener("click", () => {
+    r.offen = null;
+    r.meldung = "";
+    zeichneRang();
+  });
+}
+function rangErgebnis(wert) {
+  const r = rang;
+  if (!r || !(wert > 0)) return;
+  // diese Runde behält ihre Marke, für die nächste Runde gibt es gleich eine neue
+  r.offen = { wert, marke: r.marke };
+  r.marke = holeMarke(r.spiel, r.stufe);
+  r.meldung = "";
+  r.fehler = false;
+  if (!r.aktiv) return;
+  zeichneRang();
+  // Hinweis im Ergebnis-Fenster (nachdem das Spiel seine Meldung gesetzt hat)
+  setTimeout(() => {
+    const msg = document.getElementById("stage-msg");
+    if (rang !== r || !r.offen || msg.hidden || msg.querySelector("[data-rang-hin]")) return;
+    msg.insertAdjacentHTML("beforeend", `<p><button class="btn btn-ghost" type="button" data-rang-hin>In die Klassen-Bestenliste</button></p>`);
+    msg.querySelector("[data-rang-hin]").addEventListener("click", (e) => {
+      e.stopPropagation();
+      rangEl().scrollIntoView({ behavior: "smooth", block: "center" });
+      rangEl().querySelector(".rang-input")?.focus({ preventScroll: true });
+    });
+  }, 0);
+}
+async function rangEintragen(name) {
+  const r = rang;
+  if (!r?.offen || r.sendet) return;
+  const sauber = name.replace(/\s+/g, " ").trim();
+  if (sauber.length < 2) {
+    r.meldung = "Der Name braucht mindestens 2 Zeichen.";
+    r.fehler = true;
+    return zeichneRang();
+  }
+  schreibe(RANG_NAME, sauber);
+  r.sendet = true;
+  try {
+    const marke = await r.offen.marke;
+    if (!marke) throw new Error("Keine Spielmarke vom Server bekommen.");
+    const res = await fetch("/api/bestenliste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktion: "eintragen", marke, name: sauber, wert: r.offen.wert }) });
+    const d = await res.json();
+    if (rang !== r) return;
+    if (!d.ok) throw new Error(d.fehler || "Eintragen hat nicht geklappt.");
+    r.liste = d.liste;
+    r.meinPlatz = d.platz;
+    r.offen = null;
+    r.fehler = false;
+    r.meldung = d.verbessert ? (d.platz ? `Eingetragen! Platz ${d.platz}.` : "Eingetragen!") : "Eingetragen, dein bisheriger Bestwert unter diesem Namen bleibt stehen.";
+  } catch (err) {
+    if (rang !== r) return;
+    r.fehler = true;
+    r.meldung = err.message;
+    // die Marke ist auf dem Server evtl. schon verbraucht: dann ist diese Runde nicht mehr eintragbar
+    if (/Spielmarke/.test(err.message)) r.offen = null;
+  } finally {
+    r.sendet = false;
+  }
+  zeichneRang();
 }
 
 // ---------- Lernhilfe: aufklappbare Erklärung unter einer Lernspiel-Karte ----------

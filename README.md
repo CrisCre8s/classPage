@@ -85,7 +85,7 @@ erscheinen ab dem zweiten Tag, die volle Woche nach 7 Tagen.
 ├── main.js         # Einstieg Hub
 ├── spiele.html     # Spiele-Seite
 ├── spiele.js       # Einstieg Spiele
-├── games/          # die 14 Spiele (Liste in games/katalog.js)
+├── games/          # die 24 Spiele (Liste in games/katalog.js)
 ├── shell.js        # gemeinsam: Sterne, POWER, Void
 ├── vite.config.js  # baut beide Seiten
 ├── lks.js          # Leistungskontrollen aus lks.json
@@ -95,6 +95,7 @@ erscheinen ab dem zweiten Tag, die volle Woche nach 7 Tagen.
 ├── sprit.js        # Spritpreise im Globus-Fenster
 ├── api/sprit.js    # Vercel-Funktion → Tankerkönig-API (merkt sich nebenbei den Preis)
 ├── api/sprit-verlauf.js / sprit-speichern.js  # Wochenverlauf (Redis) und täglicher Cron-Job
+├── api/bestenliste.js  # Klassen-Bestenliste (Redis, Regeln gegen Fake-Einträge)
 ├── vercel.json     # Cron-Job für den Wochenverlauf
 ├── canvas.js       # Sternenfeld im Hintergrund
 ├── void.js         # Void-Funktion (Easter Egg)
@@ -103,7 +104,7 @@ erscheinen ab dem zweiten Tag, die volle Woche nach 7 Tagen.
 
 ## Spiele
 
-Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 14 Spiele, jeweils in
+Unter `/spiele.html` (Gamepad-Icon in der Leiste) gibt es 24 Spiele, die meisten in
 **Leicht, Mittel und Schwer**. Name, Beschreibung und Kategorie stehen zentral in
 `games/katalog.js`. Auf der Spieleseite stehen die Lernspiele oben, die Klassiker
 darunter. Der Hub zeigt nur drei Lernspiele als Vorschau, die ganze Fläche führt zur
@@ -111,7 +112,7 @@ Spieleseite.
 
 **Klassiker**
 
-- **Ping-Pong** (`games/pong.js`): erster bei 7 Punkten gewinnt
+- **Ping-Pong** (`games/pong.js`): erster bei 7 Punkten gewinnt; gegen den Computer oder zu zweit an einem Gerät (W/S gegen ↑/↓, am Handy je ein Finger pro Hälfte)
 - **Schach** (`games/schach.js`, Regeln + KI in `games/schach-engine.js`): eigene
   Zuggenerierung inkl. Rochade, en passant, Umwandlung; der Computer rechnet je nach
   Stufe 1, 2 oder 4 Halbzüge voraus, im Hintergrund (`games/schach-worker.js`).
@@ -125,9 +126,14 @@ Spieleseite.
 - **Snake** (`games/snake.js`): Leicht ohne Wände, Schwer mit Hindernissen
 - **Bug-Sucher** (`games/minen.js`): Minesweeper-Prinzip, 9×9 / 16×16 / 30×16, erster Klick ist sicher
 - **2048** (`games/z2048.js`): 5×5, 4×4 oder 3×3 Felder
-- **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker)
+- **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker); Modus „Zu zweit“ in der Werkzeugleiste, dann wird nichts gewertet
 - **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
 - **Stick-Skater** (`games/skate.js`, `skate-welten.js`, `skate-fortschritt.js`): Weltkarte mit 7 Welten (Stadt, Sonnenstrand, Dschungel, Eiswelt, Hölle, Himmel, Mond), die man durch Weiterfahren freischaltet (alle 450 m ein Portal); je Welt eigene Hindernisse und Physik (Eis rutscht, Himmel und Mond mit weniger Schwerkraft, Pilze federn, Lava-Geysire); Garage mit 8 Boards (Werte Tempo/Sprung/Schub, Spuren), gekauft mit dem Münzkonto; 3 Aufgaben mit Bonus-Münzen; Fortschritt im localStorage (Schlüssel `skate-fortschritt-v1`). In der Stadt die Zonen „Über den Dächern“, „Skatepark“ (Funboxen, Ledges, Publikum) und „Innenstadt“ (Läden, Autos, Scooter-Kids, Baustellen); Boost-Sprünge über Autos und durch den Feuerring; Highscore = Münzen (Tricks und Sprünge geben Bonus-Münzen); Tempo nur durch Anschieben
+- **Block-Stapler** (`games/bloecke.js`): fallende Steine zu vollen Reihen, mit Vorschau, Halten, Geisterstein und Wandsprung beim Drehen; Start-Level 1 / 4 / 8
+- **Flatter-PC** (`games/flatter.js`): Pixel-Computer fliegt durch Lücken zwischen Serverschränken, eine Taste
+- **Bug-Invasion** (`games/invasion.js`): Bugs in Reihen mit dem Debugger abschießen, Firewalls als Deckung, Bonus-Bug, Wellen
+- **Sudoku** (`games/sudoku.js`): Generator mit eindeutiger Lösung, 40 / 32 / 26 Vorgaben, Notizen, Bestzeit
+- **Tic-Tac-Toe** (`games/ttt.js`): Leicht macht Fehler, Mittel blockt immer, Schwer rechnet per Minimax alles durch (unschlagbar)
 - **Schlagzeug** (`games/schlagzeug.js`, `schlagzeug-klang.js`): Bass, Snare, drei Toms, Hi-Hat (zu/offen), Crash und Ride mit Tastatur, Maus oder Finger; vier Kits: „Black Pearl“ und „Red Zeppelin“ mit echten Aufnahmen (je drei Anschlagstärken, `public/drums/`), „Elektro“ und „8-Bit“ per Web Audio erzeugt; Tasten frei belegbar (wird im Browser gespeichert); frei spielen mit Metronom (60–180 BPM) oder Rhythmus-Challenge mit Notenband (Leicht 80, Mittel 96, Schwer 112 BPM), Highscore = Punkte. Samples: [AVL-Drumkits](http://www.bandshed.net/avldrumkits/) von Glen MacArthur, CC BY-SA 3.0 (Details in `public/drums/LIZENZ.txt`)
 
 **Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`).
@@ -138,11 +144,35 @@ Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabel
 - **Subnetz-Sprint** (`games/subnetz.js`): Netz, Broadcast, Maske, Hosts berechnen
 - **Befehl gesucht** (`games/befehle.js`): Aufgabe + System (Linux, Windows CMD/PowerShell, Git, Docker), den Befehl selbst eintippen; aufdeckbarer Hinweis kostet die halben Punkte
 - **Port-Quiz** (`games/ports.js`): Standard-Ports und Dienste
+- **C#-Code** (`games/csharp.js`): Datentypen, Variablen, Konstruktoren, `static`, Properties (`get; set;`), oft mit Code-Ausschnitt
+- **OSI-Sortierer** (`games/osi.js`): Protokolle, Geräte und Dateneinheiten auf die richtige Schicht ziehen (oder Taste 1–7)
+- **SQL-Sprint** (`games/sql.js`, kleine SQL-Engine im Browser in `games/sql-engine.js`): Abfrage schreiben, die Seite führt sie aus und vergleicht das Ergebnis (SELECT, WHERE, JOIN, GROUP BY, HAVING, ORDER BY, LIMIT, Aggregatfunktionen)
+- **Logikgatter-Puzzle** (`games/gatter.js`): AND, OR, XOR in eine Schaltung setzen (mit NOT), bis die Wahrheitstabelle passt
+- **Fachbegriff-Memory** (`games/memory.js`): Begriff und Erklärung aufdecken, Bestzeit zählt
 
 Neues Spiel: Eintrag in `games/katalog.js`, Modul mit `start()` in `games/`,
 Lader in `spiele.js` und eine Vorschau in `games/vorschau.js`.
 
 Siege, Highscores bzw. Bestzeiten speichert jeder Browser für sich (localStorage).
+
+### Klassen-Bestenliste
+
+Unter jedem Punkte- oder Zeit-Spiel steht die Top 10 der Klasse (je Stufe). Nach einer
+Runde kann man sein Ergebnis freiwillig mit Namen eintragen. Gespeichert wird in derselben
+Upstash-Redis-Datenbank wie der Tankverlauf (`api/bestenliste.js`), ohne Datenbank bleibt
+der Bereich ausgeblendet.
+
+Regeln gegen Fake-Einträge:
+
+- Beim Spielstart gibt der Server eine **Spielmarke** aus. Ohne Marke kein Eintrag, jede Marke gilt einmal und höchstens 3 Stunden.
+- Das Ergebnis muss zur **Spieldauer** passen: Mindestdauer je Spiel, eine Obergrenze für Punkte pro Sekunde und insgesamt; Bestzeiten dürfen nicht schneller sein als machbar.
+- **Begrenzung:** pro Name 8 Einträge pro Stunde, pro IP 60 (die Klasse teilt sich im Schulnetz eine IP).
+- **Namen:** 2–16 Zeichen, nur Buchstaben, Ziffern, Leerzeichen, `.`, `-`, `_`; keine Links, keine Beleidigungen. Pro Name zählt nur der beste Wert.
+- **Löschen:** Umgebungsvariable `BESTENLISTE_ADMIN` in Vercel auf ein langes Passwort setzen, dann
+  `curl -X DELETE -H "Authorization: Bearer <Passwort>" "https://<seite>/api/bestenliste?spiel=snake&stufe=mittel&name=<Name>"`.
+
+Ganz verhindern lässt sich Schummeln so nicht (der Browser rechnet die Punkte selbst aus),
+aber offensichtliche Fantasiewerte und Spam werden abgewiesen.
 
 ## Design
 

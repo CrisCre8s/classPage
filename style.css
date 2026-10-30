@@ -3351,3 +3351,133 @@ body.game-on .stage-help {
   justify-content: center;
   gap: 10px;
 }
+
+/* ===== Klassen-Bestenliste unter dem Spiel ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.rang {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.rang-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rang-kopf h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.rang-form {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: var(--raised);
+  border: 1px solid var(--raised-edge);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.rang-form p {
+  margin: 0 0 10px;
+}
+
+.rang-eingabe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.rang-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.rang-input:focus {
+  border-color: var(--brand-line);
+}
+
+.rang-meldung {
+  margin: 0 0 10px;
+  color: var(--pill-pos-ink);
+}
+
+.rang-meldung.fehler {
+  color: var(--pill-neg-ink);
+}
+
+.rang-liste {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rang-liste li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.rang-liste li:nth-child(-n + 3) .rang-platz {
+  color: var(--accent);
+}
+
+.rang-liste li.mein {
+  background: #2a2438;
+}
+
+.rang-platz {
+  width: 28px;
+  flex: none;
+  color: var(--faint);
+}
+
+.rang-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rang-wert {
+  flex: none;
+}
+
+.rang-leer,
+.rang-regel {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--faint);
+}
+
+@media (max-width: 640px) {
+  .rang-liste {
+    grid-template-columns: 1fr;
+  }
+}

@@ -10,7 +10,7 @@ const HALTEN_SEK = 9 * 24 * 3600;
 
 export const speicherDa = () => Boolean(URL_ && TOKEN);
 
-async function redis(befehl) {
+export async function redis(befehl) {
   const res = await fetch(URL_, {
     method: "POST",
     headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
@@ -20,6 +20,20 @@ async function redis(befehl) {
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   return data.result;
+}
+
+// mehrere Befehle in einem Aufruf (Upstash-Pipeline); Ergebnis: Liste der Einzelergebnisse
+export async function redisPipeline(befehle) {
+  const res = await fetch(`${URL_}/pipeline`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify(befehle),
+  });
+  if (!res.ok) throw new Error(`Redis HTTP ${res.status}`);
+  const data = await res.json();
+  const fehler = data.find((d) => d.error);
+  if (fehler) throw new Error(fehler.error);
+  return data.map((d) => d.result);
 }
 
 // "2026-10-27T14" in deutscher Zeit (Sommer-/Winterzeit wird von Intl erledigt)
