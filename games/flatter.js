@@ -13,7 +13,8 @@ const RACK_B = 64;
 
 // Ein Modus: alle 10 Serverschränke beginnt ein neuer Abschnitt, schneller und mit engeren Lücken
 const PRO_ABSCHNITT = 10;
-const BANNER_DAUER = 1.1; // Sekunden, die der Abschnitts-Hinweis sichtbar ist
+const BANNER_DAUER = 1.1;
+const ABSTURZ_PAUSE = 1; // Sekunden nach dem Absturz, bis der Wiederholen-Bildschirm kommt // Sekunden, die der Abschnitts-Hinweis sichtbar ist
 function werte(a) {
   return {
     luecke: Math.max(118, 178 - a * 9),
@@ -59,6 +60,7 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
   let freude = 0;
   let blinzeln = 2;
   let absturzZeit = 0;
+  let absturzText = null; // wartet bis ABSTURZ_PAUSE vorbei ist
 
   function neu() {
     pc = { y: H / 2 - 40, v: 0 };
@@ -144,7 +146,7 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
       funken.push({ x: PC_X + PC_B / 2, y: pc.y + PC_H / 2, vx: Math.cos(w) * v, vy: Math.sin(w) * v, t: 0.7, farbe: i % 3 ? "#e5566f" : "#f5d97a" });
     }
     const neuer = ergebnis({ punkte });
-    nachricht(`<p class="big">Absturz!</p><p>${punkte} ${punkte === 1 ? "Serverschrank" : "Serverschränke"} geschafft · Abschnitt ${abschnitt + 1}${neuer ? " · neuer Highscore!" : ""}</p><p class="small">Leertaste oder Klick für einen neuen Flug</p>`);
+    absturzText = `<p class="big">Absturz!</p><p>${punkte} ${punkte === 1 ? "Serverschrank" : "Serverschränke"} geschafft · Abschnitt ${abschnitt + 1}${neuer ? " · neuer Highscore!" : ""}</p><p class="small">Leertaste oder Klick für einen neuen Flug</p>`;
   }
 
   // ---------- Zeichnen ----------
@@ -695,7 +697,13 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
       freude = Math.max(0, freude - dt);
       blinzeln -= dt;
       if (blinzeln < -0.14) blinzeln = 2 + Math.random() * 2.5;
-      if (zustand === "ende") absturzZeit += dt;
+      if (zustand === "ende") {
+        absturzZeit += dt;
+        if (absturzText && absturzZeit >= ABSTURZ_PAUSE) {
+          nachricht(absturzText);
+          absturzText = null;
+        }
+      }
     }
     if (wackel > 0) wackel -= dt;
     if (banner && zustand === "laeuft" && (banner.t += dt) > BANNER_DAUER) banner = null;
@@ -704,6 +712,7 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
   function los() {
     if (zustand === "laeuft") return;
     if (zustand === "ende") {
+      if (absturzText) return; // während der kurzen Pause nach dem Absturz noch nicht neu starten
       neu();
       zustand = "bereit";
     }
