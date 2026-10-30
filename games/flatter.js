@@ -13,7 +13,7 @@ const RACK_B = 64;
 
 // Ein Modus: alle 10 Serverschränke beginnt ein neuer Abschnitt, schneller und mit engeren Lücken
 const PRO_ABSCHNITT = 10;
-const BANNER_DAUER = 0.9; // Sekunden, die der Abschnitts-Hinweis sichtbar ist
+const BANNER_DAUER = 1.1; // Sekunden, die der Abschnitts-Hinweis sichtbar ist
 function werte(a) {
   return {
     luecke: Math.max(118, 178 - a * 9),
@@ -601,23 +601,75 @@ export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
     ctx.roundRect(W / 2 - 60, 74, Math.max(4, (120 * (punkte % PRO_ABSCHNITT)) / PRO_ABSCHNITT), 4, 2);
     ctx.fill();
     ctx.font = '8px "Press Start 2P", monospace';
-    ctx.fillStyle = "#8a8698";
+    ctx.fillStyle = banner ? farbe : "#8a8698";
     ctx.fillText(`ABSCHNITT ${abschnitt + 1}`, W / 2, 94);
     if (banner) {
-      // Kleiner, dezenter Hinweis unter der Fortschrittsanzeige
+      // Abschnitts-Hinweis unter der Fortschrittsanzeige: springt kurz auf, leuchtet, Glanz läuft durch, Funken stieben seitlich weg
       const k = banner.t / BANNER_DAUER;
-      const a = k < 0.15 ? k / 0.15 : k > 0.6 ? (1 - k) / 0.4 : 1;
-      const y = 116 - (1 - Math.min(1, k / 0.15)) * 4;
-      ctx.font = '7px "Press Start 2P", monospace';
-      const b = ctx.measureText(banner.text).width + 16;
-      ctx.globalAlpha = a * 0.85;
-      ctx.fillStyle = "rgba(15,14,19,0.6)";
+      const a = k < 0.12 ? k / 0.12 : k > 0.7 ? (1 - k) / 0.3 : 1;
+      const p = Math.min(1, k / 0.2);
+      const pop = 1 + 2.2 * Math.pow(p - 1, 3) + 1.2 * Math.pow(p - 1, 2); // leichtes Überschwingen
+      const y = 118;
+      // Fortschrittsleiste blitzt in der neuen Farbe auf, ein Ring weitet sich
+      if (k < 0.45) {
+        const r = k / 0.45;
+        ctx.strokeStyle = rgba(farbe, 0.6 * (1 - r));
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(W / 2 - 60 - r * 14, 74 - r * 6, 120 + r * 28, 4 + r * 12, 4 + r * 6);
+        ctx.stroke();
+      }
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.translate(W / 2, y - 4);
+      ctx.scale(0.7 + 0.3 * pop, 0.7 + 0.3 * pop);
+      ctx.font = '9px "Press Start 2P", monospace';
+      const b = ctx.measureText(banner.text).width + 24;
+      // Pille mit Glühen und feinem Rand in der Abschnittsfarbe
+      ctx.shadowColor = farbe;
+      ctx.shadowBlur = 14 * (1 - k * 0.6);
+      ctx.fillStyle = "rgba(15,14,19,0.78)";
       ctx.beginPath();
-      ctx.roundRect(W / 2 - b / 2, y - 11, b, 16, 8);
+      ctx.roundRect(-b / 2, -10, b, 20, 10);
       ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = rgba(farbe, 0.65);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Glanz, der einmal durchläuft
+      if (k > 0.12 && k < 0.6) {
+        ctx.save();
+        ctx.clip();
+        const gx = -b / 2 - 20 + ((k - 0.12) / 0.48) * (b + 40);
+        const gl = ctx.createLinearGradient(gx - 14, 0, gx + 14, 0);
+        gl.addColorStop(0, "rgba(255,255,255,0)");
+        gl.addColorStop(0.5, "rgba(255,255,255,0.22)");
+        gl.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = gl;
+        ctx.fillRect(-b / 2, -10, b, 20);
+        ctx.restore();
+      }
       ctx.fillStyle = farbe;
-      ctx.fillText(banner.text, W / 2, y);
-      ctx.globalAlpha = 1;
+      ctx.shadowColor = farbe;
+      ctx.shadowBlur = 6;
+      ctx.fillText(banner.text, 0, 4);
+      ctx.shadowBlur = 0;
+      // kleine Funken an beiden Enden
+      for (let i = 0; i < 8; i++) {
+        const seite = i % 2 ? 1 : -1;
+        const w = (i * 0.9 + 0.3) % 1.4 - 0.7;
+        const d = Math.min(1, k * 2.2);
+        const fx = seite * (b / 2 + 2 + d * (14 + (i % 3) * 6));
+        const fy = w * d * 18;
+        ctx.globalAlpha = a * (1 - d) * 0.9;
+        ctx.fillStyle = i % 3 ? farbe : "#f2f2f3";
+        ctx.save();
+        ctx.translate(fx, fy);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-1.5, -1.5, 3, 3);
+        ctx.restore();
+      }
+      ctx.restore();
     }
     ctx.restore();
   }
