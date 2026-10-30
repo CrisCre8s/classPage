@@ -126,14 +126,14 @@ Spieleseite.
 - **Snake** (`games/snake.js`): Leicht ohne Wände, Schwer mit Hindernissen
 - **Bug-Sucher** (`games/minen.js`): Minesweeper-Prinzip, 9×9 / 16×16 / 30×16, erster Klick ist sicher
 - **2048** (`games/z2048.js`): 5×5, 4×4 oder 3×3 Felder
-- **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker); Modus „Zu zweit“ in der Werkzeugleiste, dann wird nichts gewertet
+- **Vier in einer Reihe** (`games/vier.js`, KI in `games/vier-engine.js` im Worker): in voller Auflösung gezeichnet, die Siegerreihe blinkt 4× grün; Modus „Zu zweit“ in der Werkzeugleiste, dann wird nichts gewertet
 - **Mauerbrecher** (`games/mauer.js`): Ball und Schläger, jede Mauer wird schneller
 - **Stick-Skater** (`games/skate.js`, `skate-welten.js`, `skate-fortschritt.js`): Weltkarte mit 7 Welten (Stadt, Sonnenstrand, Dschungel, Eiswelt, Hölle, Himmel, Mond), die man durch Weiterfahren freischaltet (alle 450 m ein Portal); je Welt eigene Hindernisse und Physik (Eis rutscht, Himmel und Mond mit weniger Schwerkraft, Pilze federn, Lava-Geysire); Garage mit 8 Boards (Werte Tempo/Sprung/Schub, Spuren), gekauft mit dem Münzkonto; 3 Aufgaben mit Bonus-Münzen; Fortschritt im localStorage (Schlüssel `skate-fortschritt-v1`). In der Stadt die Zonen „Über den Dächern“, „Skatepark“ (Funboxen, Ledges, Publikum) und „Innenstadt“ (Läden, Autos, Scooter-Kids, Baustellen); Boost-Sprünge über Autos und durch den Feuerring; Highscore = Münzen (Tricks und Sprünge geben Bonus-Münzen); Tempo nur durch Anschieben
-- **Block-Stapler** (`games/bloecke.js`): fallende Steine zu vollen Reihen, mit Vorschau, Halten, Geisterstein und Wandsprung beim Drehen; Start-Level 1 / 4 / 8
-- **Flatter-PC** (`games/flatter.js`): Pixel-Computer fliegt durch Lücken zwischen Serverschränken, eine Taste
+- **Block-Stapler** (`games/bloecke.js`): fallende Steine zu vollen Reihen, mit Vorschau, Halten, Geisterstein und Wandsprung beim Drehen; Start-Level 1 / 4 / 8; ↓ halten lässt den Stein zügig Reihe für Reihe fallen; volle Reihen zerfallen mit Lichtblitz in Pixel und Nullen/Einsen („Doppel!“, „Vierer!“ mit Wackeln)
+- **Flatter-PC** (`games/flatter.js`): Pixel-Computer fliegt durch Lücken zwischen Serverschränken, eine Taste; ein Modus, alle 10 Schränke ein neuer Abschnitt (schneller, engere Lücken)
 - **Bug-Invasion** (`games/invasion.js`): Bugs in Reihen mit dem Debugger abschießen, Firewalls als Deckung, Bonus-Bug, Wellen
-- **Sudoku** (`games/sudoku.js`): Generator mit eindeutiger Lösung, 40 / 32 / 26 Vorgaben, Notizen, Bestzeit
-- **Tic-Tac-Toe** (`games/ttt.js`): Leicht macht Fehler, Mittel blockt immer, Schwer rechnet per Minimax alles durch (unschlagbar)
+- **Sudoku** (`games/sudoku.js`): Generator mit eindeutiger Lösung, 40 / 32 / 26 Vorgaben, Notizen, Bestzeit; jede falsche Zahl kostet ein Leben (5 / 4 / 3)
+- **Tic-Tac-Toe** (`games/ttt.js`): Leicht macht Fehler, Mittel blockt immer, Schwer rechnet per Minimax alles durch (unschlagbar); Effekte: Siegerlinie mit Konfetti, Niederlage wackelt rot, Remis als graue Welle
 - **Schlagzeug** (`games/schlagzeug.js`, `schlagzeug-klang.js`): Bass, Snare, drei Toms, Hi-Hat (zu/offen), Crash und Ride mit Tastatur, Maus oder Finger; vier Kits: „Black Pearl“ und „Red Zeppelin“ mit echten Aufnahmen (je drei Anschlagstärken, `public/drums/`), „Elektro“ und „8-Bit“ per Web Audio erzeugt; Tasten frei belegbar (wird im Browser gespeichert); frei spielen mit Metronom (60–180 BPM) oder Rhythmus-Challenge mit Notenband (Leicht 80, Mittel 96, Schwer 112 BPM), Highscore = Punkte. Samples: [AVL-Drumkits](http://www.bandshed.net/avldrumkits/) von Glen MacArthur, CC BY-SA 3.0 (Details in `public/drums/LIZENZ.txt`)
 
 **Lernen** (Prüfungsstoff, auf Zeit, mit Lösung bei Fehlern; gemeinsame Oberfläche in `games/quiz-ui.js`).

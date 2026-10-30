@@ -11,14 +11,23 @@ const PC_B = 34;
 const PC_H = 28;
 const RACK_B = 64;
 
-const STUFEN = {
-  leicht: { luecke: 175, tempo: 140, abstand: 250, schwerkraft: 1250, sprung: -390 },
-  mittel: { luecke: 150, tempo: 165, abstand: 230, schwerkraft: 1450, sprung: -420 },
-  schwer: { luecke: 128, tempo: 190, abstand: 215, schwerkraft: 1600, sprung: -440 },
-};
+// Ein Modus: alle 10 Serverschränke beginnt ein neuer Abschnitt, schneller und mit engeren Lücken
+const PRO_ABSCHNITT = 10;
+function werte(a) {
+  return {
+    luecke: Math.max(118, 178 - a * 9),
+    tempo: Math.min(300, 140 + a * 20),
+    abstand: Math.max(200, 250 - a * 7),
+    schwerkraft: Math.min(1700, 1300 + a * 60),
+    sprung: Math.max(-450, -400 - a * 8),
+  };
+}
+const ABSCHNITT_FARBE = ["#5fc39c", "#7fb8ff", "#f5d97a", "#f0a35e", "#e5566f", "#c8a2ff"];
 
-export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis }) {
-  const S = STUFEN[stufe] || STUFEN.mittel;
+export function start({ canvas, passeCanvas, status, nachricht, ergebnis }) {
+  let S = werte(0);
+  let abschnitt = 0;
+  let banner = null;
   const ctx = passeCanvas(canvas, W, H);
   let pc, racks, punkte, zustand, raf, zuletzt, boden, funken, wackel;
 
@@ -29,17 +38,21 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     boden = 0;
     funken = [];
     wackel = 0;
+    abschnitt = 0;
+    S = werte(0);
+    banner = null;
     for (let i = 0; i < 3; i++) neuesRack(W + 120 + i * S.abstand);
     zeigeStatus();
   }
   function neuesRack(x) {
     const rand = 70;
-    const mitte = rand + S.luecke / 2 + Math.random() * (BODEN - 2 * rand - S.luecke);
+    const luecke = S.luecke;
+    const mitte = rand + luecke / 2 + Math.random() * (BODEN - 2 * rand - luecke);
     // jede Hälfte bekommt eigene blinkende Lämpchen
-    const leds = Array.from({ length: 24 }, () => ({ an: Math.random() < 0.6, takt: 0.3 + Math.random() * 1.4, farbe: Math.random() < 0.8 ? "#5fc39c" : "#f5d97a" }));
-    racks.push({ x, mitte, gezaehlt: false, leds });
+    const leds = Array.from({ length: 24 }, () => ({ an: Math.random() < 0.6, takt: 0.3 + Math.random() * 1.4, farbe: Math.random() < 0.8 ? ABSCHNITT_FARBE[abschnitt % ABSCHNITT_FARBE.length] : "#f2f2f3" }));
+    racks.push({ x, mitte, luecke: S.luecke, gezaehlt: false, leds, farbe: ABSCHNITT_FARBE[abschnitt % ABSCHNITT_FARBE.length] });
   }
-  const zeigeStatus = () => status(`${punkte} Pkt`);
+  const zeigeStatus = () => status(`${punkte} Pkt · Abschnitt ${abschnitt + 1}`);
 
   function flattern() {
     if (zustand !== "laeuft") return los();
@@ -51,12 +64,17 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     pc.y += pc.v * dt;
     boden = (boden + S.tempo * dt) % 32;
     // mit der Zeit etwas schneller
-    const tempo = S.tempo * (1 + Math.min(punkte, 40) * 0.008);
+    const tempo = S.tempo * (1 + (punkte % PRO_ABSCHNITT) * 0.006);
     for (const r of racks) {
       r.x -= tempo * dt;
       if (!r.gezaehlt && r.x + RACK_B < PC_X) {
         r.gezaehlt = true;
         punkte++;
+        if (punkte % PRO_ABSCHNITT === 0) {
+          abschnitt++;
+          S = werte(abschnitt);
+          banner = { t: 0, text: `ABSCHNITT ${abschnitt + 1}` };
+        }
         zeigeStatus();
         for (let i = 0; i < 6; i++) funken.push({ x: PC_X, y: pc.y + PC_H / 2, vx: -40 - Math.random() * 80, vy: (Math.random() - 0.5) * 120, t: 0.5 });
       }
@@ -77,14 +95,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (pc.y + PC_H >= BODEN) return crash();
     for (const r of racks) {
       if (PC_X + PC_B - k < r.x || PC_X + k > r.x + RACK_B) continue;
-      if (pc.y + k < r.mitte - S.luecke / 2 || pc.y + PC_H - k > r.mitte + S.luecke / 2) return crash();
+      if (pc.y + k < r.mitte - r.luecke / 2 || pc.y + PC_H - k > r.mitte + r.luecke / 2) return crash();
     }
   }
   function crash() {
     zustand = "ende";
     wackel = 0.3;
     const neuer = ergebnis({ punkte });
-    nachricht(`<p class="big">Absturz!</p><p>${punkte} ${punkte === 1 ? "Serverschrank" : "Serverschränke"} geschafft${neuer ? " · neuer Highscore!" : ""}</p><p class="small">Leertaste oder Klick für einen neuen Flug</p>`);
+    nachricht(`<p class="big">Absturz!</p><p>${punkte} ${punkte === 1 ? "Serverschrank" : "Serverschränke"} geschafft · Abschnitt ${abschnitt + 1}${neuer ? " · neuer Highscore!" : ""}</p><p class="small">Leertaste oder Klick für einen neuen Flug</p>`);
   }
 
   // ---------- Zeichnen ----------
@@ -157,8 +175,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.fillStyle = "#1a1922";
     for (let i = 0; i < 12; i++) ctx.fillRect((i * 40 - (boden * 0.25) % 40), 60, 2, 40);
     for (const r of racks) {
-      const oben = r.mitte - S.luecke / 2;
-      const unten = r.mitte + S.luecke / 2;
+      const oben = r.mitte - r.luecke / 2;
+      const unten = r.mitte + r.luecke / 2;
       zeichneRack(r.x, -10, oben + 10, true, r, t);
       zeichneRack(r.x, unten, BODEN - unten, false, r, t + 0.7);
     }
@@ -181,6 +199,28 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.font = '28px "Press Start 2P", monospace';
     ctx.textAlign = "center";
     ctx.fillText(String(punkte), W / 2, 60);
+    // Fortschritt bis zum nächsten Abschnitt
+    const farbe = ABSCHNITT_FARBE[abschnitt % ABSCHNITT_FARBE.length];
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fillRect(W / 2 - 60, 74, 120, 4);
+    ctx.fillStyle = farbe;
+    ctx.fillRect(W / 2 - 60, 74, (120 * (punkte % PRO_ABSCHNITT)) / PRO_ABSCHNITT, 4);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = "#8a8698";
+    ctx.fillText(`ABSCHNITT ${abschnitt + 1}`, W / 2, 94);
+    if (banner) {
+      const k = banner.t / 1.6;
+      ctx.globalAlpha = k < 0.15 ? k / 0.15 : k > 0.75 ? (1 - k) / 0.25 : 1;
+      ctx.fillStyle = "rgba(15,14,19,0.75)";
+      ctx.fillRect(0, H / 2 - 52, W, 84);
+      ctx.fillStyle = farbe;
+      ctx.font = '20px "Press Start 2P", monospace';
+      ctx.fillText(banner.text, W / 2, H / 2 - 12);
+      ctx.fillStyle = "#f2f2f3";
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillText("SCHNELLER · ENGER", W / 2, H / 2 + 14);
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
   }
 
@@ -191,6 +231,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     if (zustand === "laeuft") schritt(dt);
     else if (zustand === "bereit") pc.y = H / 2 - 40 + Math.sin(t / 300) * 8;
     if (wackel > 0) wackel -= dt;
+    if (banner && zustand === "laeuft" && (banner.t += dt) > 1.6) banner = null;
     zeichne(t / 1000);
   }
   function los() {
@@ -232,7 +273,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   zustand = "bereit";
   neu();
-  nachricht(`<p class="big">Flatter-PC</p><p>Halt den kleinen Computer in der Luft und flieg durch die Lücken zwischen den Serverschränken. Jeder Schrank gibt einen Punkt.</p><p class="small">Leertaste, Klick oder Tippen zum Start</p>`);
+  nachricht(`<p class="big">Flatter-PC</p><p>Halt den kleinen Computer in der Luft und flieg durch die Lücken zwischen den Serverschränken. Jeder Schrank gibt einen Punkt, alle 10 Schränke beginnt ein neuer Abschnitt: schneller und mit engeren Lücken.</p><p class="small">Leertaste, Klick oder Tippen zum Start</p>`);
   raf = requestAnimationFrame(loop);
   document.fonts?.load('10px "Press Start 2P"');
 

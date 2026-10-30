@@ -47,7 +47,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const ro = new ResizeObserver(passeAufloesung);
   ro.observe(canvas);
 
-  let feld, stein, naechste, beutel, halten, gehalten, punkte, reihen, level, zustand, raf, zuletzt, fallAkku, lockZeit, lockResets, blitz;
+  let feld, stein, naechste, beutel, halten, gehalten, punkte, reihen, level, zustand, raf, zuletzt, fallAkku, lockZeit, lockResets, blitz, aufloesung, teilchen, popups, wackeln;
 
   const leer = () => Array.from({ length: ZE }, () => Array(SP).fill(null));
   function ausBeutel() {
@@ -82,6 +82,10 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     level = STARTLEVEL[stufe] || 4;
     fallAkku = 0;
     blitz = null;
+    aufloesung = null;
+    teilchen = [];
+    popups = [];
+    wackeln = 0;
     neuerStein();
     zeigeStatus();
   }
@@ -147,26 +151,78 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       feld[y][x] = stein.typ;
     }
     const volle = feld.map((r, i) => (r.every(Boolean) ? i : -1)).filter((i) => i >= 0);
-    if (volle.length) {
-      blitz = { reihen: volle, t: 0.18 };
-      for (const i of volle) {
-        feld.splice(i, 1);
-        feld.unshift(Array(SP).fill(null));
-      }
-      reihen += volle.length;
-      punkte += PUNKTE_REIHEN[volle.length] * level;
-      const neuLevel = (STARTLEVEL[stufe] || 4) + Math.floor(reihen / 10);
-      if (neuLevel > level) level = neuLevel;
-    }
     stein = null;
+    if (volle.length) {
+      // Reihen erst auflösen lassen (Effekt), danach entfernen
+      aufloesung = { reihen: volle, t: 0, dauer: 0.5 };
+      sprenge(volle);
+      zeigeStatus();
+      return;
+    }
     zeigeStatus();
     neuerStein();
   }
+  // Effekt „Datenzerfall“: Die Reihe blitzt auf, zerfällt von der Mitte aus in Pixel
+  // und Nullen/Einsen, die nach oben wegfliegen. Mehr Reihen = mehr Wumms.
+  const NAMEN_REIHEN = ["", "REIHE!", "DOPPEL!", "TRIPEL!", "VIERER!"];
+  function sprenge(volle) {
+    const n = volle.length;
+    for (const y of volle)
+      for (let x = 0; x < SP; x++) {
+        const farbe = FARBEN[feld[y][x]];
+        const mx = BX + x * Z + Z / 2;
+        const my = BY + y * Z + Z / 2;
+        const verzoegerung = Math.abs(x - (SP - 1) / 2) * 0.03;
+        for (let k = 0; k < 3 + n; k++)
+          teilchen.push({ x: mx, y: my, vx: (x - (SP - 1) / 2) * 30 + (Math.random() - 0.5) * 260, vy: -80 - Math.random() * 260 * (0.6 + n * 0.25), t: 0.9 + Math.random() * 0.5, warte: 0.12 + verzoegerung, farbe, gr: 3 + Math.random() * 3 });
+        if (Math.random() < 0.5 + n * 0.1) teilchen.push({ x: mx, y: my, vx: (Math.random() - 0.5) * 60, vy: -60 - Math.random() * 80, t: 1.2, warte: 0.12 + verzoegerung, farbe: "#7fe0b0", text: Math.random() < 0.5 ? "0" : "1" });
+      }
+    const mitte = volle.reduce((a, b) => a + b, 0) / n;
+    const plus = PUNKTE_REIHEN[n] * level;
+    popups.push({ text: NAMEN_REIHEN[n], unter: `+${plus}`, x: BX + (SP * Z) / 2, y: BY + mitte * Z + Z / 2, t: 0, dauer: 1.2, farbe: n === 4 ? "#f5d97a" : "#f4f1f8", gross: n === 4 });
+    wackeln = n >= 4 ? 0.35 : n === 3 ? 0.18 : 0;
+  }
+  function aufloesungFertig() {
+    const volle = aufloesung.reihen;
+    aufloesung = null;
+    for (const i of volle) {
+      feld.splice(i, 1);
+      feld.unshift(Array(SP).fill(null));
+    }
+    reihen += volle.length;
+    punkte += PUNKTE_REIHEN[volle.length] * level;
+    const neuLevel = (STARTLEVEL[stufe] || 4) + Math.floor(reihen / 10);
+    if (neuLevel > level) {
+      level = neuLevel;
+      popups.push({ text: `LEVEL ${level}`, unter: "schneller!", x: BX + (SP * Z) / 2, y: BY + ZE * Z * 0.3, t: 0, dauer: 1.4, farbe: "#b48ef0" });
+    }
+    zeigeStatus();
+    neuerStein();
+  }
+  function effekteSchritt(dt) {
+    for (const p of teilchen) {
+      if (p.warte > 0) {
+        p.warte -= dt;
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += (p.text ? 40 : 700) * dt;
+      p.t -= dt;
+    }
+    teilchen = teilchen.filter((p) => p.t > 0 && p.y < H + 20);
+    for (const p of popups) p.t += dt;
+    popups = popups.filter((p) => p.t < p.dauer);
+    if (wackeln > 0) wackeln -= dt;
+    if (aufloesung && (aufloesung.t += dt) >= aufloesung.dauer) aufloesungFertig();
+  }
   function schritt(dt) {
+    effekteSchritt(dt);
     if (!stein) return;
     const weich = tasten.runter;
     fallAkku += dt;
-    const takt = weich ? Math.min(0.05, fallZeit() / 20) : fallZeit();
+    // gedrückt halten: zügig nach unten, aber sichtbar Reihe für Reihe (ca. 12 Reihen pro Sekunde)
+    const takt = weich ? Math.min(0.085, fallZeit()) : fallZeit();
     while (fallAkku >= takt) {
       fallAkku -= takt;
       if (!fallen(weich)) break;
@@ -241,10 +297,33 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       ctx.lineTo(BX + SP * Z, BY + y * Z + 0.5);
       ctx.stroke();
     }
-    for (let y = 0; y < ZE; y++) for (let x = 0; x < SP; x++) if (feld[y][x]) kaestchen(BX + x * Z, BY + y * Z, FARBEN[feld[y][x]]);
-    if (blitz) {
-      ctx.fillStyle = `rgba(255,255,255,${blitz.t * 3})`;
-      ctx.fillRect(BX, BY, SP * Z, ZE * Z);
+    ctx.save();
+    if (wackeln > 0) ctx.translate((Math.random() - 0.5) * 14 * wackeln, (Math.random() - 0.5) * 14 * wackeln);
+    for (let y = 0; y < ZE; y++) {
+      const loest = aufloesung?.reihen.includes(y);
+      for (let x = 0; x < SP; x++) {
+        if (!feld[y][x]) continue;
+        if (!loest) {
+          kaestchen(BX + x * Z, BY + y * Z, FARBEN[feld[y][x]]);
+          continue;
+        }
+        // Auflösung: erst weiß aufblitzen, dann von der Mitte nach außen zusammenschrumpfen
+        const t = aufloesung.t;
+        const start = 0.12 + Math.abs(x - (SP - 1) / 2) * 0.03;
+        const k = Math.max(0, Math.min(1, (t - start) / 0.16));
+        if (k >= 1) continue;
+        const g = (Z - 2) * (1 - k);
+        const cx = BX + x * Z + Z / 2;
+        const cy = BY + y * Z + Z / 2;
+        ctx.fillStyle = t < 0.12 ? "#ffffff" : FARBEN[feld[y][x]];
+        ctx.fillRect(cx - g / 2, cy - g / 2, g, g);
+      }
+      if (loest && aufloesung.t < 0.3) {
+        // Lichtstreifen über die ganze Reihe
+        const a = 1 - aufloesung.t / 0.3;
+        ctx.fillStyle = `rgba(255,255,255,${0.55 * a})`;
+        ctx.fillRect(BX - 6, BY + y * Z + Z / 2 - 3 - a * 8, SP * Z + 12, 6 + a * 16);
+      }
     }
     if (stein) {
       // Geisterstein: zeigt, wo der Stein landet
@@ -262,6 +341,41 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.strokeStyle = "#3a3550";
     ctx.lineWidth = 2;
     ctx.strokeRect(BX - 1, BY - 1, SP * Z + 2, ZE * Z + 2);
+    // Teilchen und Einblendungen
+    for (const p of teilchen) {
+      if (p.warte > 0) continue;
+      ctx.globalAlpha = Math.min(1, p.t * 1.6);
+      ctx.fillStyle = p.farbe;
+      if (p.text) {
+        ctx.font = '10px "Press Start 2P", monospace';
+        ctx.textAlign = "center";
+        ctx.fillText(p.text, p.x, p.y);
+      } else ctx.fillRect(p.x - p.gr / 2, p.y - p.gr / 2, p.gr, p.gr);
+    }
+    ctx.globalAlpha = 1;
+    for (const p of popups) {
+      const k = p.t / p.dauer;
+      const rein = Math.min(1, p.t / 0.15);
+      const skala = (p.gross ? 1.3 : 1) * (0.6 + 0.4 * rein + (p.gross ? Math.sin(p.t * 18) * 0.05 * (1 - k) : 0));
+      ctx.save();
+      ctx.translate(p.x, p.y - k * 30);
+      ctx.scale(skala, skala);
+      ctx.globalAlpha = k > 0.7 ? (1 - k) / 0.3 : 1;
+      ctx.textAlign = "center";
+      ctx.font = '16px "Press Start 2P", monospace';
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#0f0e13";
+      ctx.strokeText(p.text, 0, 0);
+      ctx.fillStyle = p.farbe;
+      ctx.fillText(p.text, 0, 0);
+      ctx.font = '10px "Press Start 2P", monospace';
+      ctx.strokeText(p.unter, 0, 20);
+      ctx.fillStyle = "#7fe0b0";
+      ctx.fillText(p.unter, 0, 20);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
     // Seitenleiste
     const sx = BX + SP * Z + 24;
     ctx.fillStyle = "#8a8698";
