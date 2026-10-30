@@ -19,6 +19,11 @@ const LADER = {
   subnetz: () => import("./games/subnetz.js"),
   befehle: () => import("./games/befehle.js"),
   ports: () => import("./games/ports.js"),
+  csharp: () => import("./games/csharp.js"),
+  osi: () => import("./games/osi.js"),
+  sql: () => import("./games/sql.js"),
+  gatter: () => import("./games/gatter.js"),
+  memory: () => import("./games/memory.js"),
 };
 const STUFEN = { lernen: "Lernen", leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
 // „Lernen“ gibt es nur bei Spielen, die einen Lernmodus haben (lernStufe im Katalog)

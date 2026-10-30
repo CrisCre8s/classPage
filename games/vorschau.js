@@ -204,5 +204,80 @@ export function zeichneVorschau(canvas, spiel) {
   if (spiel === "subnetz") textBild("NETZADRESSE?", "10.4.77.9/26", "10.4.77.0");
   if (spiel === "befehle") textBild("WELCHER BEFEHL?", "Pfad ausgeben", "pwd");
   if (spiel === "ports") textBild("WELCHER DIENST?", "PORT 22", "SSH");
+  if (spiel === "csharp") textBild("C# · PROPERTY", "{ get; set; }", "static int n;");
+  if (spiel === "sql") textBild("SQL-SPRINT", "SELECT name", "FROM kunden");
+  if (spiel === "osi") {
+    // sieben Schichten, eine Karte schwebt auf Schicht 3
+    const namen = ["ANWENDUNG", "DARSTELLUNG", "SITZUNG", "TRANSPORT", "VERMITTLUNG", "SICHERUNG", "BIT"];
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    namen.forEach((n, i) => {
+      const y = 8 + i * 15;
+      ctx.fillStyle = i === 4 ? "#2a2438" : "#1c1a23";
+      ctx.fillRect(110, y, 120, 13);
+      ctx.fillStyle = i === 4 ? lila : "#8a8c92";
+      ctx.fillText(`${7 - i} ${n}`, 115, y + 7);
+    });
+    ctx.fillStyle = "#1c1a23";
+    ctx.fillRect(14, 42, 76, 34);
+    ctx.strokeStyle = gelb;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(14, 42, 76, 34);
+    ctx.fillStyle = weiss;
+    ctx.font = '9px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.fillText("ROUTER", 52, 60);
+    ctx.strokeStyle = lila;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(92, 66);
+    ctx.lineTo(108, 73);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if (spiel === "gatter") {
+    ctx.strokeStyle = "#6a6578";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(30, 40); ctx.lineTo(90, 40);
+    ctx.moveTo(30, 80); ctx.lineTo(90, 80);
+    ctx.moveTo(140, 60); ctx.lineTo(200, 60);
+    ctx.stroke();
+    ctx.fillStyle = "#1c1a23";
+    ctx.fillRect(90, 28, 50, 64);
+    ctx.strokeStyle = lila;
+    ctx.strokeRect(90, 28, 50, 64);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = '16px "Press Start 2P", monospace';
+    ctx.fillStyle = weiss;
+    ctx.fillText("=1", 115, 61);
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = gelb;
+    ctx.fillText("A", 20, 41);
+    ctx.fillText("B", 20, 81);
+    ctx.fillText("Y", 212, 61);
+    ctx.fillStyle = "#8a8c92";
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillText("XOR", 115, 104);
+  }
+  if (spiel === "memory") {
+    const offen = { 1: ["RAID 1", gelb], 6: ["Spiegelung", weiss] };
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (let i = 0; i < 8; i++) {
+      const x = 14 + (i % 4) * 54;
+      const y = 14 + Math.floor(i / 4) * 50;
+      const o = offen[i];
+      ctx.fillStyle = o ? "#1b2828" : "#1c1a23";
+      ctx.fillRect(x, y, 50, 42);
+      ctx.strokeStyle = o ? "#5fc39c" : "#2a292f";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, 50, 42);
+      ctx.fillStyle = o ? o[1] : "#4a4458";
+      ctx.font = o ? '5px "Press Start 2P", monospace' : '12px "Press Start 2P", monospace';
+      ctx.fillText(o ? o[0] : "?", x + 25, y + 22);
+    }
+  }
 }
-
