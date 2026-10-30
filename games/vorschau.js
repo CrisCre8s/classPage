@@ -377,18 +377,20 @@ export function zeichneVorschau(canvas, spiel) {
     }
     ctx.fillStyle = "#3a3550";
     ctx.fillRect(0, 108, 240, 3);
-    // Pixel-Computer
+    // Bildschirm ohne Fuß, nach rechts gedreht (Gehäuseseite links sichtbar)
+    ctx.fillStyle = "#a49fb3";
+    ctx.fillRect(104, 50, 4, 14);
     ctx.fillStyle = "#e9e6ef";
-    ctx.fillRect(108, 48, 24, 16);
+    ctx.fillRect(108, 48, 24, 18);
     ctx.fillStyle = "#1a2a3a";
-    ctx.fillRect(111, 50, 18, 10);
+    ctx.fillRect(110, 50, 20, 13);
     ctx.fillStyle = "#7fe0b0";
-    ctx.fillRect(114, 53, 2, 3);
-    ctx.fillRect(123, 53, 2, 3);
+    ctx.fillRect(118, 53, 2, 3);
+    ctx.fillRect(125, 53, 2, 3);
+    ctx.fillRect(119, 58, 7, 1);
     ctx.fillStyle = lila;
-    ctx.fillRect(100, 50, 8, 3);
-    ctx.fillStyle = "#b9b4c6";
-    ctx.fillRect(114, 64, 12, 3);
+    ctx.fillRect(96, 52, 10, 2);
+    ctx.fillRect(98, 55, 8, 2);
   }
   if (spiel === "invasion") {
     const kaefer = ["...XXXXX...", "X.XXXXXXX.X", ".XXXX.XXXX.", "XXXXX.XXXXX", ".XXXX.XXXX.", "X.XXX.XXX.X", "...XXXXX...", "....XXX....", "...X...X..."];
