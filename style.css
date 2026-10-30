@@ -3481,7 +3481,8 @@ body.game-on .stage-help {
     grid-template-columns: 1fr;
   }
 }
-.stage[data-game="vier"] #game-canvas { image-rendering: auto; }
+.stage[data-game="vier"] #game-canvas,
+.stage[data-game="flatter"] #game-canvas { image-rendering: auto; }
 
 /* Tic-Tac-Toe: Effekte bei Sieg, Niederlage und Remis */
 .ttt-buehne {
