@@ -68,7 +68,11 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   dom.innerHTML = `
     <div class="ttt">
       <p class="ttt-zug" aria-live="polite"></p>
-      <div class="ttt-feld" role="grid" aria-label="Tic-Tac-Toe">${Array.from({ length: 9 }, (_, i) => `<button type="button" class="ttt-zelle" data-i="${i}"></button>`).join("")}</div>
+      <div class="ttt-buehne">
+        <div class="ttt-feld" role="grid" aria-label="Tic-Tac-Toe">${Array.from({ length: 9 }, (_, i) => `<button type="button" class="ttt-zelle" data-i="${i}"></button>`).join("")}</div>
+        <svg class="ttt-linie" viewBox="0 0 300 300" aria-hidden="true"><line x1="0" y1="0" x2="0" y2="0" /></svg>
+        <div class="ttt-konfetti" aria-hidden="true"></div>
+      </div>
       <div class="ttt-stand num"><span>Du <b data-s="X">0</b></span><span>Remis <b data-s="remis">0</b></span><span>Computer <b data-s="O">0</b></span></div>
       <div class="ttt-knoepfe"><button class="btn" type="button" data-a="neu" hidden>Nächste Runde</button></div>
     </div>`;
@@ -92,6 +96,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     zellen.forEach((z, i) => {
       z.textContent = brett[i] || "";
       z.className = `ttt-zelle${brett[i] ? ` ist-${brett[i].toLowerCase()}` : ""}${linie.includes(i) ? " sieg" : ""}`;
+      z.style.setProperty("--n", linie.length ? Math.max(0, linie.indexOf(i)) : i);
       z.disabled = ende || !!brett[i] || amZug !== "X";
       z.setAttribute("aria-label", `Feld ${i + 1}: ${brett[i] || "frei"}`);
     });
@@ -115,6 +120,41 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       setze(computerZug(brett, stufe), "O");
     }, 380 + Math.random() * 300);
   }
+  // ---------- Effekte ----------
+  const buehne = dom.querySelector(".ttt-buehne");
+  const linieSvg = dom.querySelector(".ttt-linie");
+  const konfetti = dom.querySelector(".ttt-konfetti");
+  function effekteAus() {
+    buehne.classList.remove("eff-sieg", "eff-niederlage", "eff-remis");
+    linieSvg.classList.remove("an");
+    konfetti.innerHTML = "";
+  }
+  function zieheLinie(linie) {
+    // Mittelpunkte der ersten und letzten Zelle, etwas über die Zellen hinaus verlängert
+    const mitte = (i) => [(i % 3) * 100 + 50, Math.floor(i / 3) * 100 + 50];
+    const [a, b] = [mitte(linie[0]), mitte(linie[2])];
+    const dx = (b[0] - a[0]) * 0.2;
+    const dy = (b[1] - a[1]) * 0.2;
+    const l = linieSvg.querySelector("line");
+    l.setAttribute("x1", a[0] - dx);
+    l.setAttribute("y1", a[1] - dy);
+    l.setAttribute("x2", b[0] + dx);
+    l.setAttribute("y2", b[1] + dy);
+    void linieSvg.getBoundingClientRect();
+    linieSvg.classList.add("an");
+  }
+  function wirfKonfetti() {
+    const farben = ["#f5d97a", "#c8a2ff", "#5fc39c", "#7fb8ff", "#e5566f", "#f0a35e"];
+    konfetti.innerHTML = Array.from({ length: 46 }, () => {
+      const x = Math.random() * 100;
+      const drift = (Math.random() - 0.5) * 160;
+      const dauer = 1.3 + Math.random() * 1.1;
+      const warte = Math.random() * 0.35;
+      const dreh = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
+      return `<i style="left:${x}%;background:${farben[Math.floor(Math.random() * farben.length)]};--drift:${drift}px;--dreh:${dreh}deg;animation-duration:${dauer}s;animation-delay:${warte}s;width:${5 + Math.random() * 6}px;height:${8 + Math.random() * 8}px"></i>`;
+    }).join("");
+  }
+
   function rundeVorbei(g) {
     ende = true;
     stand[g.wer]++;
@@ -123,6 +163,16 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     zugEl.textContent = g.wer === "X" ? "Gewonnen!" : g.wer === "O" ? "Der Computer gewinnt." : stufe === "schwer" ? "Unentschieden. Mehr geht gegen Schwer nicht." : "Unentschieden.";
     zugEl.dataset.ergebnis = g.wer;
     zeichne(g.linie || []);
+    effekteAus();
+    void buehne.offsetWidth; // Animation neu starten
+    if (g.wer === "X") {
+      buehne.classList.add("eff-sieg");
+      zieheLinie(g.linie);
+      wirfKonfetti();
+    } else if (g.wer === "O") {
+      buehne.classList.add("eff-niederlage");
+      zieheLinie(g.linie);
+    } else buehne.classList.add("eff-remis");
     neuKnopf.hidden = false;
     neuKnopf.focus({ preventScroll: true });
   }
@@ -132,6 +182,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   });
   neuKnopf.addEventListener("click", () => {
     delete zugEl.dataset.ergebnis;
+    effekteAus();
     neueRunde();
   });
   const onKey = (e) => {

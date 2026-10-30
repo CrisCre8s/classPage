@@ -14,9 +14,29 @@ const FARBE = { 1: "#f5d97a", 2: "#c8a2ff" };
 
 export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, ergebnis }) {
   const ctx = passeCanvas(canvas, W, H);
+  // HD: Canvas in voller Bildschirmauflösung zeichnen (statt Pixel-Look)
+  let skala = 1;
+  function passeAufloesung() {
+    const breite = canvas.getBoundingClientRect().width;
+    if (!breite) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const px = Math.max(W, Math.round(breite * dpr));
+    if (canvas.width !== px) {
+      canvas.width = px;
+      canvas.height = Math.round((px * H) / W);
+    }
+    skala = canvas.width / W;
+    zeichne();
+  }
+  const ro = new ResizeObserver(() => brett && passeAufloesung());
+  ro.observe(canvas);
+  // Gewinn-Effekt: die vier Steine blinken 4× grün, danach ist die Partie vorbei
+  let blinken = null;
+  const BLINK_MAL = 4;
+  const BLINK_TAKT = 260; // ms an, ms aus
   const worker = new Worker(new URL("./vier-worker.js", import.meta.url), { type: "module" });
 
-  let brett, zeiger, amZug, vorbei, fallend, reihe4, raf, anfrage = 0;
+  let brett, zeiger, amZug, vorbei, fallend, reihe4, raf, blinkRaf, anfrage = 0;
   // zu zweit: beide Farben werden von Menschen gesetzt, es wird nichts gewertet
   let zweiSpieler = false;
   let partie = 0;
@@ -32,6 +52,8 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     vorbei = false;
     fallend = null;
     reihe4 = null;
+    blinken = null;
+    cancelAnimationFrame(blinkRaf);
     anfrage++;
     nachricht(null);
     zeigeStatus();
@@ -47,60 +69,140 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   const mx = (c) => RAND + c * Z + Z / 2;
   const my = (r) => OBEN + (RE - 1 - r) * Z + Z / 2;
 
-  function scheibe(x, y, p, radius = Z * 0.38) {
-    ctx.fillStyle = FARBE[p];
+  const HELL = { 1: "#fff1b8", 2: "#efe0ff", gruen: "#c9ffe3" };
+  const DUNKEL = { 1: "#c99a2e", 2: "#7c56c4", gruen: "#1f9c63" };
+  const BASIS = { 1: "#f5d97a", 2: "#c8a2ff", gruen: "#3ddc8f" };
+  function scheibe(x, y, p, radius = Z * 0.385) {
+    // Schatten, Körper mit Verlauf, Rille und Glanzlicht
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.beginPath();
+    ctx.arc(x + 2, y + 3, radius, 0, Math.PI * 2);
+    ctx.fill();
+    const g = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.4, radius * 0.1, x, y, radius);
+    g.addColorStop(0, HELL[p]);
+    g.addColorStop(0.45, BASIS[p]);
+    g.addColorStop(1, DUNKEL[p]);
+    ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
-    // innerer Ring für den Pixel-Look
-    ctx.strokeStyle = "rgba(0,0,0,0.22)";
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(0,0,0,0.18)";
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.arc(x, y, radius - 8, 0, Math.PI * 2);
+    ctx.arc(x, y, radius * 0.7, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x, y + 1, radius * 0.7, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(x - radius * 0.32, y - radius * 0.42, radius * 0.28, radius * 0.14, -0.5, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function zeichne() {
-    ctx.fillStyle = "#0f0e13";
+    ctx.setTransform(skala, 0, 0, skala, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    const hg = ctx.createLinearGradient(0, 0, 0, H);
+    hg.addColorStop(0, "#14121b");
+    hg.addColorStop(1, "#0d0c11");
+    ctx.fillStyle = hg;
     ctx.fillRect(0, 0, W, H);
     // Vorschau-Stein über der gewählten Spalte
     if (!vorbei && mensch() && !fallend) {
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = 0.9;
       scheibe(mx(zeiger), OBEN / 2, amZug);
       ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.beginPath();
+      ctx.moveTo(mx(zeiger) - 8, OBEN - RAND - 10);
+      ctx.lineTo(mx(zeiger) + 8, OBEN - RAND - 10);
+      ctx.lineTo(mx(zeiger), OBEN - RAND - 2);
+      ctx.fill();
     }
+    // Lochhintergrund (dunkel, damit leere Felder Tiefe haben)
+    ctx.fillStyle = "#0a090e";
+    ctx.fillRect(RAND, OBEN - RAND, W - 2 * RAND, H - OBEN);
     // Steine (liegen hinter dem Brett und sind durch die Löcher zu sehen)
+    const blinkAn = blinken && Math.floor((performance.now() - blinken.start) / BLINK_TAKT) % 2 === 0;
+    const istReihe = (c, r) => reihe4?.some(([a, b]) => a === c && b === r);
     for (let c = 0; c < SP; c++)
       for (let r = 0; r < RE; r++) {
         const v = brett[c][r];
-        if (v && !(fallend && fallend.c === c && fallend.r === r)) scheibe(mx(c), my(r), v);
+        if (!v || (fallend && fallend.c === c && fallend.r === r)) continue;
+        const gruen = istReihe(c, r) && (blinken ? blinkAn : true);
+        scheibe(mx(c), my(r), gruen ? "gruen" : v);
       }
     if (fallend) scheibe(mx(fallend.c), fallend.y, fallend.p);
-    // Brett mit ausgestanzten Löchern
-    ctx.fillStyle = "#2b2640";
+    // Brett mit ausgestanzten Löchern, Verlauf und Kanten
+    const bg = ctx.createLinearGradient(0, OBEN - RAND, 0, H);
+    bg.addColorStop(0, "#3d3560");
+    bg.addColorStop(1, "#231e3a");
+    ctx.fillStyle = bg;
     ctx.beginPath();
-    ctx.rect(0, OBEN - RAND, W, H - OBEN + RAND);
+    ctx.roundRect(0, OBEN - RAND, W, H - OBEN + RAND, 14);
     for (let c = 0; c < SP; c++)
       for (let r = 0; r < RE; r++) {
-        ctx.moveTo(mx(c) + Z * 0.4, my(r));
-        ctx.arc(mx(c), my(r), Z * 0.4, 0, Math.PI * 2);
+        ctx.moveTo(mx(c) + Z * 0.41, my(r));
+        ctx.arc(mx(c), my(r), Z * 0.41, 0, Math.PI * 2);
       }
     ctx.fill("evenodd");
-    // Gewinnreihe markieren
-    if (reihe4) {
-      ctx.strokeStyle = "#ffffff";
+    // Lochränder: oben dunkel (Tiefe), unten hell (Lichtkante)
+    for (let c = 0; c < SP; c++)
+      for (let r = 0; r < RE; r++) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(0,0,0,0.45)";
+        ctx.beginPath();
+        ctx.arc(mx(c), my(r), Z * 0.41, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,0.14)";
+        ctx.beginPath();
+        ctx.arc(mx(c), my(r), Z * 0.41, Math.PI * 0.1, Math.PI * 0.9);
+        ctx.stroke();
+      }
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(1, OBEN - RAND + 1, W - 2, H - OBEN + RAND - 2, 13);
+    ctx.stroke();
+    // Gewinnreihe: grüner Schein, solange sie leuchtet
+    if (reihe4 && (!blinken || blinkAn)) {
+      ctx.save();
+      ctx.shadowColor = "#3ddc8f";
+      ctx.shadowBlur = 22;
+      ctx.strokeStyle = "#5ff0a8";
       ctx.lineWidth = 4;
       for (const [c, r] of reihe4) {
         ctx.beginPath();
-        ctx.arc(mx(c), my(r), Z * 0.4, 0, Math.PI * 2);
+        ctx.arc(mx(c), my(r), Z * 0.43, 0, Math.PI * 2);
         ctx.stroke();
       }
+      ctx.restore();
     }
     // Tastatur-Spalte
     if (document.activeElement === canvas && !vorbei && mensch()) {
-      ctx.fillStyle = "rgba(212,184,255,0.12)";
+      ctx.fillStyle = "rgba(212,184,255,0.10)";
       ctx.fillRect(RAND + zeiger * Z, OBEN - RAND, Z, H - OBEN + RAND);
     }
+  }
+
+  // Siegerreihe 4× grün blinken lassen, danach `fertig`
+  function blinkeReihe(fertig) {
+    blinken = { start: performance.now() };
+    const dauer = BLINK_MAL * 2 * BLINK_TAKT;
+    const schritt = (t) => {
+      if (!blinken) return;
+      zeichne();
+      if (t - blinken.start < dauer) blinkRaf = requestAnimationFrame(schritt);
+      else {
+        blinken = null;
+        zeichne();
+        fertig();
+      }
+    };
+    blinkRaf = requestAnimationFrame(schritt);
   }
 
   // Stein mit Schwerkraft fallen lassen, danach `fertig`
@@ -130,16 +232,15 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     if (reihe) {
       vorbei = true;
       reihe4 = reihe;
-      zeichne();
       const gewonnen = p === 1;
       if (zweiSpieler) {
         status(`${NAME[p]} gewinnt!`);
-        nachricht(`<p class="big">${NAME[p]} gewinnt!</p><p class="small">Klick für eine neue Partie</p>`);
+        blinkeReihe(() => nachricht(`<p class="big">${NAME[p]} gewinnt!</p><p class="small">Klick für eine neue Partie</p>`));
         return true;
       }
       status(gewonnen ? "Gewonnen!" : "Verloren");
       ergebnis({ gewonnen });
-      nachricht(`<p class="big">${gewonnen ? "Vier in einer Reihe!" : "Der Computer gewinnt"}</p><p class="small">Klick für eine neue Partie</p>`);
+      blinkeReihe(() => nachricht(`<p class="big">${gewonnen ? "Vier in einer Reihe!" : "Der Computer gewinnt"}</p><p class="small">Klick für eine neue Partie</p>`));
       return true;
     }
     if (voll(brett)) {
@@ -214,7 +315,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       zeichne();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (vorbei) neu();
+      if (vorbei && !blinken) neu();
       else spielerZug(zeiger);
     }
   };
@@ -224,7 +325,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   canvas.addEventListener("focus", onFocus);
   canvas.addEventListener("blur", onFocus);
   window.addEventListener("keydown", onKey);
-  const aus = overlayKlick(() => vorbei && neu());
+  const aus = overlayKlick(() => vorbei && !blinken && neu());
 
   // Modus-Wahl in der Werkzeugleiste
   tools.hidden = false;
@@ -238,12 +339,15 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   });
 
   neu();
+  passeAufloesung();
 
   return {
     pause() {},
     stop() {
       vorbei = true;
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(blinkRaf);
+      ro.disconnect();
       worker.terminate();
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerdown", onDown);

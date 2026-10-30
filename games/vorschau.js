@@ -133,32 +133,95 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.fillRect(128, 80, 7, 7);
   }
   if (spiel === "skate") {
-    // Boden, Kegel, Strichmännchen im Sprung
-    ctx.fillStyle = "#3a3550";
-    ctx.fillRect(0, 100, 240, 3);
-    ctx.fillStyle = "#ff8a3d";
+    // Abendhimmel über der Stadt, Rampe, Strichmännchen im Kickflip über eine Lücke
+    const himmel = ctx.createLinearGradient(0, 0, 0, 100);
+    himmel.addColorStop(0, "#2a1f4a");
+    himmel.addColorStop(0.55, "#6b3a6e");
+    himmel.addColorStop(1, "#e0785a");
+    ctx.fillStyle = himmel;
+    ctx.fillRect(0, 0, 240, 100);
+    ctx.fillStyle = "#ffd27a";
+    ctx.globalAlpha = 0.9;
     ctx.beginPath();
-    ctx.moveTo(150, 100);
-    ctx.lineTo(160, 84);
-    ctx.lineTo(170, 100);
+    ctx.arc(196, 70, 16, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = weiss;
-    ctx.lineWidth = 2.4;
+    ctx.globalAlpha = 1;
+    // Sterne
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    for (const [x, y] of [[20, 10], [58, 22], [92, 8], [140, 16], [170, 6], [226, 24], [8, 34]]) ctx.fillRect(x, y, 1.5, 1.5);
+    // Skyline in zwei Ebenen
+    ctx.fillStyle = "#3a2a55";
+    for (const [x, w, h] of [[0, 22, 38], [20, 16, 52], [40, 26, 30], [70, 18, 46], [92, 30, 36], [128, 14, 58], [150, 26, 34], [182, 20, 44], [206, 34, 30]]) ctx.fillRect(x, 100 - h, w, h);
+    ctx.fillStyle = "#241a38";
+    for (const [x, w, h] of [[8, 26, 24], [44, 20, 32], [86, 24, 20], [118, 30, 28], [160, 22, 22], [214, 26, 34]]) ctx.fillRect(x, 100 - h, w, h);
+    ctx.fillStyle = "#ffd27a";
+    for (const [x, y] of [[24, 54], [30, 62], [74, 60], [132, 48], [132, 58], [186, 62], [96, 70], [212, 76]]) ctx.fillRect(x, y, 2, 3);
+    // Boden mit Lücke
+    ctx.fillStyle = "#1a1722";
+    ctx.fillRect(0, 100, 240, 20);
+    ctx.fillStyle = "#4a4060";
+    ctx.fillRect(0, 100, 92, 3);
+    ctx.fillRect(148, 100, 92, 3);
+    ctx.fillStyle = "#0b0a10";
+    ctx.fillRect(92, 100, 56, 20);
+    ctx.fillStyle = "#3a6fd0";
+    ctx.fillRect(92, 110, 56, 10);
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillRect(100, 112, 10, 1.5);
+    ctx.fillRect(124, 115, 14, 1.5);
+    // Absprungrampe
+    ctx.fillStyle = "#8a6a4a";
+    ctx.beginPath();
+    ctx.moveTo(56, 100);
+    ctx.quadraticCurveTo(84, 98, 92, 84);
+    ctx.lineTo(92, 100);
+    ctx.fill();
+    ctx.fillStyle = "#c9a27a";
+    ctx.fillRect(90, 84, 3, 16);
+    // Bewegungslinien
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 1.5;
     ctx.lineCap = "round";
+    for (const [x, y, l] of [[78, 44, 18], [82, 52, 14], [76, 60, 20]]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + l, y - 3);
+      ctx.stroke();
+    }
+    // Strichmännchen im Sprung (Knie angezogen, Arme ausgebreitet)
+    ctx.strokeStyle = "#f2f2f3";
+    ctx.lineWidth = 2.6;
+    ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.moveTo(108, 70); ctx.lineTo(111, 60); ctx.lineTo(116, 52); ctx.lineTo(122, 60); ctx.lineTo(124, 70);
-    ctx.moveTo(116, 52); ctx.lineTo(119, 34);
-    ctx.moveTo(118, 38); ctx.lineTo(106, 44); ctx.lineTo(98, 40);
-    ctx.moveTo(119, 38); ctx.lineTo(130, 42); ctx.lineTo(138, 38);
+    ctx.moveTo(114, 58); ctx.lineTo(118, 50); ctx.lineTo(124, 46); ctx.lineTo(128, 54); ctx.lineTo(132, 58);
+    ctx.moveTo(124, 46); ctx.lineTo(126, 30);
+    ctx.moveTo(125, 34); ctx.lineTo(114, 30); ctx.lineTo(106, 34);
+    ctx.moveTo(126, 34); ctx.lineTo(136, 28); ctx.lineTo(144, 30);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(121, 26, 6, 0, Math.PI * 2);
+    ctx.arc(128, 22, 6, 0, Math.PI * 2);
     ctx.stroke();
+    // Board im Flip (schräg, Unterseite sichtbar)
+    ctx.save();
+    ctx.translate(123, 64);
+    ctx.rotate(-0.28);
     ctx.fillStyle = "#b48ef0";
-    ctx.fillRect(100, 71, 34, 4);
-    ctx.fillStyle = gelb;
-    ctx.fillRect(105, 76, 4, 4);
-    ctx.fillRect(125, 76, 4, 4);
+    ctx.beginPath();
+    ctx.roundRect(-18, -2.5, 36, 5, 2.5);
+    ctx.fill();
+    ctx.fillStyle = "#f5d97a";
+    ctx.fillRect(-11, 2.5, 5, 4);
+    ctx.fillRect(6, 2.5, 5, 4);
+    ctx.restore();
+    // Münzen
+    for (const [x, y] of [[152, 40], [166, 48], [180, 58]]) {
+      ctx.fillStyle = gelb;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#c99a2e";
+      ctx.fillRect(x - 0.75, y - 2.5, 1.5, 5);
+    }
   }
   if (spiel === "schlagzeug") {
     // kleines Schlagzeug: Bass, zwei Toms, Snare, Becken

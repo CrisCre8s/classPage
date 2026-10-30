@@ -28,7 +28,7 @@ const PUNKTE = {
   skate: { minSek: 3, proSek: 600, basis: 500, max: 2000000 },
   schlagzeug: { minSek: 10, proSek: 4000, basis: 0, max: 2000000 },
   bloecke: { minSek: 5, proSek: 3000, basis: 0, max: 5000000 },
-  flatter: { minSek: 1, proSek: 1.5, basis: 2, max: 5000 },
+  flatter: { minSek: 1, proSek: 2, basis: 2, max: 5000 },
   invasion: { minSek: 3, proSek: 120, basis: 100, max: 1000000 },
   // Lernspiele mit fester Zeit: die Runde läuft immer bis zum Ende
   binaer: { minSek: 55, proSek: 50, basis: 0, max: 4000 },
@@ -47,7 +47,7 @@ const ZEIT = {
   sudoku: { leicht: 60, mittel: 90, schwer: 120 },
 };
 // Spiele ohne Schwierigkeitsgrade landen unter „alle“
-const OHNE_STUFEN = new Set(["schlagzeug"]);
+const OHNE_STUFEN = new Set(["schlagzeug", "flatter"]);
 
 const VERBOTEN = ["arsch", "fick", "fotz", "hure", "nutte", "nazi", "hitler", "wichs", "schwanz", "penis", "fuck", "shit", "bitch", "cunt", "nigg", "neger", "spast", "behindert", "schwuchtel", "schlampe", "admin", "porn", "opfer"];
 

@@ -1,9 +1,11 @@
 // Sudoku: 9 × 9, jede Zahl einmal pro Zeile, Spalte und Block. Generator mit eindeutiger Lösung, drei Stufen.
 
 export const DOM = true;
-export const HILFE = "Feld antippen, dann Zahl wählen · Tastatur: Pfeile bewegen, 1–9 eintragen, Entf löschen, N Notizen an/aus";
+export const HILFE = "Feld antippen, dann Zahl wählen · Tastatur: Pfeile bewegen, 1–9 eintragen, Entf löschen, N Notizen an/aus · jede falsche Zahl kostet ein Leben";
 
 const ZIEL_VORGABEN = { leicht: 40, mittel: 32, schwer: 26 };
+// Jede falsche Zahl kostet ein Leben (Notizen nicht)
+const LEBEN = { leicht: 5, mittel: 4, schwer: 3 };
 
 // ---------- Generator ----------
 const zeileVon = (i) => Math.floor(i / 9);
@@ -83,6 +85,7 @@ const formatZeit = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).pa
 export function start({ dom, stufe, status, nachricht, ergebnis }) {
   dom.innerHTML = `
     <div class="sudoku">
+      <div class="sudoku-leben" aria-live="polite"></div>
       <div class="sudoku-feld" role="grid" aria-label="Sudoku"></div>
       <div class="sudoku-pad">
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button type="button" class="sudoku-taste num" data-d="${d}">${d}<small></small></button>`).join("")}
@@ -93,7 +96,12 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     </div>`;
   const feldEl = dom.querySelector(".sudoku-feld");
   const pad = dom.querySelector(".sudoku-pad");
-  let raetsel, loesung, werte, notizen, auswahl, notizModus, start0, pausiert, laeuft, timer, vergangen;
+  let raetsel, loesung, werte, notizen, auswahl, notizModus, start0, pausiert, laeuft, timer, vergangen, leben, fehlerZelle;
+  const maxLeben = LEBEN[stufe] || 4;
+  const lebenEl = dom.querySelector(".sudoku-leben");
+  function zeigeLeben(verloren = false) {
+    lebenEl.innerHTML = `<span class="sudoku-leben-text">Leben</span>${Array.from({ length: maxLeben }, (_, i) => `<span class="sudoku-herz${i < leben ? "" : " weg"}${verloren && i === leben ? " bricht" : ""}" aria-hidden="true"></span>`).join("")}<span class="sr-only">${leben} von ${maxLeben} Leben</span>`;
+  }
 
   feldEl.innerHTML = Array.from({ length: 81 }, (_, i) => `<button type="button" class="sudoku-zelle" data-i="${i}" role="gridcell"></button>`).join("");
   const zellen = [...feldEl.children];
@@ -104,6 +112,9 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     notizen = Array.from({ length: 81 }, () => new Set());
     auswahl = raetsel.findIndex((v) => !v);
     notizModus = false;
+    leben = maxLeben;
+    fehlerZelle = null;
+    zeigeLeben();
     vergangen = 0;
     start0 = performance.now();
     pausiert = false;
@@ -117,7 +128,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   const zeit = () => vergangen + (pausiert || !laeuft ? 0 : (performance.now() - start0) / 1000);
   function zeigeStatus() {
     const offen = werte.filter((v) => !v).length;
-    status(`${formatZeit(zeit())} · noch ${offen} Felder`);
+    status(`${formatZeit(zeit())} · noch ${offen} Felder · ${"♥".repeat(Math.max(0, leben))}`);
   }
   function konflikt(i) {
     const v = werte[i];
@@ -134,6 +145,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       if (selWert && v === selWert) z.classList.add("gleich");
       if (i === sel) z.classList.add("aktiv");
       if (!raetsel[i] && konflikt(i)) z.classList.add("konflikt");
+      if (i === fehlerZelle) z.classList.add("fehler");
       if (spalteVon(i) % 3 === 2 && spalteVon(i) < 8) z.classList.add("rand-r");
       if (zeileVon(i) % 3 === 2 && zeileVon(i) < 8) z.classList.add("rand-u");
       if (v) {
@@ -156,6 +168,10 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   }
   function setze(d) {
     if (!laeuft || pausiert || auswahl < 0 || raetsel[auswahl]) return;
+    if (fehlerZelle != null) {
+      werte[fehlerZelle] = 0;
+      fehlerZelle = null;
+    }
     if (d === 0) {
       werte[auswahl] = 0;
       notizen[auswahl].clear();
@@ -163,6 +179,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       if (werte[auswahl]) return;
       notizen[auswahl].has(d) ? notizen[auswahl].delete(d) : notizen[auswahl].add(d);
     } else {
+      if (werte[auswahl] !== d && d !== loesung[auswahl]) return fehler(auswahl, d);
       werte[auswahl] = werte[auswahl] === d ? 0 : d;
       // Notizen mit dieser Zahl bei den Nachbarn aufräumen
       if (werte[auswahl]) for (const j of NACHBARN[auswahl]) notizen[j].delete(d);
@@ -170,6 +187,50 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     zeichne();
     zeigeStatus();
     if (werte.every((v, i) => v === loesung[i])) fertig();
+  }
+  // falsche Zahl: kurz rot zeigen, Leben abziehen, Zahl wieder entfernen
+  function fehler(i, d) {
+    if (fehlerZelle != null) werte[fehlerZelle] = 0;
+    leben--;
+    werte[i] = d;
+    notizen[i].clear();
+    fehlerZelle = i;
+    zeigeLeben(true);
+    zeichne();
+    zeigeStatus();
+    feldEl.classList.remove("wackelt");
+    void feldEl.offsetWidth;
+    feldEl.classList.add("wackelt");
+    if (leben <= 0) return verloren();
+    const sperreBis = i;
+    setTimeout(() => {
+      if (fehlerZelle !== sperreBis || werte[i] !== d || !laeuft) return;
+      werte[i] = 0;
+      fehlerZelle = null;
+      zeichne();
+      zeigeStatus();
+    }, 800);
+  }
+  function verloren() {
+    const sek = zeit();
+    laeuft = false;
+    clearInterval(timer);
+    vergangen = sek;
+    ergebnis({ gewonnen: false, zeit: sek });
+    status(`Keine Leben mehr · ${formatZeit(sek)}`);
+    setTimeout(() => {
+      // zum Nachschauen: die Lösung einblenden
+      werte = [...loesung];
+      fehlerZelle = null;
+      feldEl.classList.add("aufgedeckt");
+      zeichne();
+    }, 700);
+    nachricht(`<p class="big">Keine Leben mehr</p><p>${maxLeben} Fehler, das Sudoku ist vorbei. Dahinter siehst du die Lösung.</p><p><button class="btn" type="button" data-neu>Neues Sudoku</button></p>`);
+    document.querySelector("#stage-msg [data-neu]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      feldEl.classList.remove("aufgedeckt");
+      neu();
+    });
   }
   function fertig() {
     const sek = zeit();
@@ -203,7 +264,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     } else setze(Number(b.dataset.d));
   });
   dom.querySelector('[data-a="neu"]').addEventListener("click", () => {
-    feldEl.classList.remove("geloest");
+    feldEl.classList.remove("geloest", "aufgedeckt");
     neu();
   });
   const onKey = (e) => {
@@ -227,7 +288,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   window.addEventListener("keydown", onKey);
 
   status("Sudoku");
-  nachricht(`<p class="big">Sudoku</p><p>Jede Zahl von 1 bis 9 genau einmal in jeder Zeile, jeder Spalte und jedem 3 × 3-Block. ${ZIEL_VORGABEN[stufe] || 32} Zahlen sind vorgegeben, es gibt genau eine Lösung.</p><p class="small">Doppelte Zahlen werden rot markiert · die Zeit läuft ab dem Start</p><p><button class="btn" type="button" data-start>Los geht's</button></p>`);
+  nachricht(`<p class="big">Sudoku</p><p>Jede Zahl von 1 bis 9 genau einmal in jeder Zeile, jeder Spalte und jedem 3 × 3-Block. ${ZIEL_VORGABEN[stufe] || 32} Zahlen sind vorgegeben, es gibt genau eine Lösung.</p><p class="small">${maxLeben} Leben: jede falsche Zahl kostet eins · Notizen sind gratis · die Zeit läuft ab dem Start</p><p><button class="btn" type="button" data-start>Los geht's</button></p>`);
   document.querySelector("#stage-msg [data-start]")?.addEventListener("click", (e) => {
     e.stopPropagation();
     neu();
