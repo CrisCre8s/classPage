@@ -3,6 +3,7 @@
 import { overlayKlick } from "./eingabe.js";
 import * as P from "./billard-physik.js";
 import { planeStoss, legeWeisse } from "./billard-ki.js";
+import { startLage, rolle, kugelTextur } from "./billard-kugel.js";
 
 export const HILFE = "Zielen: zeigen oder antippen · Stoßen: gedrückt halten, zurückziehen, loslassen · Tastatur: ← → zielen (Shift fein), ↑ ↓ Kraft, Leertaste stoßen";
 
@@ -18,8 +19,18 @@ function hdCanvas(ctx, canvas) {
   canvas.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.imageSmoothingEnabled = true;
+  ctx.skala = dpr;
   return ctx;
 }
+
+// Die Löcher sind Netze: von oben sieht man in den Netzbeutel, versenkte Kugeln bleiben darin liegen.
+// Liegeplätze im Loch (Abstand von der Lochmitte, leicht nach außen versetzt), danach stapeln sie sich.
+const NETZE = LOECHER.map((l) => {
+  const ux = l.ecke ? Math.sign(l.x - MITTE_X) * Math.SQRT1_2 : 0;
+  const uy = l.ecke ? Math.sign(l.y - MITTE_Y) * Math.SQRT1_2 : Math.sign(l.y - MITTE_Y);
+  return { l, ux, uy, r: l.r + 3 };
+});
+const PLAETZE = [[2, 0], [-3, -6], [-3, 6], [6, -5], [6, 5], [-7, 0], [0, -9], [0, 9], [8, 0], [-5, -3], [-5, 3], [4, 0], [0, -4], [0, 4], [-2, 0], [3, -2]];
 const rgba = (hex, a) => {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
@@ -34,7 +45,9 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   let queue = null; // Animation des Queues beim Stoß
   let legen = null; // Weiße wird gerade hingelegt { x, y, frei }
   let hinweise = []; // kurze Einblendungen
-  let fallend = []; // Kugeln, die gerade ins Loch rollen
+  let netz = LOECHER.map(() => []); // je Loch: Kugeln im Netz { n, von: {x, y}, t, platz }
+  let lagen = {}; // je Kugel: Drehlage, Textur und ob sie neu gezeichnet werden muss
+  const TEX = Math.ceil((2 * R + 2) * (ctx.skala || 2));
   let cpuPlan = null;
   let zweiSpieler = false;
   let partie = 0;
@@ -52,7 +65,9 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     anstoss = true;
     ballInHand = false;
     hinweise = [];
-    fallend = [];
+    netz = LOECHER.map(() => []);
+    lagen = {};
+    for (const k of kugeln) lagen[k.n] = { m: startLage(), tex: null, neu: true };
     queue = null;
     ziehen = null;
     legen = null;
@@ -127,7 +142,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       while (!P.freierPlatz(kugeln, x, MITTE_Y)) x += 2 * R + 1;
       acht.x = x;
       acht.y = MITTE_Y;
-      fallend = fallend.filter((f) => f.n !== 8);
+      ausNetz(8);
       hinweis("Die 8 kommt zurück aufs Feld");
     }
     if (r.foul) hinweis(`Foul: ${r.foul}`, "#e5566f");
@@ -157,6 +172,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       if (ballInHand) {
         const p = legeWeisse({ kugeln, gruppen, spieler: amZug, anstoss });
         Object.assign(kugeln[0], { x: p.x, y: p.y, drin: false, vx: 0, vy: 0 });
+        ausNetz(0);
         ballInHand = false;
       }
       const plan = planeStoss({ kugeln, gruppen, spieler: amZug, anstoss, stufe });
@@ -181,6 +197,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
   function legeHin() {
     if (!legen?.frei) return false;
     Object.assign(kugeln[0], { x: legen.x, y: legen.y, drin: false, vx: 0, vy: 0 });
+    ausNetz(0);
     legen = null;
     ballInHand = false;
     zustand = "zielen";
@@ -278,8 +295,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     t += dt;
     for (const h of hinweise) h.t += dt;
     hinweise = hinweise.filter((h) => h.t < 2.4);
-    for (const f of fallend) f.t += dt;
-    fallend = fallend.filter((f) => f.t < 0.35);
+    for (const liste of netz) for (const k of liste) k.t += dt;
     if (zustand === "cpu" && cpuPlan) {
       // Computer schwenkt den Queue sichtbar zum Ziel, holt aus und stößt
       cpuPlan.t += dt;
@@ -306,10 +322,17 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       rest += dt;
       while (rest >= P.DT) {
         const vor = stoss.versenkt.length;
+        const alt = kugeln.map((k) => [k.x, k.y]);
         P.schritt(kugeln, stoss);
+        // jede Kugel dreht sich um genau die Strecke, die sie gerollt ist
+        kugeln.forEach((k, i) => {
+          if (k.drin) return;
+          if (rolle(lagen[k.n].m, k.x - alt[i][0], k.y - alt[i][1], R)) lagen[k.n].neu = true;
+        });
         for (const n of stoss.versenkt.slice(vor)) {
           const k = kugeln.find((b) => b.n === n);
-          fallend.push({ n, x: k.x, y: k.y, l: k.loch, t: 0 });
+          const i = LOECHER.indexOf(k.loch);
+          netz[i].push({ n, von: { x: k.x, y: k.y }, t: 0, platz: netz[i].length });
         }
         rest -= P.DT;
       }
@@ -405,17 +428,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     ctx.beginPath();
     ctx.arc(X0 + (X1 - X0) * 0.73, MITTE_Y, 2, 0, Math.PI * 2);
     ctx.fill();
-    // Löcher
-    for (const l of LOECHER) {
-      const g = ctx.createRadialGradient(l.x, l.y, 2, l.x, l.y, l.r + 3);
-      g.addColorStop(0, "#000");
-      g.addColorStop(0.75, "#07070a");
-      g.addColorStop(1, "#2a2a30");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(l.x, l.y, l.r + 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    zeichneLoecher();
     // Lampenlicht von oben
     const licht = ctx.createRadialGradient(MITTE_X, MITTE_Y - 40, 40, MITTE_X, MITTE_Y, 420);
     licht.addColorStop(0, "rgba(255,250,230,0.08)");
@@ -430,6 +443,122 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
     ctx.lineTo(x, y + s);
     ctx.lineTo(x - s * 0.7, y);
     ctx.fill();
+  }
+
+  // Kugel mit ihrer Drehlage zeichnen (Textur nur neu rechnen, wenn sie sich gedreht hat)
+  function zeichneKugel3D(n, x, y, s = 1, schatten = true) {
+    const l = lagen[n];
+    if (!l) return zeichneKugel(n, x, y, R * s, schatten);
+    if (l.neu || !l.tex) {
+      l.tex = kugelTextur(n, l.m, TEX, l.tex);
+      l.neu = false;
+    }
+    if (schatten) {
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(x + 2.5 * s, y + 3 * s, R * s, R * s * 0.85, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const g = ((R + 1) * s);
+    ctx.drawImage(l.tex, x - g, y - g, 2 * g, 2 * g);
+  }
+
+  // Position einer Kugel im Netz: rollt zum Loch, plumpst hinein und bleibt im Netz liegen
+  function netzOrt(i, e) {
+    const N = NETZE[i];
+    const [a, b] = PLAETZE[e.platz % PLAETZE.length];
+    const lage = Math.floor(e.platz / PLAETZE.length); // ab der zweiten Runde liegen sie obendrauf
+    const ziel = { x: N.l.x + N.ux * a - N.uy * b + lage * 1.5, y: N.l.y + N.uy * a + N.ux * b - lage * 1.5 };
+    if (e.t < 0.1) {
+      const k = e.t / 0.1;
+      return { x: e.von.x + (N.l.x - e.von.x) * k, y: e.von.y + (N.l.y - e.von.y) * k, s: 1 - k * 0.1, oben: true };
+    }
+    const k = Math.min(1, (e.t - 0.1) / 0.35);
+    const ein = 1 - Math.pow(1 - k, 3);
+    // fällt ins Netz: wird kleiner (tiefer), federt einmal nach
+    const feder = Math.sin(Math.min(1, k * 1.6) * Math.PI) * (1 - k) * 0.08;
+    return { x: N.l.x + (ziel.x - N.l.x) * ein, y: N.l.y + (ziel.y - N.l.y) * ein, s: 0.92 - 0.14 * ein + feder, oben: false, tiefe: ein };
+  }
+  function ausNetz(n) {
+    for (const liste of netz) {
+      const i = liste.findIndex((e) => e.n === n);
+      if (i >= 0) liste.splice(i, 1);
+    }
+  }
+
+  // Loch = Blick von oben in den Netzbeutel
+  function zeichneLoecher() {
+    NETZE.forEach((N, i) => {
+      const { l } = N;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, N.r, 0, Math.PI * 2);
+      ctx.clip();
+      // Tiefe: unten im Beutel dunkel, zum Rand hin etwas heller (Netz fängt Licht)
+      const g = ctx.createRadialGradient(l.x + N.ux * 3, l.y + N.uy * 3, 1, l.x, l.y, N.r);
+      g.addColorStop(0, "#050506");
+      g.addColorStop(0.7, "#141216");
+      g.addColorStop(1, "#24201c");
+      ctx.fillStyle = g;
+      ctx.fillRect(l.x - N.r, l.y - N.r, 2 * N.r, 2 * N.r);
+      // das Netz selbst: Maschen im Beutel, zur Mitte hin tiefer und dunkler
+      masche(N, 4.5, "rgba(236,228,212,0.38)", 0.7, 0);
+      const tief = ctx.createRadialGradient(l.x + N.ux * 3, l.y + N.uy * 3, 0, l.x, l.y, N.r * 0.8);
+      tief.addColorStop(0, "rgba(0,0,0,0.55)");
+      tief.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = tief;
+      ctx.fillRect(l.x - N.r, l.y - N.r, 2 * N.r, 2 * N.r);
+      // Kugeln liegen oben im Netz
+      for (const e of netz[i]) {
+        const o = netzOrt(i, e);
+        if (o.oben) continue;
+        zeichneKugel3D(e.n, o.x, o.y, o.s, false);
+        ctx.fillStyle = `rgba(0,0,0,${0.04 + 0.1 * (o.tiefe || 0)})`;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, R * o.s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Schatten der Lochkante nach innen
+      const kante = ctx.createRadialGradient(l.x, l.y, N.r * 0.7, l.x, l.y, N.r);
+      kante.addColorStop(0, "rgba(0,0,0,0)");
+      kante.addColorStop(1, "rgba(0,0,0,0.6)");
+      ctx.fillStyle = kante;
+      ctx.fillRect(l.x - N.r, l.y - N.r, 2 * N.r, 2 * N.r);
+      ctx.restore();
+      // Lochrand (Leder)
+      ctx.strokeStyle = "#2a1a10";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, N.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,220,180,0.12)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, N.r + 1.3, Math.PI * 1.05, Math.PI * 1.75);
+      ctx.stroke();
+    });
+  }
+  // Rautenmaschen, die zur Mitte hin enger werden (wirkt wie ein nach unten hängender Beutel)
+  function masche(N, abstand, farbe, breite, versatz) {
+    const { l } = N;
+    ctx.strokeStyle = farbe;
+    ctx.lineWidth = breite;
+    const m = N.r + 2;
+    const verzerrt = (x, y) => {
+      const d = Math.hypot(x, y) / m;
+      const f = 0.55 + 0.45 * d;
+      return [l.x + x * f + N.ux * 2 * (1 - d), l.y + y * f + N.uy * 2 * (1 - d)];
+    };
+    for (const richtung of [1, -1])
+      for (let d = -2 * m; d <= 2 * m; d += abstand) {
+        ctx.beginPath();
+        for (let k = -m; k <= m; k += 2) {
+          const [x, y] = verzerrt(k + versatz, richtung * (k - d) + versatz);
+          if (k === -m) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
   }
 
   function zeichneKugel(n, x, y, r = R, schatten = true) {
@@ -616,24 +745,24 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
         ctx.shadowColor = "#5fc39c";
         ctx.shadowBlur = 10;
       }
-      ctx.fillText(n[s], x, 24);
+      ctx.fillText(n[s], x, 20);
       ctx.shadowBlur = 0;
       const nameB = ctx.measureText(n[s]).width;
       if (dran) {
         ctx.fillStyle = "#5fc39c";
         ctx.beginPath();
-        ctx.arc(links ? x + nameB + 10 : x - nameB - 10, 19, 3.5 + Math.sin(t * 5) * 0.8, 0, Math.PI * 2);
+        ctx.arc(links ? x + nameB + 10 : x - nameB - 10, 15, 3.5 + Math.sin(t * 5) * 0.8, 0, Math.PI * 2);
         ctx.fill();
       }
       const g = gruppen[s];
       ctx.font = "12px system-ui, sans-serif";
       ctx.fillStyle = "#8a8698";
       // Restliche Kugeln der Gruppe als kleine Kugeln, bei offenem Tisch ein Hinweis
-      if (!g) ctx.fillText(anstoss ? "Anstoß" : "Tisch offen", x, 44);
+      if (!g) ctx.fillText(anstoss ? "Anstoß" : "Tisch offen", x, 40);
       else {
         const meine = kugeln.filter((k) => !k.drin && P.gruppeVon(k.n) === g).map((k) => k.n);
         const liste = meine.length ? meine : [8];
-        liste.forEach((nr, i) => zeichneKugel(nr, links ? x + 7 + i * 18 : x - 7 - i * 18, 40, 7, false));
+        liste.forEach((nr, i) => zeichneKugel(nr, links ? x + 7 + i * 18 : x - 7 - i * 18, 36, 7, false));
       }
     }
     // Hinweise in der Mitte oben
@@ -643,7 +772,7 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       ctx.font = "600 13px system-ui, sans-serif";
       ctx.textAlign = "center";
       const b = ctx.measureText(h.text).width + 22;
-      const y = 22 + i * 24 - (1 - Math.min(1, h.t / 0.15)) * 6;
+      const y = Y0 + 28 + i * 26 - (1 - Math.min(1, h.t / 0.15)) * 6;
       ctx.fillStyle = "rgba(15,14,19,0.85)";
       ctx.beginPath();
       ctx.roundRect(W / 2 - b / 2, y - 14, b, 22, 11);
@@ -659,24 +788,27 @@ export function start({ canvas, tools, stufe, passeCanvas, status, nachricht, er
       ctx.font = "12px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.fillStyle = "#8a8698";
-      if (!hinweise.length) ctx.fillText(`Computer denkt${".".repeat(1 + (Math.floor(t * 3) % 3))}`, W / 2, 26);
+      if (!hinweise.length) ctx.fillText(`Computer denkt${".".repeat(1 + (Math.floor(t * 3) % 3))}`, W / 2, 30);
     }
   }
 
   function zeichne() {
     ctx.save();
     zeichneTisch();
-    for (const f of fallend) {
-      const k = Math.min(1, f.t / 0.3);
-      zeichneKugel(f.n, f.x + (f.l.x - f.x) * k, f.y + (f.l.y - f.y) * k, R * (1 - k * 0.6), false);
-    }
-    for (const k of kugeln) if (!k.drin) zeichneKugel(k.n, k.x, k.y);
+    for (const k of kugeln) if (!k.drin) zeichneKugel3D(k.n, k.x, k.y);
+    // Kugeln auf dem Weg ins Loch
+    netz.forEach((liste, i) =>
+      liste.forEach((e) => {
+        const o = netzOrt(i, e);
+        if (o.oben) zeichneKugel3D(e.n, o.x, o.y, o.s, false);
+      }),
+    );
     const zielt = (zustand === "zielen" && mensch()) || (zustand === "cpu" && cpuPlan);
     if (zielt && !kugeln[0].drin) zeichneZiel();
     if ((zielt || zustand === "stoss" || zustand === "rollt") && !kugeln[0].drin) zeichneQueue();
     if (zustand === "legen" && legen && mensch()) {
       ctx.globalAlpha = legen.frei ? 0.9 : 0.4;
-      zeichneKugel(0, legen.x, legen.y);
+      zeichneKugel3D(0, legen.x, legen.y);
       ctx.globalAlpha = 1;
       ctx.strokeStyle = legen.frei ? "rgba(95,195,156,0.9)" : "rgba(229,86,111,0.9)";
       ctx.lineWidth = 1.5;
