@@ -30,6 +30,7 @@ const PUNKTE = {
   bloecke: { minSek: 5, proSek: 3000, basis: 0, max: 5000000 },
   flatter: { minSek: 1, proSek: 2, basis: 2, max: 5000 },
   invasion: { minSek: 3, proSek: 120, basis: 100, max: 1000000 },
+  bubble: { minSek: 5, proSek: 400, basis: 1500, max: 2000000 },
   // Lernspiele mit fester Zeit: die Runde läuft immer bis zum Ende
   binaer: { minSek: 55, proSek: 50, basis: 0, max: 4000 },
   ports: { minSek: 55, proSek: 50, basis: 0, max: 4000 },

@@ -3482,7 +3482,9 @@ body.game-on .stage-help {
   }
 }
 .stage[data-game="vier"] #game-canvas,
-.stage[data-game="flatter"] #game-canvas { image-rendering: auto; }
+.stage[data-game="flatter"] #game-canvas,
+.stage[data-game="billard"] #game-canvas,
+.stage[data-game="bubble"] #game-canvas { image-rendering: auto; }
 
 /* Tic-Tac-Toe: Effekte bei Sieg, Niederlage und Remis */
 .ttt-buehne {
