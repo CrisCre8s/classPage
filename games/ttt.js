@@ -64,7 +64,7 @@ function computerZug(b, stufe) {
   return Math.random() < 0.5 ? besterZug(b, "O") : zufall();
 }
 
-export function start({ dom, stufe, status, nachricht, ergebnis }) {
+export function start({ dom, tools, stufe, status, nachricht, ergebnis }) {
   dom.innerHTML = `
     <div class="ttt">
       <p class="ttt-zug" aria-live="polite"></p>
@@ -81,6 +81,9 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   const neuKnopf = dom.querySelector('[data-a="neu"]');
   const stand = { X: 0, O: 0, remis: 0 };
   let brett, amZug, ende, runde = 0, denkt, aktiv = true;
+  // zu zweit an einem Gerät: X und O setzen abwechselnd, es wird nichts gewertet
+  let zweiSpieler = false;
+  const mensch = () => amZug === "X" || (zweiSpieler && amZug === "O");
 
   function neueRunde() {
     brett = Array(9).fill(null);
@@ -90,19 +93,19 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     amZug = runde % 2 === 1 ? "X" : "O";
     neuKnopf.hidden = true;
     zeichne();
-    if (amZug === "O") computer();
+    if (amZug === "O" && !zweiSpieler) computer();
   }
   function zeichne(linie = []) {
     zellen.forEach((z, i) => {
       z.textContent = brett[i] || "";
       z.className = `ttt-zelle${brett[i] ? ` ist-${brett[i].toLowerCase()}` : ""}${linie.includes(i) ? " sieg" : ""}`;
       z.style.setProperty("--n", linie.length ? Math.max(0, linie.indexOf(i)) : i);
-      z.disabled = ende || !!brett[i] || amZug !== "X";
+      z.disabled = ende || !!brett[i] || !mensch();
       z.setAttribute("aria-label", `Feld ${i + 1}: ${brett[i] || "frei"}`);
     });
-    zugEl.textContent = ende ? zugEl.textContent : amZug === "X" ? "Du bist dran (X)" : "Der Computer überlegt …";
+    if (!ende) zugEl.textContent = zweiSpieler ? `${amZug} ist dran` : amZug === "X" ? "Du bist dran (X)" : "Der Computer überlegt …";
     for (const [k, v] of Object.entries(stand)) dom.querySelector(`[data-s="${k}"]`).textContent = v;
-    status(`Runde ${runde} · Du ${stand.X} : ${stand.O} Computer`);
+    status(zweiSpieler ? `Runde ${runde} · X ${stand.X} : ${stand.O} O` : `Runde ${runde} · Du ${stand.X} : ${stand.O} Computer`);
   }
   function setze(i, wer) {
     if (ende || brett[i]) return;
@@ -111,12 +114,12 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     const g = gewinner(brett);
     if (g) return rundeVorbei(g);
     zeichne();
-    if (amZug === "O") computer();
+    if (amZug === "O" && !zweiSpieler) computer();
   }
   function computer() {
     clearTimeout(denkt);
     denkt = setTimeout(() => {
-      if (!aktiv || ende) return;
+      if (!aktiv || ende || zweiSpieler) return;
       setze(computerZug(brett, stufe), "O");
     }, 380 + Math.random() * 300);
   }
@@ -158,14 +161,15 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   function rundeVorbei(g) {
     ende = true;
     stand[g.wer]++;
-    if (g.wer === "X") ergebnis({ gewonnen: true });
-    else ergebnis({ gewonnen: false });
-    zugEl.textContent = g.wer === "X" ? "Gewonnen!" : g.wer === "O" ? "Der Computer gewinnt." : stufe === "schwer" ? "Unentschieden. Mehr geht gegen Schwer nicht." : "Unentschieden.";
-    zugEl.dataset.ergebnis = g.wer;
+    if (!zweiSpieler) ergebnis({ gewonnen: g.wer === "X" });
+    if (zweiSpieler) zugEl.textContent = g.wer === "remis" ? "Unentschieden." : `${g.wer} gewinnt!`;
+    else zugEl.textContent = g.wer === "X" ? "Gewonnen!" : g.wer === "O" ? "Der Computer gewinnt." : stufe === "schwer" ? "Unentschieden. Mehr geht gegen Schwer nicht." : "Unentschieden.";
+    // zu zweit jubelt jeder Sieger mit Konfetti
+    zugEl.dataset.ergebnis = zweiSpieler && g.wer === "O" ? "X" : g.wer;
     zeichne(g.linie || []);
     effekteAus();
     void buehne.offsetWidth; // Animation neu starten
-    if (g.wer === "X") {
+    if (g.wer === "X" || (zweiSpieler && g.wer === "O")) {
       buehne.classList.add("eff-sieg");
       zieheLinie(g.linie);
       wirfKonfetti();
@@ -178,7 +182,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   }
   dom.querySelector(".ttt-feld").addEventListener("click", (e) => {
     const z = e.target.closest(".ttt-zelle");
-    if (z && amZug === "X") setze(Number(z.dataset.i), "X");
+    if (z && mensch()) setze(Number(z.dataset.i), amZug);
   });
   neuKnopf.addEventListener("click", () => {
     delete zugEl.dataset.ergebnis;
@@ -186,15 +190,36 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     neueRunde();
   });
   const onKey = (e) => {
-    if (NUMPAD[e.key] !== undefined && amZug === "X" && !ende) {
+    if (e.target.closest?.("select")) return;
+    if (NUMPAD[e.key] !== undefined && mensch() && !ende) {
       e.preventDefault();
-      setze(NUMPAD[e.key], "X");
+      setze(NUMPAD[e.key], amZug);
     } else if ((e.key === "Enter" || e.key === " ") && ende) {
       e.preventDefault();
       neuKnopf.click();
     }
   };
   window.addEventListener("keydown", onKey);
+
+  // Modus-Wahl in der Werkzeugleiste (startet immer gegen den Computer)
+  tools.hidden = false;
+  tools.innerHTML = `<label class="tools-feld"><span>Modus</span><select class="tools-select" data-s="ttt-modus"><option value="cpu">Gegen Computer</option><option value="zwei">Zu zweit</option></select></label>`;
+  const modusWahl = tools.querySelector('[data-s="ttt-modus"]');
+  const standLabels = () => {
+    const [a, , c] = dom.querySelectorAll(".ttt-stand > span");
+    a.firstChild.textContent = zweiSpieler ? "X " : "Du ";
+    c.firstChild.textContent = zweiSpieler ? "O " : "Computer ";
+  };
+  modusWahl.addEventListener("change", () => {
+    zweiSpieler = modusWahl.value === "zwei";
+    clearTimeout(denkt);
+    stand.X = stand.O = stand.remis = 0;
+    runde = 0;
+    delete zugEl.dataset.ergebnis;
+    effekteAus();
+    standLabels();
+    neueRunde();
+  });
 
   nachricht(null);
   neueRunde();
