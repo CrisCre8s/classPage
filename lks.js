@@ -64,6 +64,10 @@ export function naechsteLkSatz(liste = getLks()) {
   return `${was} ${relativ(next.tage)}`;
 }
 
+// Kurze Merksätze zur LK (optional, Feld „hinweise“ in lks.json)
+const hinweisListe = (lk, klasse) =>
+  lk.hinweise?.length ? `<ul class="${klasse}">${lk.hinweise.map((h) => `<li>${esc(h)}</li>`).join("")}</ul>` : "";
+
 function renderLead(next) {
   const el = document.getElementById("lk-lead");
   if (!el) return;
@@ -89,6 +93,7 @@ function renderLead(next) {
       <div>
         <div class="lead-what">${esc(next.fach)}</div>
         <div class="lead-detail">${esc([next.art, next.thema].filter(Boolean).join(" · ")) || "&nbsp;"}</div>
+        ${hinweisListe(next, "lead-hinweise")}
       </div>
     </div>`;
 }
@@ -110,7 +115,7 @@ function renderListe(rest) {
       return `
       <li class="row lk-row${done ? " done" : ""}">
         <div class="lk-date">${kurz(d)}<span>${WOCHENTAGE[d.getDay()]}</span></div>
-        <div><span class="t">${esc(lk.fach)}</span>${detail ? `<span class="d">${esc(detail)}</span>` : ""}</div>
+        <div><span class="t">${esc(lk.fach)}</span>${detail ? `<span class="d">${esc(detail)}</span>` : ""}${hinweisListe(lk, "lk-hinweise")}</div>
         ${rechts}
       </li>`;
     })
