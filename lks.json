@@ -1,5 +1,5 @@
 [
   { "datum": "2026-10-28", "fach": "WPF (Stahl) und Sozialkunde" },
   { "datum": "2026-11-03", "fach": "Programmieren (C#)", "thema": "Konstruktor aufrufen · Klassenvariablen und static · Properties mit get; set; · Unterprogramme (Methoden) · Überladung · Standardparameter",
-    "hinweise": ["Der Rückgabewert gehört nicht zur Signatur", "return gibt einen Wert zurück und beendet die Methode"] }
+    "hinweise": ["Der Rückgabewert gehört nicht zur Signatur", "return gibt einen Wert zurück und beendet die Methode". "~klassenname() -> ist destruktor"] }
 ]
