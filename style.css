@@ -3694,3 +3694,36 @@ body.game-on .stage-help {
 .sudoku-feld.aufgedeckt .sudoku-zelle:not(.vorgabe) {
   color: var(--faint);
 }
+
+/* LK: kurze Merksätze unter dem Thema */
+.lead-hinweise,
+.lk-hinweise {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.lead-hinweise li,
+.lk-hinweise li {
+  position: relative;
+  padding-left: 14px;
+}
+
+.lead-hinweise li + li,
+.lk-hinweise li + li {
+  margin-top: 2px;
+}
+
+.lead-hinweise li::before,
+.lk-hinweise li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.6em;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--accent);
+}
