@@ -4815,3 +4815,106 @@ table.casino-plan td {
     animation-duration: 0.01s !important;
   }
 }
+
+/* ===== Impressum, Datenschutz und Fußzeile ===== */
+.recht-seite {
+  min-height: 100vh;
+  background: var(--ground);
+}
+
+.recht {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.recht h1 {
+  margin: 18px 0 8px;
+  font-size: 32px;
+  color: var(--text);
+}
+
+.recht h2 {
+  margin: 30px 0 8px;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.recht a {
+  color: var(--accent);
+}
+
+.recht ul {
+  padding-left: 20px;
+}
+
+.recht-klein {
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.recht-hinweis {
+  padding: 12px 14px;
+  color: #1a1407;
+  background: var(--accent);
+  border-radius: var(--radius);
+}
+
+.recht-fuss {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.recht-zurueck {
+  display: inline-block;
+}
+
+.fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  margin: 40px 0 24px;
+  padding-top: 18px;
+  font-size: 13px;
+  color: var(--faint);
+  border-top: 1px solid var(--rule);
+}
+
+.fuss a {
+  color: var(--muted);
+}
+
+.fuss a:hover,
+.fuss a:focus-visible {
+  color: var(--text);
+}
+
+.fuss .fuss-spenden {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  color: #1a1407;
+  background: var(--accent);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.fuss .fuss-spenden:hover,
+.fuss .fuss-spenden:focus-visible {
+  color: #1a1407;
+  filter: brightness(1.08);
+}
+
+@media (max-width: 640px) {
+  /* Platz über der unteren Navigationsleiste */
+  .fuss {
+    margin-bottom: 90px;
+  }
+}

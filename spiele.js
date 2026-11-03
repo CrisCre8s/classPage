@@ -28,6 +28,8 @@ const LADER = {
   bubble: () => import("./games/bubble.js"),
   sudoku: () => import("./games/sudoku.js"),
   ttt: () => import("./games/ttt.js"),
+  pfand: () => import("./games/pfand.js"),
+  ente: () => import("./games/ente.js"),
   automat: () => import("./games/casino.js").then((m) => m.fuer("automat")),
   gluecksrad: () => import("./games/casino.js").then((m) => m.fuer("gluecksrad")),
   blackjack: () => import("./games/casino.js").then((m) => m.fuer("blackjack")),
@@ -126,6 +128,14 @@ function stufeVon(spiel) {
   return karte(spiel)?.querySelector('[aria-checked="true"]')?.dataset.level || "mittel";
 }
 
+// Punkte in der Einheit des Spiels anzeigen (Pfand in Cent → Euro, Weite in Dezimetern → Meter)
+function punkteText(spiel, p) {
+  const e = NACH_ID[spiel].einheit;
+  if (e === "cent") return `${(p / 100).toFixed(2).replace(".", ",")} €`;
+  if (e === "dm") return `${(p / 10).toFixed(1).replace(".", ",")} m`;
+  return String(p);
+}
+
 function zeigeBest(spiel) {
   const k = karte(spiel);
   if (NACH_ID[spiel].ohneWertung) {
@@ -137,7 +147,7 @@ function zeigeBest(spiel) {
   const w = NACH_ID[spiel].wertung;
   const best = lese(bestKey(spiel, stufe), w === "zeit" ? null : 0);
   const label = w === "siege" ? "Siege" : w === "zeit" ? "Bestzeit" : "Highscore";
-  const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : best;
+  const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : w === "punkte" ? punkteText(spiel, best) : best;
   const wo = mitStufen(spiel) ? STUFEN[stufe] : NACH_ID[spiel].bestText || "";
   k.querySelector(".best").innerHTML = `<span>${label}${wo ? ` (${wo})` : ""}</span><span class="num">${wert}</span>`;
   zeigeLetzte(spiel);
@@ -180,11 +190,11 @@ function zeigeLetzte(spiel) {
     `<span class="letzte-label">Letzte ${LETZTE_ANZAHL}</span><ol class="letzte-liste">` +
     liste
       .map((e) => {
-        const text = w === "punkte" ? e.p : w === "zeit" ? (e.g ? formatZeit(e.z) : "✗") : e.g ? "✓" : "✗";
+        const text = w === "punkte" ? punkteText(spiel, e.p) : w === "zeit" ? (e.g ? formatZeit(e.z) : "✗") : e.g ? "✓" : "✗";
         const art = w === "punkte" ? "" : e.g ? " sieg" : " niederlage";
         const top = e === bester && liste.length > 1 && (w === "punkte" ? e.p > 0 : e.g) ? " top" : "";
         const stufe = mitStufen(spiel) && STUFEN[e.s] ? `${STUFEN[e.s]}, ` : "";
-        const was = w === "punkte" ? `${e.p} Punkte` : w === "zeit" ? (e.g ? `geschafft in ${formatZeit(e.z)}` : "verloren") : e.g ? "gewonnen" : "verloren";
+        const was = w === "punkte" ? (NACH_ID[spiel].einheit ? punkteText(spiel, e.p) : `${e.p} Punkte`) : w === "zeit" ? (e.g ? `geschafft in ${formatZeit(e.z)}` : "verloren") : e.g ? "gewonnen" : "verloren";
         return `<li class="num${art}${top}" title="${was} · ${stufe}${wann(e.t)}">${text}</li>`;
       })
       .join("") +
@@ -330,7 +340,7 @@ const RANG_NAME = "spiele:rang:name";
 let rang = null;
 const rangEl = () => document.getElementById("stage-rang");
 const rangStufe = (spiel, stufe) => (NACH_ID[spiel].stufen === false ? "alle" : stufe);
-const rangWert = (spiel, wert) => (NACH_ID[spiel].wertung === "zeit" ? `${formatZeit(wert)} min` : `${Number(wert).toLocaleString("de-DE")} Pkt`);
+const rangWert = (spiel, wert) => (NACH_ID[spiel].wertung === "zeit" ? `${formatZeit(wert)} min` : NACH_ID[spiel].einheit ? punkteText(spiel, wert) : `${Number(wert).toLocaleString("de-DE")} Pkt`);
 
 async function holeMarke(spiel, stufe) {
   try {
