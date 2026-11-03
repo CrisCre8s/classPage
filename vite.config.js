@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 // damit z. B. die Adresse nicht im öffentlichen Git-Repo steht. Beim Bauen werden sie in die HTML-Seiten
 // eingesetzt; fehlt etwas, zeigt die Seite einen Hinweis statt leerer Felder.
 //   IMPRESSUM_NAME, IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_EMAIL, IMPRESSUM_TELEFON (optional)
-//   PAYPAL_LINK (z. B. https://www.paypal.me/deinname)
+//   PAYPAL_LINK (optional, überschreibt den Standard-Link unten)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 function seitenDaten(env) {
@@ -16,7 +16,8 @@ function seitenDaten(env) {
     EMAIL: env.IMPRESSUM_EMAIL || "",
     TELEFON: env.IMPRESSUM_TELEFON || "",
   };
-  const paypal = (env.PAYPAL_LINK || "").trim();
+  // PayPal-Link ist öffentlich, darum steht er als Standard direkt hier
+  const paypal = (env.PAYPAL_LINK || "https://www.paypal.me/C0773").trim();
   // nur echte PayPal-Adressen zulassen
   d.PAYPAL = /^https:\/\/(www\.)?(paypal\.me|paypal\.com)\//i.test(paypal) ? paypal : "";
   return d;

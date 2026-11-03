@@ -5015,3 +5015,51 @@ table.casino-plan td {
 @keyframes hd-muenze-gesammelt {
   to { opacity: 0; transform: translate(-50%, -140%) scale(1.5); }
 }
+
+/* Projekt unterstützen: unter dem Datum, in der Leiste, nach jeder Runde */
+.hub-spenden {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 14px 6px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1407;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: filter 0.15s, transform 0.15s;
+}
+
+.hub-spenden:hover,
+.hub-spenden:focus-visible {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.hub-spenden .i {
+  width: 16px;
+  height: 16px;
+  fill: #e5566f;
+  stroke: #e5566f;
+}
+
+.rail .rail-spenden .i {
+  stroke: #ff8fa3;
+}
+
+.rail .rail-spenden:hover .i,
+.rail .rail-spenden:focus-visible .i {
+  fill: #ff8fa3;
+}
+
+.msg-spenden {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.msg-spenden a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

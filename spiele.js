@@ -305,6 +305,7 @@ async function starten(spiel) {
       if (info.wertung === "zeit" && gewonnen) rangErgebnis(zeit);
       zeigeBest(spiel);
       // Hotte-Dollar für Runden in den anderen Spielen (nicht im Casino selbst)
+      unterstuetzenHinweis();
       // neuer Highscore: +50 H$ (nicht im Casino; zählt nur mit echtem Ergebnis)
       if (info.kat !== "casino" && neu && (punkte > 0 || zeit > 0)) {
         const plus = belohne(HD_HIGHSCORE);
@@ -393,6 +394,28 @@ function zeigeKontostand() {
   const el = document.getElementById("hd-stand");
   if (el) el.textContent = hdFmt(hdStand());
   if (karte("casino-shop")) zeigeBest("casino-shop");
+}
+
+// Nach jeder Runde: kleiner Unterstützen-Hinweis im Ergebnis-Fenster (nur wenn ein PayPal-Link eingetragen ist)
+function unterstuetzenHinweis() {
+  const link = document.querySelector(".fuss-spenden")?.href;
+  if (!link) return;
+  const msg = document.getElementById("stage-msg");
+  // manche Spiele zeigen ihr Ergebnis-Fenster erst etwas später: warten, bis es da ist (höchstens 3 s)
+  const einfuegen = () => {
+    if (msg.hidden || msg.querySelector(".msg-spenden")) return false;
+    msg.insertAdjacentHTML("beforeend", `<p class="msg-spenden"><a href="${link}" target="_blank" rel="noopener">♥ Spaß gehabt? Unterstütz das Projekt</a></p>`);
+    msg.querySelector(".msg-spenden a").addEventListener("click", (e) => e.stopPropagation());
+    return true;
+  };
+  const beobachter = new MutationObserver(() => {
+    if (einfuegen()) beobachter.disconnect();
+  });
+  beobachter.observe(msg, { attributes: true, attributeFilter: ["hidden"], childList: true });
+  setTimeout(() => {
+    if (einfuegen()) beobachter.disconnect();
+  }, 0);
+  setTimeout(() => beobachter.disconnect(), 3000);
 }
 
 // ---------- Klassen-Bestenliste ----------
