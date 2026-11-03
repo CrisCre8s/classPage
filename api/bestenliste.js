@@ -14,6 +14,7 @@
 //  4. Namen: 2–16 Zeichen, nur Buchstaben, Ziffern, Leerzeichen, Punkt, Binde- und Unterstrich,
 //     keine Links, keine Beleidigungen. Pro Name zählt nur der beste Wert.
 //  5. Wer trotzdem Unsinn einträgt, wird über die Admin-Löschung entfernt.
+import { createHash } from "node:crypto";
 import { redis, redisPipeline, speicherDa } from "./_verlauf.js";
 
 const MARKE_SEK = 3 * 3600;
@@ -29,6 +30,9 @@ const PUNKTE = {
   schlagzeug: { minSek: 10, proSek: 4000, basis: 0, max: 2000000 },
   bloecke: { minSek: 5, proSek: 3000, basis: 0, max: 5000000 },
   flatter: { minSek: 1, proSek: 2, basis: 2, max: 5000 },
+  pfand: { minSek: 3, proSek: 25, basis: 50, max: 200000 },
+  // Weite in Dezimetern, ein Schlag dauert ein paar Sekunden
+  ente: { minSek: 3, proSek: 400, basis: 0, max: 30000 },
   invasion: { minSek: 3, proSek: 120, basis: 100, max: 1000000 },
   bubble: { minSek: 5, proSek: 400, basis: 1500, max: 2000000 },
   // Lernspiele mit fester Zeit: die Runde läuft immer bis zum Ende
@@ -48,7 +52,7 @@ const ZEIT = {
   sudoku: { leicht: 60, mittel: 90, schwer: 120 },
 };
 // Spiele ohne Schwierigkeitsgrade landen unter „alle“
-const OHNE_STUFEN = new Set(["schlagzeug", "flatter"]);
+const OHNE_STUFEN = new Set(["schlagzeug", "flatter", "ente"]);
 // Abzeichen aus dem Casino-Shop (nur Schmuck vor dem Namen, gleiche Kürzel wie games/preise.js)
 const ABZEICHEN = new Set(["zocker", "stern", "diamant", "koenig"]);
 
@@ -68,7 +72,12 @@ function pruefeName(roh) {
   return { name, schluessel: name.toLowerCase() };
 }
 
-const ipVon = (req) => String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unbekannt").split(",")[0].trim();
+// IP nur als gesalzener Hash speichern (für die Begrenzung reicht das, die IP selbst lässt sich daraus nicht zurückrechnen)
+const SALZ = process.env.BESTENLISTE_SALZ || process.env.KV_REST_API_TOKEN || "classpage";
+const ipVon = (req) => {
+  const ip = String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unbekannt").split(",")[0].trim();
+  return createHash("sha256").update(`${SALZ}:${ip}`).digest("hex").slice(0, 20);
+};
 const istZeit = (spiel) => Boolean(ZEIT[spiel]);
 const bekannt = (spiel) => Boolean(PUNKTE[spiel] || ZEIT[spiel]);
 const listeKey = (spiel, stufe) => `bl:liste:${spiel}:${stufe}`;

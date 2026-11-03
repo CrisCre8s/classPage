@@ -4815,3 +4815,203 @@ table.casino-plan td {
     animation-duration: 0.01s !important;
   }
 }
+
+/* ===== Impressum, Datenschutz und Fußzeile ===== */
+.recht-seite {
+  min-height: 100vh;
+  background: var(--ground);
+}
+
+.recht {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.recht h1 {
+  margin: 18px 0 8px;
+  font-size: 32px;
+  color: var(--text);
+}
+
+.recht h2 {
+  margin: 30px 0 8px;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.recht a {
+  color: var(--accent);
+}
+
+.recht ul {
+  padding-left: 20px;
+}
+
+.recht-klein {
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.recht-hinweis {
+  padding: 12px 14px;
+  color: #1a1407;
+  background: var(--accent);
+  border-radius: var(--radius);
+}
+
+.recht-fuss {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.recht-zurueck {
+  display: inline-block;
+}
+
+.fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  margin: 40px 0 24px;
+  padding-top: 18px;
+  font-size: 13px;
+  color: var(--faint);
+  border-top: 1px solid var(--rule);
+}
+
+.fuss a {
+  color: var(--muted);
+}
+
+.fuss a:hover,
+.fuss a:focus-visible {
+  color: var(--text);
+}
+
+.fuss .fuss-spenden {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  color: #1a1407;
+  background: var(--accent);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.fuss .fuss-spenden:hover,
+.fuss .fuss-spenden:focus-visible {
+  color: #1a1407;
+  filter: brightness(1.08);
+}
+
+@media (max-width: 640px) {
+  /* Platz über der unteren Navigationsleiste */
+  .fuss {
+    margin-bottom: 90px;
+  }
+}
+
+/* Casino: Fortschritt bis zur nächsten Spielzeit-Belohnung */
+.casino-zeit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.casino-zeit b {
+  color: var(--text);
+}
+
+.casino-balken {
+  flex: 1 1 120px;
+  max-width: 220px;
+  height: 6px;
+  overflow: hidden;
+  background: var(--raised);
+  border-radius: 3px;
+}
+
+.casino-balken span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.hd-toast {
+  white-space: nowrap;
+}
+
+/* Seltene Hotte-Dollar-Münze in den Spielen */
+.hd-muenze {
+  position: absolute;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  font: 700 13px/1 var(--mono);
+  color: #5a3d00;
+  background: radial-gradient(circle at 35% 30%, #fff6d0, #f5d97a 45%, #c99a2e);
+  border: 3px solid #fff1b8;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(245, 217, 122, 0.25), 0 0 24px rgba(245, 217, 122, 0.7);
+  cursor: pointer;
+  touch-action: manipulation;
+  transform: translate(-50%, -50%);
+  animation: hd-muenze-rein 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both, hd-muenze-schweben 1.2s ease-in-out 0.4s infinite alternate;
+}
+
+.hd-muenze span {
+  display: inline-block;
+  animation: hd-muenze-drehen 1.6s linear infinite;
+}
+
+.hd-muenze:hover,
+.hd-muenze:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 5px rgba(245, 217, 122, 0.45), 0 0 34px rgba(245, 217, 122, 0.9);
+}
+
+.hd-muenze.verschwindet {
+  animation: hd-muenze-weg 0.4s ease-in forwards;
+}
+
+.hd-muenze.gesammelt {
+  pointer-events: none;
+  animation: hd-muenze-gesammelt 0.5s ease-out forwards;
+}
+
+@keyframes hd-muenze-rein {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+}
+
+@keyframes hd-muenze-schweben {
+  to { transform: translate(-50%, calc(-50% - 8px)); }
+}
+
+@keyframes hd-muenze-drehen {
+  0%, 100% { display: inline-block; transform: scaleX(1); }
+  50% { transform: scaleX(0.2); }
+}
+
+@keyframes hd-muenze-weg {
+  to { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+}
+
+@keyframes hd-muenze-gesammelt {
+  to { opacity: 0; transform: translate(-50%, -140%) scale(1.5); }
+}

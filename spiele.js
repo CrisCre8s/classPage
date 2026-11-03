@@ -2,7 +2,7 @@ import "./style.css";
 import { initShell, onPower } from "./shell.js";
 import { passeCanvas, zeichneVorschau } from "./games/vorschau.js";
 import { KATALOG, KATEGORIEN, NACH_ID } from "./games/katalog.js";
-import { verdienAusSpiel, stand as hdStand, fmt as hdFmt, beiAenderung as hdAenderung } from "./games/casino-konto.js";
+import { belohne, limitErreicht as hdLimit, MUENZE as HD_MUENZE, HIGHSCORE as HD_HIGHSCORE, stand as hdStand, fmt as hdFmt, beiAenderung as hdAenderung } from "./games/casino-konto.js";
 import { ABZEICHEN, stil as preisStil } from "./games/preise.js";
 
 // Spiele werden erst geladen, wenn man sie startet (der Hub bleibt schnell)
@@ -28,6 +28,8 @@ const LADER = {
   bubble: () => import("./games/bubble.js"),
   sudoku: () => import("./games/sudoku.js"),
   ttt: () => import("./games/ttt.js"),
+  pfand: () => import("./games/pfand.js"),
+  ente: () => import("./games/ente.js"),
   automat: () => import("./games/casino.js").then((m) => m.fuer("automat")),
   gluecksrad: () => import("./games/casino.js").then((m) => m.fuer("gluecksrad")),
   blackjack: () => import("./games/casino.js").then((m) => m.fuer("blackjack")),
@@ -126,6 +128,14 @@ function stufeVon(spiel) {
   return karte(spiel)?.querySelector('[aria-checked="true"]')?.dataset.level || "mittel";
 }
 
+// Punkte in der Einheit des Spiels anzeigen (Pfand in Cent → Euro, Weite in Dezimetern → Meter)
+function punkteText(spiel, p) {
+  const e = NACH_ID[spiel].einheit;
+  if (e === "cent") return `${(p / 100).toFixed(2).replace(".", ",")} €`;
+  if (e === "dm") return `${(p / 10).toFixed(1).replace(".", ",")} m`;
+  return String(p);
+}
+
 function zeigeBest(spiel) {
   const k = karte(spiel);
   if (NACH_ID[spiel].ohneWertung) {
@@ -137,7 +147,7 @@ function zeigeBest(spiel) {
   const w = NACH_ID[spiel].wertung;
   const best = lese(bestKey(spiel, stufe), w === "zeit" ? null : 0);
   const label = w === "siege" ? "Siege" : w === "zeit" ? "Bestzeit" : "Highscore";
-  const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : best;
+  const wert = w === "zeit" ? (best == null ? "–" : formatZeit(best)) : w === "punkte" ? punkteText(spiel, best) : best;
   const wo = mitStufen(spiel) ? STUFEN[stufe] : NACH_ID[spiel].bestText || "";
   k.querySelector(".best").innerHTML = `<span>${label}${wo ? ` (${wo})` : ""}</span><span class="num">${wert}</span>`;
   zeigeLetzte(spiel);
@@ -180,11 +190,11 @@ function zeigeLetzte(spiel) {
     `<span class="letzte-label">Letzte ${LETZTE_ANZAHL}</span><ol class="letzte-liste">` +
     liste
       .map((e) => {
-        const text = w === "punkte" ? e.p : w === "zeit" ? (e.g ? formatZeit(e.z) : "✗") : e.g ? "✓" : "✗";
+        const text = w === "punkte" ? punkteText(spiel, e.p) : w === "zeit" ? (e.g ? formatZeit(e.z) : "✗") : e.g ? "✓" : "✗";
         const art = w === "punkte" ? "" : e.g ? " sieg" : " niederlage";
         const top = e === bester && liste.length > 1 && (w === "punkte" ? e.p > 0 : e.g) ? " top" : "";
         const stufe = mitStufen(spiel) && STUFEN[e.s] ? `${STUFEN[e.s]}, ` : "";
-        const was = w === "punkte" ? `${e.p} Punkte` : w === "zeit" ? (e.g ? `geschafft in ${formatZeit(e.z)}` : "verloren") : e.g ? "gewonnen" : "verloren";
+        const was = w === "punkte" ? (NACH_ID[spiel].einheit ? punkteText(spiel, e.p) : `${e.p} Punkte`) : w === "zeit" ? (e.g ? `geschafft in ${formatZeit(e.z)}` : "verloren") : e.g ? "gewonnen" : "verloren";
         return `<li class="num${art}${top}" title="${was} · ${stufe}${wann(e.t)}">${text}</li>`;
       })
       .join("") +
@@ -226,6 +236,7 @@ function einpassen() {
 function beenden() {
   laufendes?.inst?.stop();
   laufendes = null;
+  muenzenAus();
   document.getElementById("stage").hidden = true;
   document.getElementById("games").hidden = false;
   document.body.classList.remove("game-on");
@@ -294,25 +305,87 @@ async function starten(spiel) {
       if (info.wertung === "zeit" && gewonnen) rangErgebnis(zeit);
       zeigeBest(spiel);
       // Hotte-Dollar für Runden in den anderen Spielen (nicht im Casino selbst)
-      if (info.kat !== "casino") {
-        const plus = verdienAusSpiel({ gewonnen, neu, punkte, wertung: info.wertung });
-        if (plus) dollarToast(plus);
+      // neuer Highscore: +50 H$ (nicht im Casino; zählt nur mit echtem Ergebnis)
+      if (info.kat !== "casino" && neu && (punkte > 0 || zeit > 0)) {
+        const plus = belohne(HD_HIGHSCORE);
+        if (plus) dollarToast(plus, "neuer Highscore");
       }
       return neu;
     },
   });
   laufendes = { spiel, stufe, inst };
+  if (info.kat === "klassiker") muenzenAn();
   rangStart(spiel, stufe);
   einpassen();
   if (!modul.DOM) canvas.focus({ preventScroll: true });
 }
 
 // ---------- Hotte-Dollar: Einblendung und Kontostand ----------
-function dollarToast(plus) {
+// Seltene Münze im Spiel: taucht nur auf, während wirklich gespielt wird (Spiel offen, Tab sichtbar,
+// kein Start-/Pause-/Ende-Fenster), alle 45 bis 120 Sekunden Spielzeit, und bleibt 7 Sekunden.
+// Antippen oder anklicken = +10 H$. Gilt für alle Spiele außer Lernspielen und Casino.
+let muenzUhr = 0;
+let muenzSek = 0;
+let muenzNaechste = 0;
+let muenzEl = null;
+const naechsteMuenze = () => 45 + Math.random() * 75;
+function muenzenAn() {
+  muenzenAus();
+  muenzSek = 0;
+  muenzNaechste = naechsteMuenze();
+  muenzUhr = setInterval(() => {
+    const spielt = document.visibilityState === "visible" && !document.getElementById("stage").hidden && document.getElementById("stage-msg").hidden;
+    if (!spielt || muenzEl || hdLimit()) return;
+    if (++muenzSek >= muenzNaechste) {
+      muenzSek = 0;
+      muenzNaechste = naechsteMuenze();
+      zeigeMuenze();
+    }
+  }, 1000);
+}
+function muenzenAus() {
+  clearInterval(muenzUhr);
+  muenzUhr = 0;
+  muenzEl?.remove();
+  muenzEl = null;
+}
+function zeigeMuenze() {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "hd-muenze";
+  b.setAttribute("aria-label", `Münze einsammeln: ${HD_MUENZE} Hotte-Dollar`);
+  b.innerHTML = `<span>H$</span>`;
+  b.style.left = `${8 + Math.random() * 78}%`;
+  b.style.top = `${12 + Math.random() * 62}%`;
+  const weg = setTimeout(() => {
+    b.classList.add("verschwindet");
+    setTimeout(() => b.remove(), 400);
+    if (muenzEl === b) muenzEl = null;
+  }, 7000);
+  const sammeln = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (b.dataset.weg) return;
+    b.dataset.weg = "1";
+    clearTimeout(weg);
+    const plus = belohne(HD_MUENZE);
+    b.classList.add("gesammelt");
+    setTimeout(() => b.remove(), 500);
+    muenzEl = null;
+    if (plus) dollarToast(plus, "Münze");
+  };
+  // pointerdown statt click: reagiert sofort und erreicht das Spiel darunter nicht
+  b.addEventListener("pointerdown", sammeln);
+  b.addEventListener("click", (e) => e.stopPropagation());
+  document.getElementById("stage-body").appendChild(b);
+  muenzEl = b;
+}
+
+function dollarToast(plus, grund = "") {
   const t = document.createElement("div");
   t.className = "hd-toast";
   t.setAttribute("role", "status");
-  t.textContent = `+${plus} H$`;
+  t.textContent = `+${plus} H$${grund ? ` · ${grund}` : ""}`;
   document.getElementById("stage-body").appendChild(t);
   setTimeout(() => t.remove(), 2600);
 }
@@ -330,7 +403,7 @@ const RANG_NAME = "spiele:rang:name";
 let rang = null;
 const rangEl = () => document.getElementById("stage-rang");
 const rangStufe = (spiel, stufe) => (NACH_ID[spiel].stufen === false ? "alle" : stufe);
-const rangWert = (spiel, wert) => (NACH_ID[spiel].wertung === "zeit" ? `${formatZeit(wert)} min` : `${Number(wert).toLocaleString("de-DE")} Pkt`);
+const rangWert = (spiel, wert) => (NACH_ID[spiel].wertung === "zeit" ? `${formatZeit(wert)} min` : NACH_ID[spiel].einheit ? punkteText(spiel, wert) : `${Number(wert).toLocaleString("de-DE")} Pkt`);
 
 async function holeMarke(spiel, stufe) {
   try {

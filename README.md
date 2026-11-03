@@ -162,7 +162,7 @@ Siege, Highscores bzw. Bestzeiten speichert jeder Browser für sich (localStorag
 Eigene Kategorie mit fünf Karten: Spielautomat (`games/casino-automat.js`), Glücksrad (`casino-rad.js`), Blackjack (`casino-blackjack.js`), Roulette (`casino-roulette.js`) und Preis-Shop. Gemeinsamer Rahmen mit Kontostand und Tagesbonus in `games/casino.js` (`fuer(id)`), Highscore je Spiel = größter Gewinn in einer Runde. Gespielt wird mit **Hotte-Dollar (H$)**, reinem Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar, gespeichert im Browser (`games/casino-konto.js`, Schlüssel `casino:konto-v1`).
 
 - Startguthaben 500 H$, Tagesbonus 200 H$, Notgroschen 50 H$ pro Stunde, wenn man pleite ist
-- Dollar aus den anderen Spielen: +5 pro Runde, +20 bei Sieg/geschafft, +30 bei neuem Bestwert, höchstens 300 H$ pro Tag
+- Dollar aus den anderen Spielen: In allen Klassikern (nicht in Lernspielen und nicht im Casino) taucht selten eine Münze auf (alle 45 bis 120 Sekunden echter Spielzeit, 7 Sekunden sichtbar), antippen = +10 H$. Ein neuer Highscore bringt +50 H$. Zusammen höchstens 400 H$ pro Tag.
 - Auszahlungsquoten (nachgerechnet): Automat ca. 96,8 %, Glücksrad 97,5 %, Roulette 97,3 %, Blackjack ca. 99 % bei guter Spielweise. Auf Dauer gewinnt also die Bank, das steht auch im Spiel.
 - Shop (`games/preise.js`): Snake-Skins, Block-Stapler-Farben, Ping-Pong-Bälle mit Leuchtspur und Abzeichen für die Klassen-Bestenliste. Die Spiele lesen ihren Stil über `gewaehlt(kategorie)`.
 - Wer mitten in einer Runde den Tab wechselt oder das Casino verlässt, bekommt die Runde trotzdem ausgewertet.

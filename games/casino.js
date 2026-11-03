@@ -52,6 +52,7 @@ function start({ dom, status, nachricht, ergebnis, id }) {
       <div class="casino-kopf">
         <div class="casino-stand"><span class="casino-label">Kontostand</span><b class="num" data-stand></b></div>
         <div class="casino-bonus-platz"></div>
+        <p class="casino-zeit" data-zeit></p>
         <p class="casino-spielgeld">Spielgeld · nicht kaufbar · nicht in echtes Geld tauschbar</p>
       </div>
       <div class="casino-inhalt"></div>
@@ -65,6 +66,9 @@ function start({ dom, status, nachricht, ergebnis, id }) {
     const st = K.stand();
     el("[data-stand]").textContent = K.fmt(st);
     status(`${K.fmt(st)} · heute aus Spielen ${K.heuteVerdient()}/${K.SPIELE_PRO_TAG} H$`);
+    // wie viel heute schon aus den Spielen kam (Münzen + Highscores)
+    const v = K.heuteVerdient();
+    el("[data-zeit]").innerHTML = `Heute aus den Spielen: <b class="num">${v} / ${K.SPIELE_PRO_TAG} H$</b> · Münze ${K.MUENZE} H$, neuer Highscore ${K.HIGHSCORE} H$<span class="casino-balken"><span style="width:${(v / K.SPIELE_PRO_TAG) * 100}%"></span></span>`;
     const platz = el(".casino-bonus-platz");
     if (K.bonusDa()) platz.innerHTML = `<button type="button" class="btn casino-bonus" data-bonus>Tagesbonus abholen +${K.TAGESBONUS} H$</button>`;
     else {

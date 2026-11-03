@@ -5,13 +5,17 @@
 //  - Startguthaben 500 H$
 //  - Tagesbonus 200 H$ (einmal pro Kalendertag)
 //  - Notgroschen 50 H$, wenn man pleite ist (höchstens einmal pro Stunde)
-//  - gute Runden in den anderen Spielen (siehe verdienAusSpiel), höchstens 300 H$ pro Tag
+//  - in den Spielen (außer Lernspielen und Casino) taucht ab und zu eine Münze auf: antippen = +10 H$
+//  - neuer Highscore in einem Spiel: +50 H$
+//  - aus den Spielen zusammen höchstens 400 H$ pro Tag (siehe belohne)
 
 const KEY = "casino:konto-v1";
 export const START = 500;
 export const TAGESBONUS = 200;
 export const NOTGROSCHEN = 50;
-export const SPIELE_PRO_TAG = 300;
+export const SPIELE_PRO_TAG = 400;
+export const MUENZE = 10;
+export const HIGHSCORE = 50;
 const EVENT = "hotte-dollar";
 
 const heute = () => {
@@ -95,25 +99,21 @@ export function holeNotgroschen() {
   });
 }
 
-// Dollar für Runden in den anderen Spielen: +5 pro Runde, +20 bei Sieg/geschafft, +30 bei neuem Bestwert
-export function verdienAusSpiel({ gewonnen, neu, punkte, wertung }) {
-  let plus = 5;
-  if ((wertung === "siege" || wertung === "zeit") && gewonnen) plus += 20;
-  if (wertung === "punkte" && !(punkte > 0)) plus = 0;
-  if (neu) plus += 30;
-  if (!plus) return 0;
+// Dollar aus den Spielen (eingesammelte Münze oder neuer Highscore), zusammen höchstens 400 H$ pro Tag.
+// Rückgabe: wirklich gutgeschriebener Betrag (0, wenn das Tageslimit erreicht ist)
+export function belohne(betrag) {
   return aendereKonto((k) => {
     if (k.verdientTag !== heute()) {
       k.verdientTag = heute();
       k.verdient = 0;
     }
-    const rest = Math.max(0, SPIELE_PRO_TAG - k.verdient);
-    const p = Math.min(plus, rest);
+    const p = Math.max(0, Math.min(betrag, SPIELE_PRO_TAG - k.verdient));
     k.verdient += p;
     k.stand += p;
     return p;
   });
 }
+export const limitErreicht = () => heuteVerdient() >= SPIELE_PRO_TAG;
 export function heuteVerdient() {
   const k = lade();
   return k.verdientTag === heute() ? k.verdient : 0;
