@@ -524,4 +524,61 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.lineTo(ox + 3 * z - 6, oy + 3 * z - 6);
     ctx.stroke();
   }
+  if (spiel === "casino") {
+    // Spielautomat mit drei Walzen, Hebel und Münzen
+    const g = ctx.createLinearGradient(0, 0, 0, 120);
+    g.addColorStop(0, "#2a1f4a");
+    g.addColorStop(1, "#14111f");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 240, 120);
+    ctx.fillStyle = "#8a1f45";
+    ctx.beginPath();
+    ctx.roundRect(58, 10, 118, 100, 10);
+    ctx.fill();
+    ctx.fillStyle = gelb;
+    ctx.beginPath();
+    ctx.roundRect(66, 16, 102, 16, 4);
+    ctx.fill();
+    ctx.fillStyle = "#3a0f22";
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("HOTTE-O-MAT", 117, 25);
+    ctx.fillStyle = "#f2f2f3";
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.roundRect(68 + i * 33, 40, 29, 40, 4);
+      ctx.fill();
+    }
+    ctx.font = "20px sans-serif";
+    ["🔥", "🔥", "🔥"].forEach((z, i) => ctx.fillText(z, 82.5 + i * 33, 61));
+    ctx.fillStyle = "#e5566f";
+    ctx.fillRect(66, 59, 102, 2);
+    ctx.fillStyle = "#3a0f22";
+    ctx.beginPath();
+    ctx.roundRect(80, 88, 74, 14, 4);
+    ctx.fill();
+    // Hebel
+    ctx.strokeStyle = "#c9cbd4";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(176, 64);
+    ctx.lineTo(192, 64);
+    ctx.lineTo(192, 30);
+    ctx.stroke();
+    ctx.fillStyle = "#e5566f";
+    ctx.beginPath();
+    ctx.arc(192, 26, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // Münzen
+    for (const [x, y] of [[30, 92], [40, 100], [22, 104], [210, 98], [200, 106]]) {
+      ctx.fillStyle = gelb;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 9, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#c99a2e";
+      ctx.fillRect(x - 4, y - 0.75, 8, 1.5);
+    }
+  }
 }

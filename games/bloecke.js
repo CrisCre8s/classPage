@@ -1,4 +1,5 @@
 // Block-Stapler: fallende Steine zu vollen Reihen stapeln. Mit Vorschau, Halten, Geisterstein, Drehen mit Wandsprung.
+import { gewaehlt, BLOECKE } from "./preise.js";
 // (Spielprinzip der bekannten Fallblock-Spiele, eigene Umsetzung und eigener Name)
 
 export const HILFE = "← → schieben · ↑ oder X drehen, Z andersrum · ↓ schneller · Leertaste ganz runter · C halten · P Pause · Handy: tippen dreht, wischen schiebt, nach unten wischen lässt fallen";
@@ -11,7 +12,8 @@ const H = 500;
 const BX = 20; // Brett links
 const BY = 10;
 
-const FARBEN = { I: "#7fb8ff", O: "#f5d97a", T: "#b48ef0", S: "#5fc39c", Z: "#e5566f", J: "#6a8cff", L: "#f0a35e" };
+// Farben kommen aus dem Shop (Standard: klassisch)
+let FARBEN = BLOECKE.standard.farben;
 // Steine in 4 Drehlagen (Raster 4 × 4 bzw. 3 × 3), Drehsystem wie im Standard (SRS)
 const FORMEN = {
   I: [[[0, 1], [1, 1], [2, 1], [3, 1]], [[2, 0], [2, 1], [2, 2], [2, 3]], [[0, 2], [1, 2], [2, 2], [3, 2]], [[1, 0], [1, 1], [1, 2], [1, 3]]],
@@ -31,6 +33,7 @@ const STARTLEVEL = { leicht: 1, mittel: 4, schwer: 8 };
 const PUNKTE_REIHEN = [0, 100, 300, 500, 800];
 
 export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis }) {
+  FARBEN = gewaehlt("bloecke").farben;
   const ctx = passeCanvas(canvas, W, H);
   let skala = 1;
   function passeAufloesung() {
