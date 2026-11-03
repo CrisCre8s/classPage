@@ -146,7 +146,7 @@ Jede Karte hat „So geht's“ zum Aufklappen: Erklärungen, Beispiele und Tabel
 - **Subnetz-Sprint** (`games/subnetz.js`): Netz, Broadcast, Maske, Hosts berechnen
 - **Befehl gesucht** (`games/befehle.js`): Aufgabe + System (Linux, Windows CMD/PowerShell, Git, Docker), den Befehl selbst eintippen; aufdeckbarer Hinweis kostet die halben Punkte
 - **Port-Quiz** (`games/ports.js`): Standard-Ports und Dienste
-- **C#-Code** (`games/csharp.js`): Datentypen, Variablen, Konstruktoren, `static`, Properties (`get; set;`), oft mit Code-Ausschnitt
+- **C#-Code** (`games/csharp.js`): Datentypen, Variablen, Konstruktoren, `static`, Properties (`get; set;`), Unterprogramme mit `return`, Signatur, Überladung, Standardparameter, oft mit Code-Ausschnitt; bei einem Fehler hält die Zeit an, bis man auf „Weiter“ tippt
 - **OSI-Sortierer** (`games/osi.js`): Protokolle, Geräte und Dateneinheiten auf die richtige Schicht ziehen (oder Taste 1–7)
 - **SQL-Sprint** (`games/sql.js`, kleine SQL-Engine im Browser in `games/sql-engine.js`): Abfrage schreiben, die Seite führt sie aus und vergleicht das Ergebnis (SELECT, WHERE, JOIN, GROUP BY, HAVING, ORDER BY, LIMIT, Aggregatfunktionen)
 - **Logikgatter-Puzzle** (`games/gatter.js`): AND, OR, XOR in eine Schaltung setzen (mit NOT), bis die Wahrheitstabelle passt

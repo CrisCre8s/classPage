@@ -3727,3 +3727,37 @@ body.game-on .stage-help {
   border-radius: 1px;
   background: var(--accent);
 }
+
+/* Quiz: Zeit angehalten, weiter mit Knopf */
+.quiz-weiter-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.quiz-pause {
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.quiz-pause::before {
+  content: "⏸ ";
+}
+
+.quiz-taste-hinweis {
+  margin-left: 6px;
+  padding: 1px 5px;
+  font-size: 11px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+@media (pointer: coarse) {
+  .quiz-taste-hinweis {
+    display: none;
+  }
+}

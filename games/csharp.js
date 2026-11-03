@@ -1,9 +1,11 @@
 // C#-Code: kleine Code-Stücke lesen und verstehen. Was gibt der Code aus, welche Zeile ist richtig,
-// was bedeutet static, wie schreibt man eine Property? Passend zur LK (Konstruktor, static, get; set;).
+// was bedeutet static, wie schreibt man eine Property? Passend zur LK (Konstruktor, static, get; set;,
+// Unterprogramme, Überladung, Standardparameter; Merksätze: Rückgabewert gehört nicht zur Signatur,
+// return gibt einen Wert zurück und beendet die Methode).
 import { quizSpiel, esc } from "./quiz-ui.js";
 
 export const DOM = true;
-export const HILFE = "Antwort antippen oder Taste 1–4 · 120 Sekunden · falsche Antworten werden erklärt";
+export const HILFE = "Antwort antippen oder Taste 1–4 · 120 Sekunden · bei Fehlern hält die Zeit an, mit „Weiter“ oder Enter geht's zur nächsten Frage";
 
 const code = (zeilen) => `<pre class="quiz-code">${esc(zeilen.join("\n"))}</pre>`;
 // { s: Stufe 1–3, t: Thema, f: Frage, c: Code (Zeilen), o: Optionen (erste = richtig), e: Erklärung }
@@ -49,6 +51,31 @@ export const FRAGEN = [
   { s: 3, t: "Property", f: "Welche Property kann man nach dem Erzeugen des Objekts nicht mehr ändern?", o: ["public string Id { get; init; }", "public string Id { get; set; }", "public static string Id { get; set; }", "public string Id;"], e: "init erlaubt das Setzen nur beim Erzeugen (z. B. new X { Id = \"1\" })." },
   { s: 3, t: "Property", f: "Was gibt der Code aus?", c: ["class Rechteck", "{", "    public int B { get; set; }", "    public int H { get; set; }", "    public int Flaeche => B * H;", "}", "", "var r = new Rechteck { B = 3, H = 4 };", "r.B = 5;", "Console.WriteLine(r.Flaeche);"], o: ["20", "12", "0", "Fehler"], e: "Flaeche wird bei jedem Lesen neu berechnet: 5 · 4 = 20." },
 
+  // ---------- Unterprogramme (Methoden) und return ----------
+  { s: 1, t: "Unterprogramme", f: "Warum schreibt man Unterprogramme (Methoden)?", o: ["Damit Code wiederverwendbar und übersichtlich wird", "Damit das Programm schneller kompiliert", "Weil C# sonst nicht startet", "Damit alle Variablen global werden"], e: "Ein Unterprogramm fasst Code unter einem Namen zusammen. Man schreibt ihn einmal und ruft ihn beliebig oft auf." },
+  { s: 1, t: "Unterprogramme", f: "Was gibt der Code aus?", c: ["static int Quadrat(int x)", "{", "    return x * x;", "}", "", "Console.WriteLine(Quadrat(4));"], o: ["16", "8", "4", "Fehler"], e: "Quadrat(4) rechnet 4 · 4 und gibt 16 mit return zurück." },
+  { s: 1, t: "Unterprogramme", f: "Welcher Teil ist hier der Rückgabetyp?", c: ["static double Mittelwert(int a, int b)"], o: ["double", "static", "Mittelwert", "int a, int b"], e: "Der Rückgabetyp steht direkt vor dem Methodennamen. In den Klammern stehen die Parameter." },
+  { s: 1, t: "return", f: "Was macht return in einer Methode?", o: ["Es gibt einen Wert zurück und beendet die Methode", "Es gibt einen Wert auf der Konsole aus, die Methode läuft weiter", "Es startet die Methode von vorn", "Es beendet das ganze Programm"], e: "Merksatz: return gibt einen Wert zurück und beendet die Funktion sofort." },
+  { s: 2, t: "return", f: "Was gibt der Code aus?", c: ["static string Test()", "{", "    return \"A\";", "    Console.WriteLine(\"B\");", "}", "", "Console.WriteLine(Test());"], o: ["A", "AB", "BA", "B"], e: "Nach return ist die Methode zu Ende. Die Zeile mit B wird nie erreicht (der Compiler warnt: unerreichbarer Code)." },
+  { s: 2, t: "return", f: "Was gibt der Code aus?", c: ["static int Pruefe(int x)", "{", "    if (x < 0) return -1;", "    return 1;", "}", "", "Console.WriteLine(Pruefe(-5));"], o: ["-1", "1", "-11", "Fehler"], e: "Bei x = -5 greift das erste return. Die Methode endet sofort, das zweite return wird nicht mehr erreicht." },
+  { s: 2, t: "return", f: "Welche Methode kompiliert NICHT?", o: ["static int Zahl() { }", "static void Hallo() { }", "static int Eins() { return 1; }", "static void Nix() { return; }"], e: "Wer int als Rückgabetyp angibt, muss auf jedem Weg einen int mit return liefern. Bei void darf return ohne Wert stehen und beendet nur die Methode." },
+
+  // ---------- Signatur und Überladung ----------
+  { s: 2, t: "Signatur", f: "Was gehört zur Signatur einer Methode?", o: ["Der Name und die Parameterliste (Anzahl, Typen, Reihenfolge)", "Der Name und der Rückgabetyp", "Nur der Rückgabetyp", "Der Code im Methodenrumpf"], e: "Merksatz: Der Rückgabewert gehört nicht zur Signatur. Sie besteht aus dem Namen und den Parametertypen." },
+  { s: 2, t: "Signatur", f: "Kompiliert diese Klasse?", c: ["class Mathe", "{", "    static int Teile(int a, int b) => a / b;", "    static double Teile(int a, int b) => (double)a / b;", "}"], o: ["Nein: gleiche Signatur, nur der Rückgabetyp ist anders", "Ja, wegen der verschiedenen Rückgabetypen", "Ja, aber nur die zweite Methode wird benutzt", "Nein, weil => hier nicht erlaubt ist"], e: "Der Rückgabetyp gehört nicht zur Signatur. Beide Methoden heißen Teile(int, int), das ist doppelt." },
+  { s: 1, t: "Überladung", f: "Was bedeutet Überladung (Overloading)?", o: ["Mehrere Methoden mit gleichem Namen, aber unterschiedlichen Parametern", "Eine Methode ruft sich selbst auf", "Eine Methode der Basisklasse wird mit override ersetzt", "Eine Methode hat zu viele Zeilen"], e: "Überladene Methoden teilen den Namen und unterscheiden sich in Anzahl, Typ oder Reihenfolge der Parameter." },
+  { s: 2, t: "Überladung", f: "Was gibt der Code aus?", c: ["static void Zeige(int x) => Console.Write(\"int \");", "static void Zeige(double x) => Console.Write(\"double \");", "static void Zeige(string x) => Console.Write(\"string \");", "", "Zeige(5); Zeige(5.0); Zeige(\"5\");"], o: ["int double string", "int int int", "double double string", "Fehler"], e: "C# wählt die Überladung, deren Parametertyp zum Argument passt: 5 ist int, 5.0 ist double, \"5\" ist string." },
+  { s: 2, t: "Überladung", f: "Es gibt schon static int Summe(int a, int b). Welche weitere Methode ist NICHT erlaubt?", o: ["static long Summe(int x, int y)", "static int Summe(int a, int b, int c)", "static double Summe(double a, double b)", "static int Summe(int[] zahlen)"], e: "Andere Parameternamen oder ein anderer Rückgabetyp reichen nicht. Es bleibt Summe(int, int)." },
+  { s: 3, t: "Überladung", f: "Was gibt der Code aus?", c: ["static int Mal(int a, int b) => a * b;", "static int Mal(int a, int b, int c) => a * b * c;", "", "Console.WriteLine(Mal(2, 3) + Mal(1, 2, 3));"], o: ["12", "6", "11", "Fehler"], e: "Mal(2, 3) nimmt die Version mit 2 Parametern (6), Mal(1, 2, 3) die mit 3 (6). Zusammen 12." },
+  { s: 3, t: "Überladung", f: "Was gibt der Code aus?", c: ["static void F(long x) => Console.Write(\"long\");", "static void F(double x) => Console.Write(\"double\");", "", "F(3);"], o: ["long", "double", "Fehler: mehrdeutig", "nichts"], e: "3 ist ein int. Eine F(int) gibt es nicht, also nimmt C# die bessere Umwandlung: int → long passt genauer als int → double." },
+
+  // ---------- Standardparameter ----------
+  { s: 1, t: "Standardparameter", f: "Was gibt der Code aus?", c: ["static void Gruss(string name = \"Gast\")", "{", "    Console.WriteLine($\"Hallo {name}\");", "}", "", "Gruss();"], o: ["Hallo Gast", "Hallo ", "Fehler: Parameter fehlt", "Hallo name"], e: "Lässt man das Argument weg, wird der Standardwert \"Gast\" eingesetzt." },
+  { s: 2, t: "Standardparameter", f: "Was gibt der Code aus?", c: ["static int Plus(int a, int b = 10) => a + b;", "", "Console.WriteLine(Plus(5) + Plus(5, 1));"], o: ["21", "16", "30", "Fehler"], e: "Plus(5) nimmt b = 10 (15), Plus(5, 1) überschreibt den Standardwert (6). 15 + 6 = 21." },
+  { s: 2, t: "Standardparameter", f: "Welche Methode kompiliert NICHT?", o: ["static void F(int a = 1, int b)", "static void F(int a, int b = 2)", "static void F(int a = 1, int b = 2)", "static void F(int a)"], e: "Parameter mit Standardwert müssen hinter allen Pflichtparametern stehen." },
+  { s: 3, t: "Standardparameter", f: "Was gibt der Code aus?", c: ["static string Box(string t, int breite = 5, char z = '*')", "    => t.PadLeft(breite, z);", "", "Console.WriteLine(Box(\"ab\", z: '-'));"], o: ["---ab", "***ab", "ab---", "Fehler"], e: "Mit dem benannten Argument z: überspringt man breite (bleibt 5). \"ab\" wird links mit - auf 5 Zeichen aufgefüllt." },
+  { s: 3, t: "Standardparameter", f: "Welcher Standardwert ist erlaubt?", o: ["int x = 3 * 4", "DateTime d = DateTime.Now", "int[] a = new int[3]", "string s = Console.ReadLine()"], e: "Standardwerte müssen schon beim Kompilieren feststehen (Konstanten). 3 * 4 ist ein konstanter Ausdruck." },
+
   // ---------- Objekte und Referenzen ----------
   { s: 2, t: "Objekte", f: "Was gibt der Code aus?", c: ["class P { public int X; }", "", "P a = new P();", "P b = a;", "b.X = 9;", "Console.WriteLine(a.X);"], o: ["9", "0", "Fehler", "null"], e: "a und b zeigen auf dasselbe Objekt (Referenztyp)." },
   { s: 2, t: "Zugriff", f: "Was bedeutet private bei einem Feld?", o: ["Nur Code in derselben Klasse darf darauf zugreifen", "Jeder darf darauf zugreifen", "Nur abgeleitete Klassen dürfen zugreifen", "Das Feld ist statisch"], e: "private schützt das Feld vor Zugriffen von außen (Kapselung)." },
@@ -78,8 +105,9 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     nachricht,
     ergebnis,
     titel: "C#-Code",
-    intro: `${pool.length} Fragen zu Variablen, Konstruktoren, static und Properties. Lies den Code genau.`,
+    intro: `${pool.length} Fragen zu Variablen, Konstruktoren, static, Properties, Methoden mit return, Überladung und Standardparametern. Lies den Code genau. Bei einem Fehler hält die Zeit an, bis du auf „Weiter“ tippst.`,
     sekunden: 120,
+    weiterKnopf: true,
     punkteJe: S.punkte,
     naechste() {
       if (!stapel.length) stapel = mische([...pool]);
