@@ -1562,6 +1562,8 @@ body.power-off .rail {
 
 .lern-panel {
   grid-column: 1 / -1;
+  /* sonst macht ein langer Codeblock das ganze Panel breiter als den Bildschirm */
+  min-width: 0;
   padding: 28px;
   border: 1px solid var(--pill-pos-ink);
   border-radius: var(--radius);
@@ -1594,7 +1596,8 @@ body.power-off .rail {
 }
 
 .lh {
-  columns: 3 300px;
+  /* Spalten erst ab genug Breite, sonst wird Code zu eng */
+  columns: 3 360px;
   column-gap: 28px;
 }
 
@@ -2011,7 +2014,7 @@ body.game-on .stage-help {
     font-size: 15px;
   }
   .page-title { font-size: 22px; }
-  .games-grid { grid-template-columns: 1fr; }
+  .games-grid { grid-template-columns: minmax(0, 1fr); }
   .lern-panel { padding: 18px 14px; }
   .lern-head h3 { font-size: 20px; }
   .lh { columns: 1; }
@@ -3759,5 +3762,107 @@ body.game-on .stage-help {
 @media (pointer: coarse) {
   .quiz-taste-hinweis {
     display: none;
+  }
+}
+
+/* „So geht's“ am Handy: mehr Platz, Code bricht um statt seitlich zu scrollen */
+@media (max-width: 640px) {
+  .lern-panel {
+    padding: 16px 12px;
+  }
+  .lern-head {
+    margin-bottom: 16px;
+  }
+  .lern-head h3 {
+    font-size: 20px;
+  }
+  .lh-block {
+    padding: 14px 12px;
+  }
+  .lh-bsp {
+    padding: 10px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .lh-tab {
+    font-size: 13px;
+  }
+  .lh-tab th,
+  .lh-tab td {
+    padding-left: 6px;
+    padding-right: 6px;
+    hyphens: auto;
+  }
+  /* breite Text-Tabellen als gestapelte Karten: Zeile = Karte, Spaltenname klein davor */
+  .lh-stapel,
+  .lh-stapel tbody,
+  .lh-stapel tr,
+  .lh-stapel td {
+    display: block;
+    width: 100%;
+  }
+  .lh-stapel thead {
+    display: none;
+  }
+  .lh-stapel tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--raised-edge);
+  }
+  .lh-stapel tr:last-child {
+    border-bottom: 0;
+  }
+  .lh-stapel td {
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+  .lh-stapel td:first-child {
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  .lh-stapel td + td {
+    margin-top: 4px;
+  }
+  /* OSI: Nr., Schicht und Einheit in eine Zeile, Beispiele darunter */
+  .lh-osi tr {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    column-gap: 10px;
+    align-items: baseline;
+  }
+  .lh-osi td:nth-child(2) {
+    margin: 0;
+    font-weight: 600;
+  }
+  .lh-osi td:nth-child(3) {
+    margin: 0;
+    font-size: 12px;
+    color: var(--faint);
+  }
+  .lh-osi td:nth-child(4) {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    color: var(--muted);
+  }
+  .lh-osi td:nth-child(4)::before {
+    content: "Beispiele: ";
+    color: var(--faint);
+  }
+  .lh-text td + td {
+    color: var(--muted);
+  }
+}
+
+/* Memory-Liste: lange Begriffe dürfen getrennt werden */
+.lh-text td.num {
+  white-space: normal;
+  hyphens: auto;
+}
+
+@media (max-width: 400px) {
+  .lh-tab-mini {
+    font-size: 12px;
   }
 }
