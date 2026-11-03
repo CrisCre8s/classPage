@@ -66,10 +66,9 @@ function start({ dom, status, nachricht, ergebnis, id }) {
     const st = K.stand();
     el("[data-stand]").textContent = K.fmt(st);
     status(`${K.fmt(st)} · heute aus Spielen ${K.heuteVerdient()}/${K.SPIELE_PRO_TAG} H$`);
-    // Fortschritt bis zur nächsten Spielzeit-Belohnung
-    const fs = K.spielzeitFortschritt();
-    const mmss = (x) => `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, "0")}`;
-    el("[data-zeit]").innerHTML = `Spielzeit in den anderen Spielen: <b class="num">${mmss(fs)} / ${mmss(K.SPIELZEIT_BLOCK)}</b> bis +${K.SPIELZEIT_LOHN} H$<span class="casino-balken"><span style="width:${(fs / K.SPIELZEIT_BLOCK) * 100}%"></span></span>`;
+    // wie viel heute schon aus den Spielen kam (Münzen + Highscores)
+    const v = K.heuteVerdient();
+    el("[data-zeit]").innerHTML = `Heute aus den Spielen: <b class="num">${v} / ${K.SPIELE_PRO_TAG} H$</b> · Münze ${K.MUENZE} H$, neuer Highscore ${K.HIGHSCORE} H$<span class="casino-balken"><span style="width:${(v / K.SPIELE_PRO_TAG) * 100}%"></span></span>`;
     const platz = el(".casino-bonus-platz");
     if (K.bonusDa()) platz.innerHTML = `<button type="button" class="btn casino-bonus" data-bonus>Tagesbonus abholen +${K.TAGESBONUS} H$</button>`;
     else {

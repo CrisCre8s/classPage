@@ -2,7 +2,7 @@ import "./style.css";
 import { initShell, onPower } from "./shell.js";
 import { passeCanvas, zeichneVorschau } from "./games/vorschau.js";
 import { KATALOG, KATEGORIEN, NACH_ID } from "./games/katalog.js";
-import { verdienAusSpiel, stand as hdStand, fmt as hdFmt, beiAenderung as hdAenderung } from "./games/casino-konto.js";
+import { belohne, limitErreicht as hdLimit, MUENZE as HD_MUENZE, HIGHSCORE as HD_HIGHSCORE, stand as hdStand, fmt as hdFmt, beiAenderung as hdAenderung } from "./games/casino-konto.js";
 import { ABZEICHEN, stil as preisStil } from "./games/preise.js";
 
 // Spiele werden erst geladen, wenn man sie startet (der Hub bleibt schnell)
@@ -236,6 +236,7 @@ function einpassen() {
 function beenden() {
   laufendes?.inst?.stop();
   laufendes = null;
+  muenzenAus();
   document.getElementById("stage").hidden = true;
   document.getElementById("games").hidden = false;
   document.body.classList.remove("game-on");
@@ -304,26 +305,82 @@ async function starten(spiel) {
       if (info.wertung === "zeit" && gewonnen) rangErgebnis(zeit);
       zeigeBest(spiel);
       // Hotte-Dollar für Runden in den anderen Spielen (nicht im Casino selbst)
-      if (info.kat !== "casino") {
-        // Spielzeit dieser Runde: seit dem Start oder seit dem letzten Ergebnis
-        const jetzt = performance.now();
-        const dauerSek = (jetzt - rundeSeit) / 1000;
-        rundeSeit = jetzt;
-        const { plus, grund } = verdienAusSpiel({ neu, dauerSek });
-        if (plus) dollarToast(plus, grund);
+      // neuer Highscore: +50 H$ (nicht im Casino; zählt nur mit echtem Ergebnis)
+      if (info.kat !== "casino" && neu && (punkte > 0 || zeit > 0)) {
+        const plus = belohne(HD_HIGHSCORE);
+        if (plus) dollarToast(plus, "neuer Highscore");
       }
       return neu;
     },
   });
   laufendes = { spiel, stufe, inst };
-  rundeSeit = performance.now();
+  if (info.kat === "klassiker") muenzenAn();
   rangStart(spiel, stufe);
   einpassen();
   if (!modul.DOM) canvas.focus({ preventScroll: true });
 }
 
 // ---------- Hotte-Dollar: Einblendung und Kontostand ----------
-let rundeSeit = 0; // Beginn der aktuellen Runde (für die Spielzeit-Belohnung)
+// Seltene Münze im Spiel: taucht nur auf, während wirklich gespielt wird (Spiel offen, Tab sichtbar,
+// kein Start-/Pause-/Ende-Fenster), alle 45 bis 120 Sekunden Spielzeit, und bleibt 7 Sekunden.
+// Antippen oder anklicken = +10 H$. Gilt für alle Spiele außer Lernspielen und Casino.
+let muenzUhr = 0;
+let muenzSek = 0;
+let muenzNaechste = 0;
+let muenzEl = null;
+const naechsteMuenze = () => 45 + Math.random() * 75;
+function muenzenAn() {
+  muenzenAus();
+  muenzSek = 0;
+  muenzNaechste = naechsteMuenze();
+  muenzUhr = setInterval(() => {
+    const spielt = document.visibilityState === "visible" && !document.getElementById("stage").hidden && document.getElementById("stage-msg").hidden;
+    if (!spielt || muenzEl || hdLimit()) return;
+    if (++muenzSek >= muenzNaechste) {
+      muenzSek = 0;
+      muenzNaechste = naechsteMuenze();
+      zeigeMuenze();
+    }
+  }, 1000);
+}
+function muenzenAus() {
+  clearInterval(muenzUhr);
+  muenzUhr = 0;
+  muenzEl?.remove();
+  muenzEl = null;
+}
+function zeigeMuenze() {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "hd-muenze";
+  b.setAttribute("aria-label", `Münze einsammeln: ${HD_MUENZE} Hotte-Dollar`);
+  b.innerHTML = `<span>H$</span>`;
+  b.style.left = `${8 + Math.random() * 78}%`;
+  b.style.top = `${12 + Math.random() * 62}%`;
+  const weg = setTimeout(() => {
+    b.classList.add("verschwindet");
+    setTimeout(() => b.remove(), 400);
+    if (muenzEl === b) muenzEl = null;
+  }, 7000);
+  const sammeln = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (b.dataset.weg) return;
+    b.dataset.weg = "1";
+    clearTimeout(weg);
+    const plus = belohne(HD_MUENZE);
+    b.classList.add("gesammelt");
+    setTimeout(() => b.remove(), 500);
+    muenzEl = null;
+    if (plus) dollarToast(plus, "Münze");
+  };
+  // pointerdown statt click: reagiert sofort und erreicht das Spiel darunter nicht
+  b.addEventListener("pointerdown", sammeln);
+  b.addEventListener("click", (e) => e.stopPropagation());
+  document.getElementById("stage-body").appendChild(b);
+  muenzEl = b;
+}
+
 function dollarToast(plus, grund = "") {
   const t = document.createElement("div");
   t.className = "hd-toast";

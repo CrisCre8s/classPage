@@ -5,20 +5,17 @@
 //  - Startguthaben 500 H$
 //  - Tagesbonus 200 H$ (einmal pro Kalendertag)
 //  - Notgroschen 50 H$, wenn man pleite ist (höchstens einmal pro Stunde)
-//  - Spielzeit in den anderen Spielen: alle 5 Minuten 60 H$, dazu Bonus für einen neuen Bestwert
-//    in einer Runde ab 1 Minute (siehe verdienAusSpiel), höchstens 400 H$ pro Tag.
-//    Kurze Runden allein bringen nichts, man muss erst eine Weile spielen.
+//  - in den Spielen (außer Lernspielen und Casino) taucht ab und zu eine Münze auf: antippen = +10 H$
+//  - neuer Highscore in einem Spiel: +50 H$
+//  - aus den Spielen zusammen höchstens 400 H$ pro Tag (siehe belohne)
 
 const KEY = "casino:konto-v1";
 export const START = 500;
 export const TAGESBONUS = 200;
 export const NOTGROSCHEN = 50;
 export const SPIELE_PRO_TAG = 400;
-export const SPIELZEIT_BLOCK = 300; // Sekunden Spielzeit für eine Belohnung
-export const SPIELZEIT_LOHN = 60;
-const BESTWERT_BONUS = 40;
-const BESTWERT_MIN_SEK = 60; // ein Bestwert zählt erst, wenn die Runde mindestens so lange gedauert hat
-const MAX_RUNDE_SEK = 600; // eine Runde zählt höchstens 10 Minuten (falls jemand das Spiel offen lässt)
+export const MUENZE = 10;
+export const HIGHSCORE = 50;
 const EVENT = "hotte-dollar";
 
 const heute = () => {
@@ -102,37 +99,21 @@ export function holeNotgroschen() {
   });
 }
 
-// Dollar aus den anderen Spielen: Spielzeit wird gesammelt, alle 5 Minuten gibt es 60 H$.
-// Ein neuer Bestwert in einer Runde von mindestens 1 Minute bringt zusätzlich 40 H$.
-// Rückgabe: { plus, grund }
-export function verdienAusSpiel({ neu, dauerSek }) {
-  const dauer = Math.max(0, Math.min(MAX_RUNDE_SEK, dauerSek || 0));
+// Dollar aus den Spielen (eingesammelte Münze oder neuer Highscore), zusammen höchstens 400 H$ pro Tag.
+// Rückgabe: wirklich gutgeschriebener Betrag (0, wenn das Tageslimit erreicht ist)
+export function belohne(betrag) {
   return aendereKonto((k) => {
     if (k.verdientTag !== heute()) {
       k.verdientTag = heute();
       k.verdient = 0;
     }
-    k.spielSek = (k.spielSek || 0) + dauer;
-    let plus = 0;
-    const gruende = [];
-    while (k.spielSek >= SPIELZEIT_BLOCK) {
-      k.spielSek -= SPIELZEIT_BLOCK;
-      plus += SPIELZEIT_LOHN;
-      if (!gruende.length) gruende.push(`${SPIELZEIT_BLOCK / 60} Min. gespielt`);
-    }
-    if (neu && dauer >= BESTWERT_MIN_SEK) {
-      plus += BESTWERT_BONUS;
-      gruende.push("neuer Bestwert");
-    }
-    const rest = Math.max(0, SPIELE_PRO_TAG - k.verdient);
-    const p = Math.min(plus, rest);
+    const p = Math.max(0, Math.min(betrag, SPIELE_PRO_TAG - k.verdient));
     k.verdient += p;
     k.stand += p;
-    return { plus: p, grund: gruende.join(" + ") };
+    return p;
   });
 }
-// Spielzeit seit der letzten Belohnung (Sekunden)
-export const spielzeitFortschritt = () => Math.min(SPIELZEIT_BLOCK, lade().spielSek || 0);
+export const limitErreicht = () => heuteVerdient() >= SPIELE_PRO_TAG;
 export function heuteVerdient() {
   const k = lade();
   return k.verdientTag === heute() ? k.verdient : 0;
