@@ -134,7 +134,7 @@ export function baue(ziel, api) {
           ergebnisEl.textContent = "Niete. Nochmal?";
           ergebnisEl.className = "rad-ergebnis nichts";
         }
-        api.runde();
+        api.runde(gewinn - e);
         dreht = false;
         los.disabled = false;
         einsatz.sperre(false);
@@ -159,7 +159,7 @@ export function baue(ziel, api) {
         // Tab gewechselt, während das Rad dreht: Ergebnis trotzdem auszahlen
         const g = Math.round(offen.e * offen.m);
         if (g) api.gutschrift(g);
-        api.runde();
+        api.runde(g - offen.e);
       }
       window.removeEventListener("keydown", onKey);
       einsatz.aus();

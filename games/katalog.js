@@ -5,7 +5,7 @@
 export const KATEGORIEN = [
   { id: "lernen", name: "Lernen", text: "Prüfungsstoff für Fachinformatiker. Unter „So geht's“ steht erst alles zum Nachlesen, dann wird gespielt." },
   { id: "klassiker", name: "Klassiker", text: "Gegen den Computer oder auf Highscore" },
-  { id: "casino", name: "Casino", text: "Mit Hotte-Dollar zocken und gegen Preise eintauschen. Reines Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar." },
+  { id: "casino", name: "Casino", text: "Mit Hotte-Dollar zocken und im Preis-Shop eintauschen. Reines Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar. Dein Guthaben und deine Preise bleiben in diesem Browser gespeichert." },
 ];
 
 export const KATALOG = [
@@ -47,9 +47,17 @@ export const KATALOG = [
   { id: "sql", kat: "lernen", name: "SQL-Sprint", kurz: "Abfrage schreiben, Seite prüft", text: "Eine kleine Datenbank mit Kunden, Bestellungen und Mitarbeitern. Du schreibst die SELECT-Abfrage, die Seite führt sie aus und vergleicht das Ergebnis. 6 Aufgaben pro Runde.", tasten: "Tastatur · Strg+Enter: ausführen", wertung: "punkte" },
   { id: "gatter", kat: "lernen", name: "Logikgatter-Puzzle", kurz: "AND, OR, XOR, NOT richtig setzen", text: "Setz die passenden Gatter in die Schaltung, bis am Ausgang für jede Eingabe das Richtige herauskommt. Die Wahrheitstabelle zeigt live, was noch fehlt. 120 Sekunden.", tasten: "Gatter antippen zum Wechseln", wertung: "punkte" },
   { id: "memory", kat: "lernen", name: "Fachbegriff-Memory", kurz: "Begriff und Erklärung finden", text: "Deck Begriffspaare auf: „RAID 1“ gehört zu „Spiegelung“, „DHCP“ zu „IP automatisch vergeben“. Je schneller, desto besser.", tasten: "Karten antippen", wertung: "zeit" },
-  { id: "casino", kat: "casino", name: "Hotte-Casino", kurz: "Automat, Glücksrad, Blackjack, Roulette", text: "Spielautomat, Glücksrad, Blackjack und Roulette mit Hotte-Dollar. Dollar gibt's als Startguthaben, Tagesbonus und für gute Runden in den anderen Spielen. Im Shop tauschst du sie gegen Snake-Skins, Block-Farben, Leucht-Bälle und Abzeichen für die Bestenliste.", tasten: "Antippen · Leertaste drehen · Blackjack: H, S, D", wertung: "punkte",
-    // ein Modus; als „Highscore“ zählt der höchste Kontostand
-    stufen: false, bestText: "höchster Kontostand" },
+  { id: "automat", kat: "casino", name: "Spielautomat", kurz: "3 Walzen, eine Gewinnlinie", text: "Der Hotte-O-Mat: drei Walzen mit Bugs, Kaffee, Disketten, Servern, Hotte-Flammen und der Sieben. Drei Siebenen zahlen das 250-Fache.", tasten: "Drehen antippen oder Leertaste", wertung: "punkte",
+    stufen: false, bestText: "größter Gewinn" },
+  { id: "gluecksrad", kat: "casino", name: "Glücksrad", kurz: "Drehen bis zu 10×", text: "Einmal drehen: 20 Felder von der Niete bis zum 10-fachen Einsatz. Wo der Zeiger stehen bleibt, wird ausgezahlt.", tasten: "Drehen antippen oder Leertaste", wertung: "punkte",
+    stufen: false, bestText: "größter Gewinn" },
+  { id: "blackjack", kat: "casino", name: "Blackjack", kurz: "Gegen die Bank auf 21", text: "Näher an 21 als die Bank, ohne drüber zu kommen. Blackjack zahlt 3:2, Verdoppeln auf die ersten zwei Karten.", tasten: "Antippen · H Karte · S Halten · D Verdoppeln", wertung: "punkte",
+    stufen: false, bestText: "größter Gewinn" },
+  { id: "roulette", kat: "casino", name: "Roulette", kurz: "Rot, Schwarz oder volle Zahl", text: "Europäisches Roulette mit einer Null. Chips auf Zahlen, Farben, Gerade/Ungerade, Hälften oder Dutzende setzen, dann rollt die Kugel.", tasten: "Felder antippen · Drehen", wertung: "punkte",
+    stufen: false, bestText: "größter Gewinn" },
+  { id: "casino-shop", kat: "casino", name: "Preis-Shop", kurz: "Hotte-Dollar eintauschen", text: "Tausch deine Hotte-Dollar gegen Snake-Skins, Block-Stapler-Farben, Ping-Pong-Bälle mit Leuchtspur und Abzeichen für die Klassen-Bestenliste.", tasten: "Antippen", wertung: "punkte",
+    // kein Spiel: keine Stufen, keine Ergebnisse
+    stufen: false, ohneWertung: true, knopf: "Öffnen" },
 ];
 
 export const NACH_ID = Object.fromEntries(KATALOG.map((s) => [s.id, s]));

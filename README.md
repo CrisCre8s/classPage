@@ -159,7 +159,7 @@ Siege, Highscores bzw. Bestzeiten speichert jeder Browser für sich (localStorag
 
 ### Hotte-Casino
 
-`games/casino.js` mit Spielautomat (`casino-automat.js`), Glücksrad (`casino-rad.js`), Blackjack (`casino-blackjack.js`) und Roulette (`casino-roulette.js`). Gespielt wird mit **Hotte-Dollar (H$)**, reinem Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar, gespeichert im Browser (`games/casino-konto.js`, Schlüssel `casino:konto-v1`).
+Eigene Kategorie mit fünf Karten: Spielautomat (`games/casino-automat.js`), Glücksrad (`casino-rad.js`), Blackjack (`casino-blackjack.js`), Roulette (`casino-roulette.js`) und Preis-Shop. Gemeinsamer Rahmen mit Kontostand und Tagesbonus in `games/casino.js` (`fuer(id)`), Highscore je Spiel = größter Gewinn in einer Runde. Gespielt wird mit **Hotte-Dollar (H$)**, reinem Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar, gespeichert im Browser (`games/casino-konto.js`, Schlüssel `casino:konto-v1`).
 
 - Startguthaben 500 H$, Tagesbonus 200 H$, Notgroschen 50 H$ pro Stunde, wenn man pleite ist
 - Dollar aus den anderen Spielen: +5 pro Runde, +20 bei Sieg/geschafft, +30 bei neuem Bestwert, höchstens 300 H$ pro Tag
