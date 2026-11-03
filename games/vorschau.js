@@ -524,7 +524,7 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.lineTo(ox + 3 * z - 6, oy + 3 * z - 6);
     ctx.stroke();
   }
-  if (spiel === "casino") {
+  if (spiel === "automat") {
     // Spielautomat mit drei Walzen, Hebel und Münzen
     const g = ctx.createLinearGradient(0, 0, 0, 120);
     g.addColorStop(0, "#2a1f4a");
@@ -580,5 +580,150 @@ export function zeichneVorschau(canvas, spiel) {
       ctx.fillStyle = "#c99a2e";
       ctx.fillRect(x - 4, y - 0.75, 8, 1.5);
     }
+  }
+  if (spiel === "gluecksrad") {
+    const farben = ["#2a2733", "#5fc39c", "#4a3c6e", "#6a8cff", "#2a2733", "#f0a35e", "#2a2733", "#4a3c6e", "#f5d97a", "#2a2733", "#5fc39c", "#4a3c6e"];
+    const cx = 120;
+    const cy = 64;
+    const r = 52;
+    farben.forEach((f, i) => {
+      const a = (i / farben.length) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a, a + (Math.PI * 2) / farben.length);
+      ctx.closePath();
+      ctx.fillStyle = f;
+      ctx.fill();
+      ctx.strokeStyle = "#0f0e13";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    ctx.strokeStyle = "#3a3550";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#16141c";
+    ctx.beginPath();
+    ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = gelb;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#e5566f";
+    ctx.beginPath();
+    ctx.moveTo(cx - 7, 4);
+    ctx.lineTo(cx + 7, 4);
+    ctx.lineTo(cx, 18);
+    ctx.fill();
+    ctx.fillStyle = gelb;
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("10×", 196, 64);
+    ctx.fillText("2×", 40, 40);
+  }
+  if (spiel === "blackjack") {
+    ctx.fillStyle = "#1f6b4a";
+    ctx.beginPath();
+    ctx.roundRect(10, 6, 220, 108, 14);
+    ctx.fill();
+    const karte = (x, y, w, f, rot, dreh) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(dreh);
+      ctx.fillStyle = "#fbfaf7";
+      ctx.beginPath();
+      ctx.roundRect(-18, -26, 36, 52, 4);
+      ctx.fill();
+      ctx.fillStyle = rot ? "#c6354e" : "#18161e";
+      ctx.font = "600 11px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText(w, -14, -22);
+      ctx.font = "18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(f, 0, 3);
+      ctx.restore();
+    };
+    karte(96, 64, "A", "♠", false, -0.15);
+    karte(130, 62, "K", "♥", true, 0.12);
+    ctx.fillStyle = gelb;
+    ctx.font = '12px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.fillText("21", 190, 62);
+    for (const [x, y] of [[40, 90], [48, 84], [36, 80]]) {
+      ctx.fillStyle = "#e5566f";
+      ctx.beginPath();
+      ctx.ellipse(x, y, 10, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  if (spiel === "roulette") {
+    const reihe = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+    const rotSet = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+    const cx = 120;
+    const cy = 60;
+    const r = 52;
+    ctx.fillStyle = "#3a2a1a";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+    ctx.fill();
+    reihe.forEach((n, i) => {
+      const a = (i / reihe.length) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a, a + (Math.PI * 2) / reihe.length);
+      ctx.closePath();
+      ctx.fillStyle = n === 0 ? "#1f9c63" : rotSet.has(n) ? "#c6354e" : "#18161e";
+      ctx.fill();
+    });
+    ctx.fillStyle = "#6a4a2a";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.62, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#c9a227";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx - 18, cy);
+    ctx.lineTo(cx + 18, cy);
+    ctx.moveTo(cx, cy - 18);
+    ctx.lineTo(cx, cy + 18);
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(cx + 30, cy - 34, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (spiel === "casino-shop") {
+    // Regal mit Preisen: Snake-Skin, Block-Farben, Leuchtball, Krone
+    ctx.fillStyle = "#3a3550";
+    ctx.fillRect(14, 58, 212, 4);
+    ctx.fillRect(14, 104, 212, 4);
+    ["#f5d97a", "#e0b84a", "#f5d97a", "#e0b84a"].forEach((f, i) => {
+      ctx.fillStyle = f;
+      ctx.fillRect(24 + i * 11, 40, 10, 10);
+    });
+    ["#00e5ff", "#ffee00", "#d600ff", "#00ff88"].forEach((f, i) => {
+      ctx.fillStyle = f;
+      ctx.fillRect(84 + (i % 2) * 11, 30 + Math.floor(i / 2) * 11, 10, 10);
+    });
+    const g = ctx.createLinearGradient(130, 0, 180, 0);
+    g.addColorStop(0, "rgba(255,61,0,0)");
+    g.addColorStop(1, "#ff9100");
+    ctx.fillStyle = g;
+    ctx.fillRect(130, 42, 44, 6);
+    ctx.fillStyle = "#ffb347";
+    ctx.fillRect(174, 39, 12, 12);
+    ctx.font = "22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("👑", 60, 86);
+    ctx.fillText("💎", 120, 86);
+    ctx.fillText("🎰", 180, 86);
+    ctx.fillStyle = gelb;
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillText("H$", 210, 20);
   }
 }

@@ -1,18 +1,26 @@
 // Hotte-Casino: Spielautomat, Glücksrad, Blackjack und Roulette mit Hotte-Dollar (Spielgeld),
-// dazu ein Shop, in dem man die Dollar gegen Preise auf der Seite eintauscht.
+// dazu ein Preis-Shop, in dem man die Dollar gegen Extras auf der Seite eintauscht.
 import * as K from "./casino-konto.js";
 import { KATEGORIEN as SHOP_KAT, DATEN } from "./preise.js";
 
-export const DOM = true;
-export const HILFE = "Spielgeld: Hotte-Dollar kann man weder kaufen noch in echtes Geld tauschen · Dollar gibt's als Tagesbonus und für gute Runden in den anderen Spielen · Leertaste: drehen/ziehen";
+// Jedes Casino-Spiel ist ein eigener Eintrag im Katalog. Gemeinsam sind Kontostand, Tagesbonus und Hilfen.
+// Aufruf aus spiele.js: import("./games/casino.js").then((m) => m.fuer("automat"))
+export const SPIELE = {
+  automat: { laden: () => import("./casino-automat.js"), hilfe: "Einsatz wählen, dann Drehen (oder Leertaste) · 3 gleiche Symbole auf der roten Linie gewinnen, 🔥 bringt den Einsatz zurück" },
+  gluecksrad: { laden: () => import("./casino-rad.js"), hilfe: "Einsatz wählen, dann Drehen (oder Leertaste) · das Feld unter dem Zeiger gibt den Multiplikator" },
+  blackjack: { laden: () => import("./casino-blackjack.js"), hilfe: "Karten geben (Leertaste) · H = Karte, S = Halten, D = Verdoppeln · näher an 21 als die Bank, ohne drüber" },
+  roulette: { laden: () => import("./casino-roulette.js"), hilfe: "Chip-Wert wählen, Felder antippen (mehrmals = mehr Einsatz), dann Drehen · Zahl 35:1, Dutzend 2:1, Farbe 1:1" },
+  "casino-shop": { shop: true, hilfe: "Hotte-Dollar gegen Extras tauschen · gekaufte Sachen bleiben in diesem Browser gespeichert" },
+};
+export const IDS = Object.keys(SPIELE);
+const SPIELGELD = "Spielgeld: Hotte-Dollar kann man weder kaufen noch in echtes Geld tauschen";
 
-const TABS = [
-  { id: "automat", name: "Automat", laden: () => import("./casino-automat.js") },
-  { id: "rad", name: "Glücksrad", laden: () => import("./casino-rad.js") },
-  { id: "blackjack", name: "Blackjack", laden: () => import("./casino-blackjack.js") },
-  { id: "roulette", name: "Roulette", laden: () => import("./casino-roulette.js") },
-  { id: "shop", name: "Preise" },
-];
+// liefert ein Spiel-Modul (DOM, HILFE, start) für spiele.js
+export function fuer(id) {
+  const def = SPIELE[id];
+  return { DOM: true, HILFE: `${def.hilfe} · ${SPIELGELD}`, start: (opt) => start({ ...opt, id }) };
+}
+
 export const EINSAETZE = [10, 25, 50, 100, 250];
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
@@ -37,7 +45,8 @@ export function einsatzWahl(el, { beiWahl } = {}) {
   return { wert: () => letzterEinsatz, zeichne, aus, sperre: (an) => el.querySelectorAll("button").forEach((b) => (b.disabled = an || Number(b.dataset.e) > K.stand())) };
 }
 
-export function start({ dom, status, nachricht, ergebnis }) {
+function start({ dom, status, nachricht, ergebnis, id }) {
+  const def = SPIELE[id];
   dom.innerHTML = `
     <div class="casino">
       <div class="casino-kopf">
@@ -45,14 +54,12 @@ export function start({ dom, status, nachricht, ergebnis }) {
         <div class="casino-bonus-platz"></div>
         <p class="casino-spielgeld">Spielgeld · nicht kaufbar · nicht in echtes Geld tauschbar</p>
       </div>
-      <div class="casino-tabs" role="tablist" aria-label="Casino-Spiele">${TABS.map((t) => `<button type="button" role="tab" class="casino-tab" data-tab="${t.id}" aria-selected="false">${t.name}</button>`).join("")}</div>
-      <div class="casino-inhalt" role="tabpanel"></div>
+      <div class="casino-inhalt"></div>
     </div>`;
   const el = (s) => dom.querySelector(s);
   const inhalt = el(".casino-inhalt");
-  let aktiv = null;
   let laufend = null;
-  let anfrage = 0;
+  let aktiv = true;
 
   function zeigeStand() {
     const st = K.stand();
@@ -83,50 +90,33 @@ export function start({ dom, status, nachricht, ergebnis }) {
   const api = {
     ...K,
     einsatzWahl,
-    // nach jeder Runde: Rekord-Kontostand als Highscore merken
-    runde() {
-      ergebnis({ punkte: K.stand() });
+    // nach jeder Runde: Gewinn (Auszahlung minus Einsatz) melden; Highscore = größter Gewinn
+    runde(netto) {
+      ergebnis({ punkte: Math.max(0, Math.round(netto || 0)) });
     },
     // kurze Einblendung oben im Casino
     meldung(text, art = "") {
       const m = document.createElement("div");
       m.className = `casino-toast ${art}`;
       m.textContent = text;
-      el(".casino").appendChild(m);
+      el(".casino")?.appendChild(m);
       setTimeout(() => m.classList.add("weg"), 1800);
       setTimeout(() => m.remove(), 2300);
     },
   };
 
-  async function zeigeTab(id) {
-    if (aktiv === id) return;
-    aktiv = id;
-    laufend?.stop?.();
-    laufend = null;
-    dom.querySelectorAll(".casino-tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
-    inhalt.innerHTML = "";
-    const tab = TABS.find((t) => t.id === id);
-    if (id === "shop") {
-      laufend = shop(inhalt, api);
-      return;
-    }
-    const nr = ++anfrage;
-    const modul = await tab.laden();
-    if (nr !== anfrage) return;
-    laufend = modul.baue(inhalt, api);
-  }
-  el(".casino-tabs").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-tab]");
-    if (b) zeigeTab(b.dataset.tab);
-  });
-
   zeigeStand();
   nachricht(null);
-  zeigeTab("automat");
+  if (def.shop) laufend = shop(inhalt, api);
+  else
+    def.laden().then((modul) => {
+      if (aktiv) laufend = modul.baue(inhalt, api);
+    });
 
   return {
     pause() {},
     stop() {
+      aktiv = false;
       laufend?.stop?.();
       ausStand();
       clearInterval(uhr);

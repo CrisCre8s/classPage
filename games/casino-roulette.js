@@ -227,7 +227,7 @@ export function baue(ziel, api) {
     dreht = false;
     einsatz.sperre(false);
     zeigeEinsaetze();
-    api.runde();
+    api.runde(netto);
   }
   const onKey = (e) => {
     if (e.key === " " && !e.target.closest?.("input, textarea, select, button")) {

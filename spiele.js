@@ -28,7 +28,11 @@ const LADER = {
   bubble: () => import("./games/bubble.js"),
   sudoku: () => import("./games/sudoku.js"),
   ttt: () => import("./games/ttt.js"),
-  casino: () => import("./games/casino.js"),
+  automat: () => import("./games/casino.js").then((m) => m.fuer("automat")),
+  gluecksrad: () => import("./games/casino.js").then((m) => m.fuer("gluecksrad")),
+  blackjack: () => import("./games/casino.js").then((m) => m.fuer("blackjack")),
+  roulette: () => import("./games/casino.js").then((m) => m.fuer("roulette")),
+  "casino-shop": () => import("./games/casino.js").then((m) => m.fuer("casino-shop")),
   csharp: () => import("./games/csharp.js"),
   osi: () => import("./games/osi.js"),
   sql: () => import("./games/sql.js"),
@@ -85,10 +89,10 @@ function karteHtml(s) {
           <span class="seg-pill" aria-hidden="true"></span>
           ${stufenFuer(s).map(([id, l]) => `<button type="button" role="radio" aria-checked="${id === "mittel"}" data-level="${id}">${l}</button>`).join("")}
         </div>`}
-        <div class="letzte" aria-label="Letzte ${LETZTE_ANZAHL} Ergebnisse"></div>
+        ${s.ohneWertung ? "" : `<div class="letzte" aria-label="Letzte ${LETZTE_ANZAHL} Ergebnisse"></div>`}
         <div class="game-foot">
           <p class="best"></p>
-          <button class="btn play" type="button">Spielen</button>
+          <button class="btn play" type="button">${s.knopf || "Spielen"}</button>
         </div>
       </div>
     </section>`;
@@ -124,6 +128,11 @@ function stufeVon(spiel) {
 
 function zeigeBest(spiel) {
   const k = karte(spiel);
+  if (NACH_ID[spiel].ohneWertung) {
+    // Preis-Shop: statt Highscore den Kontostand zeigen
+    k.querySelector(".best").innerHTML = `<span>Dein Konto</span><span class="num">${hdFmt(hdStand())}</span>`;
+    return;
+  }
   const stufe = stufeVon(spiel);
   const w = NACH_ID[spiel].wertung;
   const best = lese(bestKey(spiel, stufe), w === "zeit" ? null : 0);
@@ -285,7 +294,7 @@ async function starten(spiel) {
       if (info.wertung === "zeit" && gewonnen) rangErgebnis(zeit);
       zeigeBest(spiel);
       // Hotte-Dollar für Runden in den anderen Spielen (nicht im Casino selbst)
-      if (spiel !== "casino") {
+      if (info.kat !== "casino") {
         const plus = verdienAusSpiel({ gewonnen, neu, punkte, wertung: info.wertung });
         if (plus) dollarToast(plus);
       }
@@ -310,6 +319,7 @@ function dollarToast(plus) {
 function zeigeKontostand() {
   const el = document.getElementById("hd-stand");
   if (el) el.textContent = hdFmt(hdStand());
+  if (karte("casino-shop")) zeigeBest("casino-shop");
 }
 
 // ---------- Klassen-Bestenliste ----------
@@ -339,7 +349,7 @@ function rangAus() {
 }
 function rangStart(spiel, stufe) {
   rangAus();
-  if (NACH_ID[spiel].wertung === "siege" || spiel === "casino") return;
+  if (NACH_ID[spiel].wertung === "siege" || NACH_ID[spiel].kat === "casino") return;
   const s = rangStufe(spiel, stufe);
   rang = { spiel, stufe: s, marke: holeMarke(spiel, s), offen: null, liste: [], meldung: "" };
   ladeRangliste(rang);

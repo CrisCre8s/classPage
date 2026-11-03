@@ -30,6 +30,10 @@ export function summe(hand) {
   return { s, weich: asse > 0 };
 }
 const istBlackjack = (h) => h.length === 2 && summe(h).s === 21;
+// Tempo der Auflösung (ms): Karte umdrehen, jede weitere Bankkarte, Spannung vor dem Ergebnis
+const UMDREHEN = 750;
+const BANK_KARTE = 1000;
+const SPANNUNG = 1400;
 
 export function baue(ziel, api) {
   ziel.innerHTML = `
@@ -68,7 +72,11 @@ export function baue(ziel, api) {
   let laeuft = false;
   let verdeckt = true;
   let fertigGewertet = true;
+  let ausstehend = null;
+  let sperrt = false; // zwischen Ende der Hand und Auflösung: kein neues Spiel // Auszahlung, die nach dem Spannungsmoment gutgeschrieben wird
   const timer = [];
+  const tisch = el(".bj-tisch");
+  const warte = (ms, fn) => timer.push(setTimeout(fn, ms));
 
   const ziehe = () => {
     if (schuh.length < 52) schuh = neuerSchuh();
@@ -78,23 +86,44 @@ export function baue(ziel, api) {
     zu
       ? `<span class="bj-karte zu" style="--i:${i}"></span>`
       : `<span class="bj-karte${k.f === "♥" || k.f === "♦" ? " rot" : ""}" style="--i:${i}"><b>${k.w}</b><i>${k.f}</i><b class="unten">${k.w}</b></span>`;
+  function zeichneHand(ziel_, hand, zuIndex) {
+    const kinder = ziel_.children;
+    if (kinder.length > hand.length) ziel_.innerHTML = "";
+    hand.forEach((k, i) => {
+      const zu = i === zuIndex;
+      const da = kinder[i];
+      if (!da) {
+        ziel_.insertAdjacentHTML("beforeend", karteHtml(k, kinder.length === 0 && i > 0 ? i : 0, zu));
+        return;
+      }
+      // verdeckte Karte wird umgedreht
+      if (da.classList.contains("zu") && !zu) {
+        da.outerHTML = karteHtml(k, 0).replace('class="bj-karte', 'class="bj-karte dreht');
+      }
+    });
+  }
   function zeichne() {
-    el("[data-du]").innerHTML = du.map((k, i) => karteHtml(k, i)).join("");
-    el("[data-bank]").innerHTML = bank.map((k, i) => karteHtml(k, i, verdeckt && i === 1)).join("");
+    zeichneHand(el("[data-du]"), du, -1);
+    zeichneHand(el("[data-bank]"), bank, verdeckt ? 1 : -1);
     el("[data-du-s]").textContent = du.length ? summe(du).s : "";
     el("[data-bank-s]").textContent = bank.length ? (verdeckt ? summe([bank[0]]).s : summe(bank).s) : "";
-    knopf("geben").hidden = laeuft;
+    knopf("geben").hidden = laeuft || sperrt;
     knopf("karte").hidden = !laeuft;
     knopf("halten").hidden = !laeuft;
     knopf("doppeln").hidden = !laeuft || du.length !== 2 || api.stand() < wette;
     einsatz.sperre(laeuft);
   }
   function geben() {
-    if (laeuft) return;
+    if (laeuft || sperrt) return;
     const e = einsatz.wert();
     if (!api.setze(e)) return api.meldung("Zu wenig Guthaben für diesen Einsatz.");
     wette = e;
     fertigGewertet = false;
+    ausstehend = null;
+    tisch.className = "bj-tisch";
+    tisch.querySelectorAll(".bj-muenze, .bj-stempel").forEach((x) => x.remove());
+    el("[data-du]").innerHTML = "";
+    el("[data-bank]").innerHTML = "";
     du = [ziehe(), ziehe()];
     bank = [ziehe(), ziehe()];
     verdeckt = true;
@@ -103,68 +132,122 @@ export function baue(ziel, api) {
     ergebnisEl.className = "bj-ergebnis";
     zeichne();
     // Blackjack sofort auswerten
-    if (istBlackjack(du) || istBlackjack(bank)) aufdecken(true);
+    if (istBlackjack(du) || istBlackjack(bank)) {
+      laeuft = false;
+      sperrt = true;
+      zeichne();
+      knopf("geben").hidden = true;
+      warte(700, () => aufdecken(true));
+    }
   }
   function karte() {
     if (!laeuft) return;
     du.push(ziehe());
     zeichne();
-    if (summe(du).s > 21) setTimeout(() => ende("Überkauft!", 0), 350);
-    else if (summe(du).s === 21) setTimeout(halten, 300);
+    if (summe(du).s > 21) {
+      laeuft = false;
+      sperrt = true;
+      zeichne();
+      warte(500, () => ende("Überkauft!", 0, "ueberkauft"));
+    } else if (summe(du).s === 21) {
+      laeuft = false;
+      sperrt = true;
+      zeichne();
+      warte(500, () => aufdecken(false));
+    }
   }
   function doppeln() {
     if (!laeuft || du.length !== 2 || !api.setze(wette)) return;
     wette *= 2;
     du.push(ziehe());
     zeichne();
-    if (summe(du).s > 21) setTimeout(() => ende("Überkauft!", 0), 350);
-    else setTimeout(halten, 450);
+    laeuft = false;
+    sperrt = true;
+    zeichne();
+    if (summe(du).s > 21) warte(500, () => ende("Überkauft!", 0, "ueberkauft"));
+    else warte(600, () => aufdecken(false));
   }
   function halten() {
     if (!laeuft) return;
     laeuft = false; // keine Eingaben mehr, Bank spielt
     aufdecken(false);
   }
-  // Bank deckt auf und zieht Karte für Karte
-  function aufdecken(sofort) {
+  // Bank deckt auf und zieht Karte für Karte, dann kommt der Vergleich
+  function aufdecken() {
     laeuft = false;
+    sperrt = true;
     verdeckt = false;
     zeichne();
     knopf("geben").hidden = true;
+    ergebnisEl.textContent = "Die Bank deckt auf …";
+    ergebnisEl.className = "bj-ergebnis";
     const bjDu = istBlackjack(du);
     const bjBank = istBlackjack(bank);
     if (bjDu || bjBank) {
-      if (bjDu && bjBank) return ende("Beide Blackjack: unentschieden", wette);
-      if (bjDu) return ende("Blackjack! 3:2", Math.round(wette * 2.5), true);
-      return ende("Bank hat Blackjack", 0);
+      if (bjDu && bjBank) return warte(UMDREHEN, () => ende("Beide Blackjack: unentschieden", wette, "push"));
+      if (bjDu) return warte(UMDREHEN, () => ende("Blackjack! 3:2", Math.round(wette * 2.5), "blackjack"));
+      return warte(UMDREHEN, () => ende("Bank hat Blackjack", 0, "verloren"));
     }
     const zug = () => {
       const b = summe(bank).s;
       if (b < 17) {
+        ergebnisEl.textContent = `Bank hat ${b}, sie muss ziehen …`;
         bank.push(ziehe());
         zeichne();
         knopf("geben").hidden = true;
-        timer.push(setTimeout(zug, 550));
+        warte(BANK_KARTE, zug);
         return;
       }
       const d = summe(du).s;
-      if (b > 21) ende("Bank überkauft, du gewinnst!", wette * 2, true);
-      else if (d > b) ende(`${d} schlägt ${b}: gewonnen!`, wette * 2, true);
-      else if (d === b) ende(`${d} gegen ${b}: unentschieden`, wette);
-      else ende(`${b} schlägt ${d}: die Bank gewinnt`, 0);
+      if (b > 21) ende("Bank überkauft, du gewinnst!", wette * 2, "gewinn");
+      else if (d > b) ende(`${d} schlägt ${b}: gewonnen!`, wette * 2, "gewinn");
+      else if (d === b) ende(`${d} gegen ${b}: unentschieden`, wette, "push");
+      else ende(`${b} schlägt ${d}: die Bank gewinnt`, 0, "verloren");
     };
-    timer.push(setTimeout(zug, sofort ? 0 : 450));
+    warte(UMDREHEN, zug);
   }
-  function ende(text, auszahlung, sieg = false) {
+  // Ergebnis: erst ein Spannungsmoment (Summen pulsieren), dann Auflösung mit Effekt
+  function ende(text, auszahlung, art) {
     fertigGewertet = true;
     laeuft = false;
     verdeckt = false;
-    if (auszahlung) api.gutschrift(auszahlung);
-    const netto = auszahlung - wette;
-    ergebnisEl.textContent = `${text}${netto > 0 ? ` +${api.fmt(netto)}` : netto < 0 ? ` −${api.fmt(-netto)}` : ""}`;
-    ergebnisEl.className = `bj-ergebnis ${sieg ? "gewinn" : netto === 0 ? "zurueck" : "nichts"}`;
+    ausstehend = auszahlung;
     zeichne();
-    api.runde();
+    knopf("geben").hidden = true;
+    einsatz.sperre(true);
+    const sofort = art === "ueberkauft";
+    if (!sofort) {
+      tisch.classList.add("spannung");
+      ergebnisEl.textContent = "…";
+      ergebnisEl.className = "bj-ergebnis spannung-text";
+    }
+    warte(sofort ? 0 : SPANNUNG, () => {
+      sperrt = false;
+      tisch.classList.remove("spannung");
+      if (ausstehend) api.gutschrift(ausstehend);
+      ausstehend = null;
+      const netto = auszahlung - wette;
+      ergebnisEl.textContent = `${text}${netto > 0 ? ` +${api.fmt(netto)}` : netto < 0 ? ` −${api.fmt(-netto)}` : ""}`;
+      ergebnisEl.className = `bj-ergebnis ${netto > 0 ? "gewinn" : netto === 0 ? "zurueck" : "nichts"}`;
+      effekt(art, netto);
+      zeichne();
+      api.runde(netto);
+    });
+  }
+  function effekt(art, netto) {
+    tisch.classList.add(`eff-${art}`);
+    if (art === "ueberkauft" || art === "verloren") {
+      tisch.insertAdjacentHTML("beforeend", `<span class="bj-stempel">${art === "ueberkauft" ? "ÜBERKAUFT" : "VERLOREN"}</span>`);
+    }
+    if (netto > 0) {
+      // Münzregen, bei Blackjack mehr
+      const n = art === "blackjack" ? 34 : 18;
+      tisch.insertAdjacentHTML(
+        "beforeend",
+        Array.from({ length: n }, () => `<span class="bj-muenze" style="left:${Math.random() * 100}%;--d:${(Math.random() - 0.5) * 120}px;animation-delay:${Math.random() * 0.5}s;animation-duration:${1.1 + Math.random() * 0.8}s"></span>`).join(""),
+      );
+      if (art === "blackjack") api.meldung(`BLACKJACK! +${api.fmt(netto)}`, "gewinn");
+    }
   }
   ziel.querySelector(".bj-knoepfe").addEventListener("click", (e) => {
     const a = e.target.closest("[data-a]")?.dataset.a;
@@ -188,6 +271,10 @@ export function baue(ziel, api) {
   return {
     stop() {
       timer.forEach(clearTimeout);
+      if (ausstehend) {
+        api.gutschrift(ausstehend);
+        ausstehend = null;
+      }
       // offene Hand: wie „Halten“, Bank zieht sofort fertig, dann auszahlen
       if (wette && !fertigGewertet) {
         if (summe(du).s <= 21 && !(istBlackjack(du) || istBlackjack(bank))) while (summe(bank).s < 17) bank.push(ziehe());
@@ -200,7 +287,7 @@ export function baue(ziel, api) {
         else if (b > 21 || d > b) aus = wette * 2;
         else if (d === b) aus = wette;
         if (aus) api.gutschrift(aus);
-        api.runde();
+        api.runde(aus - wette);
       }
       window.removeEventListener("keydown", onKey);
       einsatz.aus();

@@ -101,7 +101,7 @@ export function baue(ziel, api) {
       const gewinn = Math.round(e * r.faktor);
       if (still) {
         if (gewinn) api.gutschrift(gewinn);
-        api.runde();
+        api.runde(gewinn - e);
         return;
       }
       aktuell = neu;
@@ -125,7 +125,7 @@ export function baue(ziel, api) {
         ergebnisEl.textContent = "Leider nichts. Nochmal?";
         ergebnisEl.className = "automat-ergebnis nichts";
       }
-      api.runde();
+      api.runde(gewinn - e);
       dreht = false;
       los.disabled = false;
       einsatz.sperre(false);
