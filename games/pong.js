@@ -1,5 +1,7 @@
 // Ping-Pong gegen den Computer oder zu zweit an einem Gerät. Wer zuerst 7 Punkte hat, gewinnt.
 
+import { gewaehlt } from "./preise.js";
+
 export const HILFE = "Maus/Finger bewegen oder W/S bzw. ↑/↓ · Leertaste: Start/Pause · zu zweit: links W/S, rechts ↑/↓, am Handy jede Hälfte ein Finger";
 
 const W = 800;
@@ -24,6 +26,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   const spieler = { y: H / 2 - SCHLAEGER_H / 2, ziel: null };
   const cpu = { y: H / 2 - SCHLAEGER_H / 2, versatz: 0 };
   const ball = { x: W / 2, y: H / 2, vx: 0, vy: 0 };
+  // Ball-Stil aus dem Casino-Shop, mit Leuchtspur
+  const ballStil = gewaehlt("pong");
+  const spur = [];
   let punkte = [0, 0];
   let zustand = "bereit"; // bereit | laeuft | pause | punkt | ende
   let aufschlagNach = 1; // 1 = Richtung Computer
@@ -188,9 +193,23 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.fillRect(W - 36, Math.round(cpu.y), SCHLAEGER_B, SCHLAEGER_H);
 
     if (zustand === "laeuft" || zustand === "pause") {
-      ctx.fillStyle = "#f5d97a";
+      if (ballStil.spur) {
+        if (zustand === "laeuft") {
+          spur.push({ x: ball.x, y: ball.y });
+          if (spur.length > 14) spur.shift();
+        }
+        spur.forEach((p, i) => {
+          const k = (i + 1) / spur.length;
+          ctx.globalAlpha = k * 0.55;
+          ctx.fillStyle = ballStil.spur[Math.floor((1 - k) * ballStil.spur.length) % ballStil.spur.length];
+          const g = BALL * (0.35 + 0.65 * k);
+          ctx.fillRect(p.x + (BALL - g) / 2, p.y + (BALL - g) / 2, g, g);
+        });
+        ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = ballStil.ball;
       ctx.fillRect(Math.round(ball.x), Math.round(ball.y), BALL, BALL);
-    }
+    } else spur.length = 0;
   }
 
   function loop(t) {

@@ -157,6 +157,16 @@ Lader in `spiele.js` und eine Vorschau in `games/vorschau.js`.
 
 Siege, Highscores bzw. Bestzeiten speichert jeder Browser für sich (localStorage).
 
+### Hotte-Casino
+
+`games/casino.js` mit Spielautomat (`casino-automat.js`), Glücksrad (`casino-rad.js`), Blackjack (`casino-blackjack.js`) und Roulette (`casino-roulette.js`). Gespielt wird mit **Hotte-Dollar (H$)**, reinem Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar, gespeichert im Browser (`games/casino-konto.js`, Schlüssel `casino:konto-v1`).
+
+- Startguthaben 500 H$, Tagesbonus 200 H$, Notgroschen 50 H$ pro Stunde, wenn man pleite ist
+- Dollar aus den anderen Spielen: +5 pro Runde, +20 bei Sieg/geschafft, +30 bei neuem Bestwert, höchstens 300 H$ pro Tag
+- Auszahlungsquoten (nachgerechnet): Automat ca. 96,8 %, Glücksrad 97,5 %, Roulette 97,3 %, Blackjack ca. 99 % bei guter Spielweise. Auf Dauer gewinnt also die Bank, das steht auch im Spiel.
+- Shop (`games/preise.js`): Snake-Skins, Block-Stapler-Farben, Ping-Pong-Bälle mit Leuchtspur und Abzeichen für die Klassen-Bestenliste. Die Spiele lesen ihren Stil über `gewaehlt(kategorie)`.
+- Wer mitten in einer Runde den Tab wechselt oder das Casino verlässt, bekommt die Runde trotzdem ausgewertet.
+
 ### Klassen-Bestenliste
 
 Unter jedem Punkte- oder Zeit-Spiel steht die Top 10 der Klasse (je Stufe). Nach einer
@@ -170,6 +180,7 @@ Regeln gegen Fake-Einträge:
 - Das Ergebnis muss zur **Spieldauer** passen: Mindestdauer je Spiel, eine Obergrenze für Punkte pro Sekunde und insgesamt; Bestzeiten dürfen nicht schneller sein als machbar.
 - **Begrenzung:** pro Name 8 Einträge pro Stunde, pro IP 60 (die Klasse teilt sich im Schulnetz eine IP).
 - **Namen:** 2–16 Zeichen, nur Buchstaben, Ziffern, Leerzeichen, `.`, `-`, `_`; keine Links, keine Beleidigungen. Pro Name zählt nur der beste Wert.
+- **Abzeichen:** Wer im Casino ein Abzeichen gekauft und ausgewählt hat, schickt es beim Eintragen mit. Der Server nimmt nur bekannte Kürzel an (zocker, stern, diamant, koenig).
 - **Löschen:** Umgebungsvariable `BESTENLISTE_ADMIN` in Vercel auf ein langes Passwort setzen, dann
   `curl -X DELETE -H "Authorization: Bearer <Passwort>" "https://<seite>/api/bestenliste?spiel=snake&stufe=mittel&name=<Name>"`.
 

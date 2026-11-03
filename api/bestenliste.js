@@ -49,6 +49,8 @@ const ZEIT = {
 };
 // Spiele ohne Schwierigkeitsgrade landen unter „alle“
 const OHNE_STUFEN = new Set(["schlagzeug", "flatter"]);
+// Abzeichen aus dem Casino-Shop (nur Schmuck vor dem Namen, gleiche Kürzel wie games/preise.js)
+const ABZEICHEN = new Set(["zocker", "stern", "diamant", "koenig"]);
 
 const VERBOTEN = ["arsch", "fick", "fotz", "hure", "nutte", "nazi", "hitler", "wichs", "schwanz", "penis", "fuck", "shit", "bitch", "cunt", "nigg", "neger", "spast", "behindert", "schwuchtel", "schlampe", "admin", "porn", "opfer"];
 
@@ -89,7 +91,7 @@ async function top(spiel, stufe, anzahl = 10) {
     try {
       info = JSON.parse(infos[i] || "{}");
     } catch {}
-    return { platz: i + 1, name: info.name || m.schluessel, wert: m.wert, datum: info.datum || null };
+    return { platz: i + 1, name: info.name || m.schluessel, wert: m.wert, datum: info.datum || null, abzeichen: info.abzeichen || null };
   });
 }
 
@@ -183,7 +185,16 @@ export default async function handler(req, res) {
       // pro Name zählt nur der beste Wert (Punkte: höher, Zeit: niedriger)
       const [geaendert] = await redisPipeline([["ZADD", liste, istZeit(spiel) ? "LT" : "GT", "CH", gerundet, n.schluessel]]);
       const neu = (await redis(["HEXISTS", info, n.schluessel])) === 0;
-      if (geaendert || neu) await redis(["HSET", info, n.schluessel, JSON.stringify({ name: n.name, datum: new Date().toISOString().slice(0, 10) })]);
+      const abzeichen = ABZEICHEN.has(body.abzeichen) ? body.abzeichen : null;
+      if (geaendert || neu) await redis(["HSET", info, n.schluessel, JSON.stringify({ name: n.name, datum: new Date().toISOString().slice(0, 10), abzeichen })]);
+      else {
+        // Wert nicht verbessert: nur das Abzeichen aktuell halten
+        let alt = {};
+        try {
+          alt = JSON.parse((await redis(["HGET", info, n.schluessel])) || "{}");
+        } catch {}
+        if ((alt.abzeichen || null) !== abzeichen) await redis(["HSET", info, n.schluessel, JSON.stringify({ ...alt, abzeichen })]);
+      }
       // nur die besten 100 behalten
       await redis(istZeit(spiel) ? ["ZREMRANGEBYRANK", liste, 100, -1] : ["ZREMRANGEBYRANK", liste, 0, -101]);
       const rang = await redis([istZeit(spiel) ? "ZRANK" : "ZREVRANK", liste, n.schluessel]);

@@ -5,6 +5,7 @@
 export const KATEGORIEN = [
   { id: "lernen", name: "Lernen", text: "Prüfungsstoff für Fachinformatiker. Unter „So geht's“ steht erst alles zum Nachlesen, dann wird gespielt." },
   { id: "klassiker", name: "Klassiker", text: "Gegen den Computer oder auf Highscore" },
+  { id: "casino", name: "Casino", text: "Mit Hotte-Dollar zocken und gegen Preise eintauschen. Reines Spielgeld: nicht kaufbar und nicht in echtes Geld tauschbar." },
 ];
 
 export const KATALOG = [
@@ -46,6 +47,9 @@ export const KATALOG = [
   { id: "sql", kat: "lernen", name: "SQL-Sprint", kurz: "Abfrage schreiben, Seite prüft", text: "Eine kleine Datenbank mit Kunden, Bestellungen und Mitarbeitern. Du schreibst die SELECT-Abfrage, die Seite führt sie aus und vergleicht das Ergebnis. 6 Aufgaben pro Runde.", tasten: "Tastatur · Strg+Enter: ausführen", wertung: "punkte" },
   { id: "gatter", kat: "lernen", name: "Logikgatter-Puzzle", kurz: "AND, OR, XOR, NOT richtig setzen", text: "Setz die passenden Gatter in die Schaltung, bis am Ausgang für jede Eingabe das Richtige herauskommt. Die Wahrheitstabelle zeigt live, was noch fehlt. 120 Sekunden.", tasten: "Gatter antippen zum Wechseln", wertung: "punkte" },
   { id: "memory", kat: "lernen", name: "Fachbegriff-Memory", kurz: "Begriff und Erklärung finden", text: "Deck Begriffspaare auf: „RAID 1“ gehört zu „Spiegelung“, „DHCP“ zu „IP automatisch vergeben“. Je schneller, desto besser.", tasten: "Karten antippen", wertung: "zeit" },
+  { id: "casino", kat: "casino", name: "Hotte-Casino", kurz: "Automat, Glücksrad, Blackjack, Roulette", text: "Spielautomat, Glücksrad, Blackjack und Roulette mit Hotte-Dollar. Dollar gibt's als Startguthaben, Tagesbonus und für gute Runden in den anderen Spielen. Im Shop tauschst du sie gegen Snake-Skins, Block-Farben, Leucht-Bälle und Abzeichen für die Bestenliste.", tasten: "Antippen · Leertaste drehen · Blackjack: H, S, D", wertung: "punkte",
+    // ein Modus; als „Highscore“ zählt der höchste Kontostand
+    stufen: false, bestText: "höchster Kontostand" },
 ];
 
 export const NACH_ID = Object.fromEntries(KATALOG.map((s) => [s.id, s]));

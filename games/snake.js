@@ -1,5 +1,6 @@
 // Snake: Bits fressen, länger werden, nicht in sich selbst (oder die Wand) beißen.
 import { richtungsEingabe, overlayKlick, RICHTUNG } from "./eingabe.js";
+import { gewaehlt } from "./preise.js";
 
 export const HILFE = "Pfeiltasten, WASD oder Wischen · Leertaste: Start/Pause · Power-ups: Uhr = 5 s Zeitlupe, Geist = 5 s durch dich selbst, Portal (Mittel/Schwer) = 5 s durch die Wände";
 
@@ -263,7 +264,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     });
     // Körper als durchgehendes Band: Kopf → Mitten der Felder → Schwanz
     const pfad = [lage[0], ...schlange.slice(0, -1), lage[lage.length - 1]];
-    ctx.strokeStyle = zeitlupe && !endetBald ? "#7fb8ff" : "#b48ef0";
+    const skin = gewaehlt("snake");
+    const skinZeit = performance.now() / 1000;
+    ctx.strokeStyle = zeitlupe && !endetBald ? "#7fb8ff" : skin.strich(skinZeit);
     ctx.lineWidth = T - 6;
     ctx.lineCap = "square";
     ctx.lineJoin = "miter";
@@ -280,7 +283,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     for (let i = lage.length - 1; i >= 0; i--) {
       const teil = lage[i];
       if (zeitlupe && !endetBald) ctx.fillStyle = i === 0 ? "#ffffff" : i % 2 ? "#a8d4ff" : "#7fb8ff";
-      else ctx.fillStyle = i === 0 ? "#ffffff" : i % 2 ? "#c8a2ff" : "#b48ef0";
+      else ctx.fillStyle = skin.glied(i, skinZeit);
       ctx.fillRect(teil.x * T + 2, teil.y * T + 2, T - 4, T - 4);
     }
     ctx.globalAlpha = 1;

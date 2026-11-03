@@ -2,6 +2,8 @@ import "./style.css";
 import { initShell, onPower } from "./shell.js";
 import { passeCanvas, zeichneVorschau } from "./games/vorschau.js";
 import { KATALOG, KATEGORIEN, NACH_ID } from "./games/katalog.js";
+import { verdienAusSpiel, stand as hdStand, fmt as hdFmt, beiAenderung as hdAenderung } from "./games/casino-konto.js";
+import { ABZEICHEN, stil as preisStil } from "./games/preise.js";
 
 // Spiele werden erst geladen, wenn man sie startet (der Hub bleibt schnell)
 const LADER = {
@@ -26,6 +28,7 @@ const LADER = {
   bubble: () => import("./games/bubble.js"),
   sudoku: () => import("./games/sudoku.js"),
   ttt: () => import("./games/ttt.js"),
+  casino: () => import("./games/casino.js"),
   csharp: () => import("./games/csharp.js"),
   osi: () => import("./games/osi.js"),
   sql: () => import("./games/sql.js"),
@@ -102,6 +105,7 @@ function baueKarten() {
           <span class="chip">${spiele.length}</span>
           <p class="kat-text">${k.text}</p>
         </div>
+        ${k.id === "casino" ? `<p class="hd-kopf">Dein Konto: <b class="num" id="hd-stand"></b></p>` : ""}
         <div class="games-grid">${spiele.map(karteHtml).join("")}</div>
       </section>`;
   }).join("");
@@ -280,6 +284,11 @@ async function starten(spiel) {
       if (info.wertung === "punkte") rangErgebnis(punkte);
       if (info.wertung === "zeit" && gewonnen) rangErgebnis(zeit);
       zeigeBest(spiel);
+      // Hotte-Dollar für Runden in den anderen Spielen (nicht im Casino selbst)
+      if (spiel !== "casino") {
+        const plus = verdienAusSpiel({ gewonnen, neu, punkte, wertung: info.wertung });
+        if (plus) dollarToast(plus);
+      }
       return neu;
     },
   });
@@ -287,6 +296,20 @@ async function starten(spiel) {
   rangStart(spiel, stufe);
   einpassen();
   if (!modul.DOM) canvas.focus({ preventScroll: true });
+}
+
+// ---------- Hotte-Dollar: Einblendung und Kontostand ----------
+function dollarToast(plus) {
+  const t = document.createElement("div");
+  t.className = "hd-toast";
+  t.setAttribute("role", "status");
+  t.textContent = `+${plus} H$`;
+  document.getElementById("stage-body").appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+function zeigeKontostand() {
+  const el = document.getElementById("hd-stand");
+  if (el) el.textContent = hdFmt(hdStand());
 }
 
 // ---------- Klassen-Bestenliste ----------
@@ -316,7 +339,7 @@ function rangAus() {
 }
 function rangStart(spiel, stufe) {
   rangAus();
-  if (NACH_ID[spiel].wertung === "siege") return;
+  if (NACH_ID[spiel].wertung === "siege" || spiel === "casino") return;
   const s = rangStufe(spiel, stufe);
   rang = { spiel, stufe: s, marke: holeMarke(spiel, s), offen: null, liste: [], meldung: "" };
   ladeRangliste(rang);
@@ -341,7 +364,7 @@ function zeichneRang() {
   const stufeName = r.stufe === "alle" ? "" : STUFEN[r.stufe];
   const name = lese(RANG_NAME, "");
   const liste = r.liste.length
-    ? `<ol class="rang-liste">${r.liste.map((e) => `<li${r.meinPlatz === e.platz ? ' class="mein"' : ""}><span class="rang-platz num">${e.platz}.</span><span class="rang-name">${esc(e.name)}</span><span class="rang-wert num">${rangWert(r.spiel, e.wert)}</span></li>`).join("")}</ol>`
+    ? `<ol class="rang-liste">${r.liste.map((e) => `<li${r.meinPlatz === e.platz ? ' class="mein"' : ""}><span class="rang-platz num">${e.platz}.</span><span class="rang-name">${e.abzeichen && ABZEICHEN[e.abzeichen] ? `<span class="rang-abzeichen" title="${esc(ABZEICHEN[e.abzeichen].name)}">${ABZEICHEN[e.abzeichen].zeichen}</span> ` : ""}${esc(e.name)}</span><span class="rang-wert num">${rangWert(r.spiel, e.wert)}</span></li>`).join("")}</ol>`
     : `<p class="rang-leer">Noch keine Einträge. Der erste Platz ist frei!</p>`;
   const form = r.offen
     ? `<form class="rang-form" novalidate>
@@ -406,7 +429,7 @@ async function rangEintragen(name) {
   try {
     const marke = await r.offen.marke;
     if (!marke) throw new Error("Keine Spielmarke vom Server bekommen.");
-    const res = await fetch("/api/bestenliste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktion: "eintragen", marke, name: sauber, wert: r.offen.wert }) });
+    const res = await fetch("/api/bestenliste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktion: "eintragen", marke, name: sauber, wert: r.offen.wert, abzeichen: preisStil("abzeichen") }) });
     const d = await res.json();
     if (rang !== r) return;
     if (!d.ok) throw new Error(d.fehler || "Eintragen hat nicht geklappt.");
@@ -477,6 +500,8 @@ async function lernhilfeUmschalten(spiel, knopf) {
 
 function initKarten() {
   baueKarten();
+  zeigeKontostand();
+  hdAenderung(zeigeKontostand);
   document.querySelectorAll(".game-card").forEach((k) => {
     const spiel = k.dataset.game;
     const art = k.querySelector(".game-art");
