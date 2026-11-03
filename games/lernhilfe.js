@@ -8,9 +8,10 @@ import { PAARE } from "./memory.js";
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const block = (titel, html) => `<section class="lh-block"><h4>${titel}</h4>${html}</section>`;
 const bsp = (zeilen) => `<pre class="lh-bsp num">${zeilen.map(esc).join("\n")}</pre>`;
+// Klasse „lh-stapel“: am Handy wird jede Zeile zu einer kleinen Karte (statt enger Spalten)
 const tabelle = (kopf, zeilen, klasse = "") =>
   `<div class="lh-scroll"><table class="lh-tab ${klasse}"><thead><tr>${kopf.map((k) => `<th>${k}</th>`).join("")}</tr></thead><tbody>${zeilen
-    .map((z) => `<tr>${z.map((w, i) => `<td${i === 0 ? ' class="num"' : ""}>${w}</td>`).join("")}</tr>`)
+    .map((z) => `<tr>${z.map((w, i) => `<td${i === 0 ? ' class="num"' : ""} data-label="${esc(String(kopf[i]).replace(/<[^>]+>/g, ""))}">${w}</td>`).join("")}</tr>`)
     .join("")}</tbody></table></div>`;
 
 const STUFE_NAME = { 1: "Leicht", 2: "Mittel", 3: "Schwer" };
@@ -81,7 +82,7 @@ function subnetz() {
       "Beispiel /26",
       bsp([
         "192.168.4.77/26",
-        "26 = 24 + 2 → 4. Oktett, 2 Netzbits",
+        "26 = 24 + 2", "→ 4. Oktett, 2 Netzbits",
         "Maske       255.255.255.192",
         "Blockgröße  256 − 192 = 64",
         "Netze       .0  .64  .128  .192",
@@ -96,7 +97,7 @@ function subnetz() {
       "Beispiel /12 (anderes Oktett)",
       bsp([
         "10.200.13.5/12",
-        "12 = 8 + 4 → 2. Oktett, 4 Netzbits",
+        "12 = 8 + 4", "→ 2. Oktett, 4 Netzbits",
         "Maske       255.240.0.0",
         "Blockgröße  256 − 240 = 16",
         "200 → abrunden auf 192",
@@ -170,13 +171,16 @@ function csharp() {
         "class Auto",
         "{",
         "    public string Marke;",
-        "    public Auto(string marke)   // Konstruktor",
+        "    // Konstruktor",
+        "    public Auto(string marke)",
         "    {",
-        "        this.Marke = marke;     // this = dieses Objekt",
+        "        // this = dieses Objekt",
+        "        this.Marke = marke;",
         "    }",
         "}",
         "",
-        "Auto a = new Auto(\"VW\");     // Konstruktor aufrufen",
+        "// Konstruktor aufrufen",
+        "Auto a = new Auto(\"VW\");",
       ])}
        <p class="lh-klein">Sobald man einen eigenen Konstruktor schreibt, gibt es den leeren <code>new Auto()</code> nicht mehr automatisch. Mit <code>: this(…)</code> ruft ein Konstruktor einen anderen auf, mit <code>: base(…)</code> den der Basisklasse.</p>`,
     ),
@@ -185,42 +189,57 @@ function csharp() {
       `<p>Was <code>static</code> ist, gehört zur <b>Klasse</b>, nicht zu einem einzelnen Objekt. Eine statische Variable (Klassenvariable) teilen sich alle Objekte.</p>${bsp([
         "class Zaehler",
         "{",
-        "    public static int Anzahl = 0;  // gibt es nur einmal",
+        "    // gibt es nur einmal",
+        "    public static int Anzahl = 0;",
         "    public Zaehler() { Anzahl++; }",
         "}",
         "",
-        "new Zaehler(); new Zaehler();",
-        "Console.WriteLine(Zaehler.Anzahl);  // 2",
+        "new Zaehler();",
+        "new Zaehler();",
+        "// Ausgabe: 2",
+        "Console.WriteLine(Zaehler.Anzahl);",
       ])}
        <ul class="lh-liste"><li>Aufruf über den Klassennamen: <code>Math.Max(1, 2)</code>, <code>Zaehler.Anzahl</code></li><li>Eine statische Methode kennt kein Objekt, also auch kein <code>this</code> und keine normalen Felder.</li><li><code>Main</code> ist static, weil beim Start noch kein Objekt existiert.</li></ul>`,
     ),
     block(
       "Properties: get; set;",
       `<p>Eine Property sieht von außen aus wie ein Feld, hat innen aber Methoden zum Lesen (<code>get</code>) und Schreiben (<code>set</code>).</p>${bsp([
-        "public string Name { get; set; }              // automatische Property",
-        "public int Alter { get; private set; }        // nur die Klasse darf schreiben",
-        "public string Id { get; init; }               // nur beim Erzeugen setzbar",
+        "// automatische Property",
+        "public string Name { get; set; }",
+        "// nur die Klasse darf schreiben",
+        "public int Alter",
+        "    { get; private set; }",
+        "// nur beim Erzeugen setzbar",
+        "public string Id { get; init; }",
         "",
         "private int _stand;",
         "public int Stand",
         "{",
         "    get { return _stand; }",
-        "    set { if (value >= 0) _stand = value; }   // value = neuer Wert",
+        "    // value = der neue Wert",
+        "    set",
+        "    {",
+        "        if (value >= 0)",
+        "            _stand = value;",
+        "    }",
         "}",
         "",
-        "public int Flaeche => Breite * Hoehe;         // nur lesen, wird berechnet",
+        "// nur lesen, jedes Mal berechnet",
+        "public int Flaeche",
+        "    => Breite * Hoehe;",
       ])}`,
     ),
     block(
       "Unterprogramme (Methoden) und return",
       `<p>Ein <b>Unterprogramm</b> (in C# eine <b>Methode</b>) fasst Code unter einem Namen zusammen. Man schreibt es einmal und ruft es beliebig oft auf.</p>${bsp([
-        "//  Rückgabetyp  Name     Parameter",
-        "static int     Quadrat(int x)",
+        "// Rückgabetyp, Name, Parameter",
+        "static int Quadrat(int x)",
         "{",
-        "    return x * x;      // Wert zurückgeben, Methode ist hier zu Ende",
+        "    // zurückgeben + beenden",
+        "    return x * x;",
         "}",
         "",
-        "int q = Quadrat(4);    // Aufruf: q = 16",
+        "int q = Quadrat(4);  // q = 16",
       ])}
        <ul class="lh-liste"><li><b>return</b> gibt einen Wert zurück und <b>beendet die Methode</b> sofort. Code danach läuft nicht mehr.</li><li>Bei <code>void</code> gibt es keinen Rückgabewert, <code>return;</code> ohne Wert beendet nur die Methode.</li><li>Hat die Methode einen Rückgabetyp (z. B. <code>int</code>), muss jeder Weg mit <code>return</code> einen passenden Wert liefern.</li></ul>`,
     ),
@@ -228,23 +247,36 @@ function csharp() {
       "Signatur und Überladung",
       `<p>Die <b>Signatur</b> einer Methode ist ihr <b>Name</b> plus die <b>Parameterliste</b> (Anzahl, Typen, Reihenfolge). <b>Der Rückgabewert gehört nicht zur Signatur.</b></p>
        <p><b>Überladung</b>: mehrere Methoden mit gleichem Namen, aber unterschiedlicher Signatur. C# wählt beim Aufruf die passende aus.</p>${bsp([
-        "static int    Summe(int a, int b)           { return a + b; }",
-        "static int    Summe(int a, int b, int c)    { return a + b + c; }   // andere Anzahl ✓",
-        "static double Summe(double a, double b)     { return a + b; }       // andere Typen ✓",
+        "static int Summe(int a, int b)",
+        "    => a + b;",
+        "// ✓ andere Anzahl",
+        "static int Summe(",
+        "    int a, int b, int c)",
+        "    => a + b + c;",
+        "// ✓ andere Typen",
+        "static double Summe(",
+        "    double a, double b)",
+        "    => a + b;",
         "",
-        "static long   Summe(int x, int y) { … }   // ✗ gleiche Signatur Summe(int, int):",
-        "                                          //   anderer Rückgabetyp oder andere Namen reichen nicht",
+        "// ✗ wieder Summe(int, int):",
+        "// anderer Rückgabetyp oder",
+        "// andere Namen reichen nicht",
+        "static long Summe(int x, int y)",
+        "    => x + y;",
       ])}`,
     ),
     block(
       "Standardparameter (optionale Parameter)",
       `<p>Ein Parameter kann einen <b>Standardwert</b> bekommen. Lässt man das Argument beim Aufruf weg, wird dieser Wert benutzt.</p>${bsp([
-        "static void Gruss(string name = \"Gast\", int mal = 1) { … }",
+        "static void Gruss(",
+        "    string name = \"Gast\",",
+        "    int mal = 1) { … }",
         "",
-        "Gruss();               // name = \"Gast\", mal = 1",
-        "Gruss(\"Lea\");          // name = \"Lea\",  mal = 1",
-        "Gruss(\"Lea\", 3);       // beide angegeben",
-        "Gruss(mal: 2);         // benanntes Argument: name bleibt \"Gast\"",
+        "Gruss();           // Gast, 1",
+        "Gruss(\"Lea\");      // Lea, 1",
+        "Gruss(\"Lea\", 3);   // Lea, 3",
+        "// benanntes Argument:",
+        "Gruss(mal: 2);     // Gast, 2",
       ])}
        <ul class="lh-liste"><li>Parameter mit Standardwert stehen <b>hinter</b> allen Pflichtparametern: <code>F(int a, int b = 2)</code> ✓, <code>F(int a = 1, int b)</code> ✗</li><li>Der Standardwert muss beim Kompilieren feststehen (Konstante), z. B. <code>5</code>, <code>"Gast"</code>, <code>null</code>, aber nicht <code>DateTime.Now</code>.</li></ul>`,
     ),
@@ -264,6 +296,7 @@ function osi() {
       `<p class="lh-klein">Merksatz von oben (7) nach unten (1): <b>A</b>lle <b>D</b>eutschen <b>S</b>tudenten <b>T</b>rinken <b>V</b>erschiedene <b>S</b>orten <b>B</b>ier.</p>${tabelle(
         ["Nr.", "Schicht", "Einheit", "Beispiele im Spiel"],
         SCHICHTEN.map((s) => [s.nr, `${s.name}<br><small>${s.en}</small>`, s.pdu, beispiele(s.nr)]),
+        "lh-stapel lh-osi",
       )}`,
     ),
     block(
@@ -279,33 +312,38 @@ function sql() {
     block(
       "Aufbau einer Abfrage",
       `<p>Die Reihenfolge der Teile ist fest:</p>${bsp([
-        "SELECT spalten          -- was soll angezeigt werden",
-        "FROM tabelle            -- woher",
-        "WHERE bedingung         -- welche Zeilen",
-        "GROUP BY spalte         -- zusammenfassen",
-        "HAVING bedingung        -- Bedingung für Gruppen",
-        "ORDER BY spalte DESC    -- sortieren (ASC = aufsteigend)",
-        "LIMIT 3                 -- nur die ersten 3",
-      ])}`,
+        "SELECT spalten   -- anzeigen",
+        "FROM tabelle     -- woher",
+        "WHERE bedingung  -- filtern",
+        "GROUP BY spalte  -- gruppieren",
+        "HAVING bedingung -- für Gruppen",
+        "ORDER BY spalte  -- sortieren",
+        "LIMIT 3          -- nur 3 Zeilen",
+      ])}<p class="lh-klein">ORDER BY sortiert mit ASC aufsteigend (Standard), mit DESC absteigend.</p>`,
     ),
     block(
       "Bedingungen",
       `${bsp([
-        "WHERE stadt = 'Berlin'              -- Text in einfachen Anführungszeichen",
-        "WHERE alter > 30 AND stadt <> 'Jena'",
+        "-- Text in einfachen Hochkommas",
+        "WHERE stadt = 'Berlin'",
+        "WHERE alter > 30",
+        "  AND stadt <> 'Jena'",
         "WHERE stadt IN ('Hamburg', 'Jena')",
-        "WHERE name LIKE 'M%'                -- % = beliebig viele Zeichen, _ = eins",
-        "WHERE eintritt BETWEEN 2017 AND 2020",
+        "-- % = beliebig viele Zeichen",
+        "-- _ = genau ein Zeichen",
+        "WHERE name LIKE 'M%'",
+        "WHERE eintritt",
+        "  BETWEEN 2017 AND 2020",
         "WHERE b.id IS NULL",
       ])}`,
     ),
     block(
       "Zählen, Summen, Gruppen",
-      `${bsp(["SELECT COUNT(*) FROM kunden", "SELECT AVG(gehalt), MAX(gehalt) FROM mitarbeiter", "SELECT stadt, COUNT(*) FROM kunden GROUP BY stadt", "SELECT abteilung FROM mitarbeiter GROUP BY abteilung HAVING COUNT(*) > 2"])}<p class="lh-klein">COUNT, SUM, AVG usw. gehören nie in WHERE, sondern in SELECT oder HAVING.</p>`,
+      `${bsp(["SELECT COUNT(*) FROM kunden", "", "SELECT AVG(gehalt), MAX(gehalt)", "FROM mitarbeiter", "", "SELECT stadt, COUNT(*)", "FROM kunden", "GROUP BY stadt", "", "SELECT abteilung", "FROM mitarbeiter", "GROUP BY abteilung", "HAVING COUNT(*) > 2"])}<p class="lh-klein">COUNT, SUM, AVG usw. gehören nie in WHERE, sondern in SELECT oder HAVING.</p>`,
     ),
     block(
       "Tabellen verbinden (JOIN)",
-      `${bsp(["SELECT k.name, b.produkt", "FROM bestellungen b", "JOIN kunden k ON b.kunde_id = k.id", "", "-- auch Zeilen ohne Partner: LEFT JOIN"])}<p class="lh-klein">k und b sind Kurznamen (Aliase) für die Tabellen.</p>`,
+      `${bsp(["SELECT k.name, b.produkt", "FROM bestellungen b", "JOIN kunden k", "  ON b.kunde_id = k.id", "", "-- ohne Partner auch: LEFT JOIN"])}<p class="lh-klein">k und b sind Kurznamen (Aliase) für die Tabellen.</p>`,
     ),
   ].join("");
 }
@@ -333,7 +371,7 @@ function gatter() {
 // ---------- Fachbegriff-Memory ----------
 function memory() {
   return [1, 2, 3]
-    .map((s) => block(`${STUFE_NAME[s]} <span class="chip">${PAARE.filter((p) => p[2] === s).length}</span>`, tabelle(["Begriff", "Bedeutung"], PAARE.filter((p) => p[2] === s).map((p) => [esc(p[0]), esc(p[1])]), "lh-text")))
+    .map((s) => block(`${STUFE_NAME[s]} <span class="chip">${PAARE.filter((p) => p[2] === s).length}</span>`, tabelle(["Begriff", "Bedeutung"], PAARE.filter((p) => p[2] === s).map((p) => [esc(p[0]), esc(p[1])]), "lh-text lh-stapel")))
     .join("");
 }
 
