@@ -52,6 +52,7 @@ function start({ dom, status, nachricht, ergebnis, id }) {
       <div class="casino-kopf">
         <div class="casino-stand"><span class="casino-label">Kontostand</span><b class="num" data-stand></b></div>
         <div class="casino-bonus-platz"></div>
+        <p class="casino-zeit" data-zeit></p>
         <p class="casino-spielgeld">Spielgeld · nicht kaufbar · nicht in echtes Geld tauschbar</p>
       </div>
       <div class="casino-inhalt"></div>
@@ -65,6 +66,10 @@ function start({ dom, status, nachricht, ergebnis, id }) {
     const st = K.stand();
     el("[data-stand]").textContent = K.fmt(st);
     status(`${K.fmt(st)} · heute aus Spielen ${K.heuteVerdient()}/${K.SPIELE_PRO_TAG} H$`);
+    // Fortschritt bis zur nächsten Spielzeit-Belohnung
+    const fs = K.spielzeitFortschritt();
+    const mmss = (x) => `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, "0")}`;
+    el("[data-zeit]").innerHTML = `Spielzeit in den anderen Spielen: <b class="num">${mmss(fs)} / ${mmss(K.SPIELZEIT_BLOCK)}</b> bis +${K.SPIELZEIT_LOHN} H$<span class="casino-balken"><span style="width:${(fs / K.SPIELZEIT_BLOCK) * 100}%"></span></span>`;
     const platz = el(".casino-bonus-platz");
     if (K.bonusDa()) platz.innerHTML = `<button type="button" class="btn casino-bonus" data-bonus>Tagesbonus abholen +${K.TAGESBONUS} H$</button>`;
     else {

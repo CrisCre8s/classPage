@@ -545,17 +545,17 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       // links unten, damit die Flasche in der Hand nichts verdeckt
       ctx.fillStyle = "rgba(15,14,19,0.6)";
       ctx.beginPath();
-      ctx.roundRect(10, H - 62, 170, 50, 8);
+      ctx.roundRect(10, H - 74, 176, 62, 8);
       ctx.fill();
       ctx.fillStyle = "#f2f2f3";
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.textAlign = "left";
-      ctx.fillText(sorte.name.toUpperCase(), 20, H - 42);
+      ctx.fillText(sorte.name.toUpperCase(), 20, H - 54);
       ctx.fillStyle = "#7fe0b0";
-      ctx.fillText(`${sorte.pfand} CT PFAND`, 20, H - 28);
+      ctx.fillText(`${sorte.pfand} CT PFAND`, 20, H - 39);
       ctx.fillStyle = "#8a8698";
       ctx.font = '6px "Press Start 2P", monospace';
-      ctx.fillText(sorte.wind > 1.1 ? "LEICHT: WIND WIRKT STARK" : sorte.wind < 0.8 ? "SCHWER: WIND WIRKT KAUM" : "WIND WIRKT NORMAL", 20, H - 16);
+      ctx.fillText(sorte.wind > 1.1 ? "LEICHT: WIND WIRKT STARK" : sorte.wind < 0.8 ? "SCHWER: WIND WIRKT KAUM" : "WIND WIRKT NORMAL", 20, H - 24);
     }
     // Effekte
     for (const e of effekte) {

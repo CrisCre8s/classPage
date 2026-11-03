@@ -305,24 +305,30 @@ async function starten(spiel) {
       zeigeBest(spiel);
       // Hotte-Dollar für Runden in den anderen Spielen (nicht im Casino selbst)
       if (info.kat !== "casino") {
-        const plus = verdienAusSpiel({ gewonnen, neu, punkte, wertung: info.wertung });
-        if (plus) dollarToast(plus);
+        // Spielzeit dieser Runde: seit dem Start oder seit dem letzten Ergebnis
+        const jetzt = performance.now();
+        const dauerSek = (jetzt - rundeSeit) / 1000;
+        rundeSeit = jetzt;
+        const { plus, grund } = verdienAusSpiel({ neu, dauerSek });
+        if (plus) dollarToast(plus, grund);
       }
       return neu;
     },
   });
   laufendes = { spiel, stufe, inst };
+  rundeSeit = performance.now();
   rangStart(spiel, stufe);
   einpassen();
   if (!modul.DOM) canvas.focus({ preventScroll: true });
 }
 
 // ---------- Hotte-Dollar: Einblendung und Kontostand ----------
-function dollarToast(plus) {
+let rundeSeit = 0; // Beginn der aktuellen Runde (für die Spielzeit-Belohnung)
+function dollarToast(plus, grund = "") {
   const t = document.createElement("div");
   t.className = "hd-toast";
   t.setAttribute("role", "status");
-  t.textContent = `+${plus} H$`;
+  t.textContent = `+${plus} H$${grund ? ` · ${grund}` : ""}`;
   document.getElementById("stage-body").appendChild(t);
   setTimeout(() => t.remove(), 2600);
 }
