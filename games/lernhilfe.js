@@ -212,6 +212,43 @@ function csharp() {
       ])}`,
     ),
     block(
+      "Unterprogramme (Methoden) und return",
+      `<p>Ein <b>Unterprogramm</b> (in C# eine <b>Methode</b>) fasst Code unter einem Namen zusammen. Man schreibt es einmal und ruft es beliebig oft auf.</p>${bsp([
+        "//  Rückgabetyp  Name     Parameter",
+        "static int     Quadrat(int x)",
+        "{",
+        "    return x * x;      // Wert zurückgeben, Methode ist hier zu Ende",
+        "}",
+        "",
+        "int q = Quadrat(4);    // Aufruf: q = 16",
+      ])}
+       <ul class="lh-liste"><li><b>return</b> gibt einen Wert zurück und <b>beendet die Methode</b> sofort. Code danach läuft nicht mehr.</li><li>Bei <code>void</code> gibt es keinen Rückgabewert, <code>return;</code> ohne Wert beendet nur die Methode.</li><li>Hat die Methode einen Rückgabetyp (z. B. <code>int</code>), muss jeder Weg mit <code>return</code> einen passenden Wert liefern.</li></ul>`,
+    ),
+    block(
+      "Signatur und Überladung",
+      `<p>Die <b>Signatur</b> einer Methode ist ihr <b>Name</b> plus die <b>Parameterliste</b> (Anzahl, Typen, Reihenfolge). <b>Der Rückgabewert gehört nicht zur Signatur.</b></p>
+       <p><b>Überladung</b>: mehrere Methoden mit gleichem Namen, aber unterschiedlicher Signatur. C# wählt beim Aufruf die passende aus.</p>${bsp([
+        "static int    Summe(int a, int b)           { return a + b; }",
+        "static int    Summe(int a, int b, int c)    { return a + b + c; }   // andere Anzahl ✓",
+        "static double Summe(double a, double b)     { return a + b; }       // andere Typen ✓",
+        "",
+        "static long   Summe(int x, int y) { … }   // ✗ gleiche Signatur Summe(int, int):",
+        "                                          //   anderer Rückgabetyp oder andere Namen reichen nicht",
+      ])}`,
+    ),
+    block(
+      "Standardparameter (optionale Parameter)",
+      `<p>Ein Parameter kann einen <b>Standardwert</b> bekommen. Lässt man das Argument beim Aufruf weg, wird dieser Wert benutzt.</p>${bsp([
+        "static void Gruss(string name = \"Gast\", int mal = 1) { … }",
+        "",
+        "Gruss();               // name = \"Gast\", mal = 1",
+        "Gruss(\"Lea\");          // name = \"Lea\",  mal = 1",
+        "Gruss(\"Lea\", 3);       // beide angegeben",
+        "Gruss(mal: 2);         // benanntes Argument: name bleibt \"Gast\"",
+      ])}
+       <ul class="lh-liste"><li>Parameter mit Standardwert stehen <b>hinter</b> allen Pflichtparametern: <code>F(int a, int b = 2)</code> ✓, <code>F(int a = 1, int b)</code> ✗</li><li>Der Standardwert muss beim Kompilieren feststehen (Konstante), z. B. <code>5</code>, <code>"Gast"</code>, <code>null</code>, aber nicht <code>DateTime.Now</code>.</li></ul>`,
+    ),
+    block(
       "Typische Fallen",
       `<ul class="lh-liste"><li><code>7 / 2</code> ist bei int <b>3</b>, der Rest fällt weg. <code>7 % 2</code> ist der Rest: 1.</li><li><code>"5" + "3"</code> ergibt <b>"53"</b>, Strings werden verkettet.</li><li>Arrays beginnen bei Index <b>0</b>.</li><li>Klassen sind Referenztypen: <code>b = a</code> kopiert nur den Verweis, beide zeigen auf dasselbe Objekt. <code>int</code> ist ein Werttyp und wird kopiert.</li></ul>`,
     ),

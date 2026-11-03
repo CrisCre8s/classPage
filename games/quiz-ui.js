@@ -15,8 +15,9 @@ export const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "
  *  { frage: html, loesung: text, pruefe(eingabe) → bool, tastatur?: "bin"|"dez"|"hex"|"ip",
  *    optionen?: [text], richtigIndex?: number, erklaerung?: html, platzhalter?: text,
  *    freitext?: bool (normale Tastatur, keine Großbuchstaben), hinweis?: text (aufdeckbar, halbe Punkte) }
+ * weiterKnopf: bei falscher Antwort hält die Zeit an, die Lösung bleibt stehen, weiter geht es erst mit „Weiter“
  */
-export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, sekunden, punkteJe, naechste }) {
+export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, sekunden, punkteJe, naechste, weiterKnopf = false }) {
   const grob = window.matchMedia("(pointer: coarse)").matches; // Touch: eigenes Ziffernfeld statt Handytastatur
   dom.innerHTML = `
     <div class="quiz">
@@ -52,6 +53,16 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
   const hinweisEl = el(".quiz-hinweis");
 
   let frage, punkte, serie, richtig, gesamt, fehler, ende, timer, sperre, laeuft, raf, hinweise, mitHinweis;
+  let angehalten = 0; // Zeitpunkt, seit dem die Uhr steht (0 = läuft)
+  const jetzt = () => (angehalten || performance.now());
+  function weiter() {
+    if (!laeuft || !angehalten) return;
+    ende += performance.now() - angehalten;
+    angehalten = 0;
+    sperre = false;
+    zeigeFrage();
+    dom.scrollTo?.({ top: 0 });
+  }
 
   function zeigeStatus() {
     status(`${punkte} Pkt · ${richtig}/${gesamt} richtig`);
@@ -128,6 +139,17 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
     }
     hinweisBtn.hidden = true;
     zeigeStatus();
+    if (!ok && weiterKnopf) {
+      // Zeit anhalten, bis man die Lösung gelesen hat
+      angehalten = performance.now();
+      feedback.insertAdjacentHTML("beforeend", `<span class="quiz-weiter-zeile"><span class="quiz-pause">Zeit angehalten</span><button class="btn quiz-weiter" type="button">Weiter <span class="quiz-taste-hinweis">Enter</span></button></span>`);
+      const knopf = feedback.querySelector(".quiz-weiter");
+      knopf.addEventListener("click", weiter);
+      knopf.focus({ preventScroll: true });
+      // am Handy liegen Erklärung und Knopf oft unter dem sichtbaren Bereich
+      feedback.scrollIntoView({ block: "end", behavior: "smooth" });
+      return;
+    }
     setTimeout(() => {
       sperre = false;
       if (laeuft) zeigeFrage();
@@ -135,7 +157,7 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
   }
 
   function tick() {
-    const rest = Math.max(0, ende - performance.now());
+    const rest = Math.max(0, ende - jetzt());
     balken.style.transform = `scaleX(${rest / (sekunden * 1000)})`;
     balken.classList.toggle("knapp", rest < 10000);
     if (rest <= 0) return fertig();
@@ -170,6 +192,7 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
     fehler = [];
     hinweise = 0;
     sperre = false;
+    angehalten = 0;
     laeuft = true;
     nachricht(null);
     zeigeStatus();
@@ -208,6 +231,13 @@ export function quizSpiel({ dom, status, nachricht, ergebnis, titel, intro, seku
   const onKey = (e) => {
     if (!laeuft) {
       if (e.key === "Enter" && !document.getElementById("stage-msg").hidden && gesamt === undefined) los();
+      return;
+    }
+    if (angehalten) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        weiter();
+      }
       return;
     }
     if (frage?.optionen && /^[1-9]$/.test(e.key) && Number(e.key) <= frage.optionen.length) {
