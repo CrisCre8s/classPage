@@ -14,6 +14,9 @@ const POWER = {
 const POWER_CHANCE = 0.2; // pro gefressenem Bit
 const POWER_ABSTAND = 4; // mindestens so viele Bits zwischen zwei Power-ups
 const POWER_LIEGT = 8; // Sekunden, bis ein Power-up wieder verschwindet
+// Nach dem Portal bleiben die Wände noch kurz offen (Wand blinkt), damit man nicht genau
+// im Moment des Ablaufens gegen die Wand fährt, ohne es noch sehen zu können
+const PORTAL_NACHLAUF = 0.8;
 
 // Felder quadratisch (T × T), die Schlange gleitet flüssig von Feld zu Feld:
 // gleiche Strecke in Pixeln pro Sekunde in jede Richtung
@@ -37,6 +40,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
   let schlange, dir, warteschlange, futter, steine, punkte, tempo, zustand, raf, zuletzt, akku;
   let item, effekt, seitPower; // liegendes Power-up, aktive Wirkung { art, rest }, Bits seit dem letzten
+  let nachlauf = 0; // Sekunden, die die Wände nach dem Portal noch offen bleiben
+  const waendeOffen = () => !S.waende || effekt?.art === "wand" || nachlauf > 0;
   // dir = Richtung des Schritts, der gerade läuft (der Kopf gleitet schon dorthin);
   // bewegt = Richtung des letzten ausgeführten Schritts (zum Prüfen auf Umdrehen)
   let bewegt;
@@ -85,6 +90,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     akku = 0;
     item = null;
     effekt = null;
+    nachlauf = 0;
     seitPower = 0;
     futter = null;
     neuesFutter();
@@ -92,7 +98,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   }
 
   function zeigeStatus() {
-    status(`${punkte} Pkt · Länge ${schlange.length}${effekt ? ` · ${POWER[effekt.art].name} ${Math.ceil(effekt.rest)} s` : ""}`);
+    status(`${punkte} Pkt · Länge ${schlange.length}${effekt ? ` · ${POWER[effekt.art].name} ${Math.ceil(effekt.rest)} s` : nachlauf > 0 ? " · Portal schließt!" : ""}`);
   }
 
   function schritt() {
@@ -104,7 +110,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function gehe() {
     let x = schlange[0].x + dir.x;
     let y = schlange[0].y + dir.y;
-    if (!S.waende || effekt?.art === "wand") {
+    if (waendeOffen()) {
       x = (x + SP) % SP;
       y = (y + ZE) % ZE;
     }
@@ -210,8 +216,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.fillStyle = "#16141c";
     for (let x = 0; x < SP; x++) for (let y = 0; y < ZE; y++) if ((x + y) % 2) ctx.fillRect(x * T, y * T, T, T);
     if (S.waende) {
-      const portal = effekt?.art === "wand";
-      const endet = portal && effekt.rest < 1.2 && Math.floor(t / 110) % 2;
+      const portal = effekt?.art === "wand" || nachlauf > 0;
+      // letzte 1,5 s blinkt die Wand, im Nachlauf schnell
+      const endet = (effekt?.art === "wand" && effekt.rest < 1.5 && Math.floor(t / 110) % 2) || (nachlauf > 0 && Math.floor(t / 60) % 2);
       if (portal && !endet) {
         // Wand ist offen: grün gestrichelt und laufend
         ctx.strokeStyle = POWER.wand.farbe;
@@ -310,10 +317,17 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     zuletzt = t;
     if (zustand === "laeuft") {
       if (item && (item.rest -= dt) <= 0) item = null;
+      if (nachlauf > 0 && (nachlauf -= dt) <= 0) {
+        nachlauf = 0;
+        zeigeStatus();
+      }
       if (effekt) {
         const vorher = Math.ceil(effekt.rest);
         effekt.rest -= dt;
-        if (effekt.rest <= 0) effekt = null;
+        if (effekt.rest <= 0) {
+          if (effekt.art === "wand") nachlauf = PORTAL_NACHLAUF;
+          effekt = null;
+        }
         if (!effekt || Math.ceil(effekt.rest) !== vorher) zeigeStatus();
       }
       akku += dt * tempo * (effekt?.art === "langsam" ? 0.55 : 1);
