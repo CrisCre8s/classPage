@@ -5,7 +5,7 @@ import { overlayKlick } from "./eingabe.js";
 import { WELTEN, STADT_ZONEN, ZONEN, weltVonZone, PHYSIK, BODEN_STIL, RAIL_STIL, HINDERNISSE, zeichneHintergrund, zeichneWetter, bodenDetail, zeichneLuecke, dekoFuerWelt, VOGEL, zeichneWeltDeko, zeichneKleinWelt, zeichneKisteWelt, zeichneRailWelt, zeichneMover, zeichnePilz, zeichneGeysir, RING_FARBEN, zeichneWeltSymbol } from "./skate-welten.js";
 import { BOARDS, boardVon, boardFaktoren, neueAufgabe, laden, speichern } from "./skate-fortschritt.js";
 
-export const HILFE = "Karte: ← → Welt wählen · B Boards · Leertaste los · Im Spiel: → oder D anschieben · Leertaste/↑ springen (kurz = kleiner Hüpfer, halten = hoch) · auf der Stange: ↑ ↓ ← → Grind-Tricks · in der Luft: ↑ Kickflip · ↓ Shove-it · ← Backflip · Handy: tippen springt, wischen = Trick · P: Pause";
+export const HILFE = "Karte: ← → Welt wählen · B Boards · Leertaste los · Im Spiel: → oder D anschieben · Leertaste/↑ springen (kurz = kleiner Hüpfer, halten = hoch) · auf der Stange: ↑ ↓ ← → Grind-Tricks · in der Luft: ↑ Kickflip · Q Heelflip · ↓ Shove-it · E 360 Shove-it · ← Backflip · Handy: links Schiebe-Knopf, rechts wischen: ↓ dann ↑ Ollie · ↓ dann ↗ Kickflip · ↓ dann ↖ Heelflip · ↓ dann Halbkreis rechts Pop Shove-it · Halbkreis links FS Shove-it · ganzer Kreis 360 Shove-it · ↑ dann ↓ Nollie · ↓ dann zur Seite Backflip · antippen = Ollie · P: Pause";
 
 const W = 960; // logische Größe; gezeichnet wird in echter Bildschirmauflösung
 const H = 480;
@@ -45,8 +45,12 @@ const SCHUB_DAUER = 0.5; // so lange dauert ein Anschieben mit dem Fuß (aufsetz
 
 const TRICKS = {
   kickflip: { name: "Kickflip", dauer: 0.42, muenzen: 1 },
-  shove: { name: "Shove-it", dauer: 0.38, muenzen: 1 },
+  shove: { name: "Pop Shove-it", dauer: 0.38, muenzen: 1 },
   backflip: { name: "Backflip", dauer: 0.72, muenzen: 3 },
+  heelflip: { name: "Heelflip", dauer: 0.42, muenzen: 1 },
+  fsshove: { name: "FS Shove-it", dauer: 0.38, muenzen: 1 },
+  shove360: { name: "360 Shove-it", dauer: 0.62, muenzen: 2 },
+  nollie: { name: "Nollie", dauer: 0.3, muenzen: 1 },
 };
 
 const zufall = (a, b) => a + Math.random() * (b - a);
@@ -955,6 +959,7 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     fp.startWelt = wahlWelt;
     speichern(fp);
     zustand = "laeuft";
+    laufHilfe = 8;
     neu();
     nachricht(null);
   }
@@ -1880,6 +1885,13 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       if (sp.trick.art === "kickflip") brettWinkel = k * Math.PI * 2;
       if (sp.trick.art === "shove") boardX = Math.cos(k * Math.PI * 2);
       if (sp.trick.art === "backflip") drehen = -k * Math.PI * 2;
+      if (sp.trick.art === "heelflip") brettWinkel = -k * Math.PI * 2;
+      if (sp.trick.art === "fsshove") {
+        boardX = Math.cos(k * Math.PI * 2);
+        brettWinkel = Math.sin(k * Math.PI) * 0.35;
+      }
+      if (sp.trick.art === "shove360") boardX = Math.cos(k * Math.PI * 4);
+      if (sp.trick.art === "nollie") drehen = Math.sin(k * Math.PI) * 0.35;
     }
     // Grind-Trick: Brett kippt (Nose/Tail), steht quer (Boardslide) oder schräg (Crooked)
     let grindKipp = 0;
@@ -2132,13 +2144,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     ctx.restore();
     zeichneWetter(ctx, bgAktuell, t, kamX, W, H);
     zeichneHud(t, dt);
+    zeichneTouch(t, dt);
     // Hinweis, solange man (fast) steht
     if (zustand === "laeuft" && tempo < 90 && !sp.sturz) {
       ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t / 260);
       ctx.font = '13px "Press Start 2P", monospace';
       ctx.textAlign = "center";
       ctx.fillStyle = "#f5d97a";
-      ctx.fillText(grob ? "Links tippen: anschieben" : "→ oder D: anschieben", W / 2, H - 28);
+      ctx.fillText(grob ? "Links halten: anschieben" : "→ oder D: anschieben", W / 2, H - 28);
       ctx.globalAlpha = 1;
     }
     // Tempo-Linien bei hoher Geschwindigkeit
@@ -2158,6 +2171,106 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
 
 
   // ---------- Anzeige im Spiel: Weg bis zur nächsten Welt, Welt-Banner ----------
+  // Touch: Schiebe-Knopf links, Fingerspur und erkannter Trick rechts, kurze Wisch-Hilfe
+  function zeichneTouch(t, dt) {
+    for (const p of fingerSpur) p.t += dt;
+    if (!zeiger) fingerSpur = fingerSpur.filter((p) => p.t < 0.35);
+    if (fingerSpur.length > 1) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (let i = 1; i < fingerSpur.length; i++) {
+        const alt = Math.min(1, fingerSpur[i].t / 0.35);
+        const a = zeiger ? 0.75 : 0.75 * (1 - alt);
+        if (a <= 0) continue;
+        ctx.strokeStyle = `rgba(159, 208, 255, ${a})`;
+        ctx.lineWidth = 3 + 7 * (i / fingerSpur.length);
+        ctx.beginPath();
+        ctx.moveTo(fingerSpur[i - 1].x, fingerSpur[i - 1].y);
+        ctx.lineTo(fingerSpur[i].x, fingerSpur[i].y);
+        ctx.stroke();
+      }
+    }
+    if (wischAnzeige) {
+      wischAnzeige.t += dt;
+      const a = Math.max(0, 1 - wischAnzeige.t / 0.7);
+      if (a <= 0) wischAnzeige = null;
+      else {
+        ctx.globalAlpha = a;
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#9fd0ff";
+        ctx.fillText(wischAnzeige.text, Math.min(W - 80, Math.max(80, wischAnzeige.x)), Math.max(70, wischAnzeige.y - 26 - wischAnzeige.t * 30));
+        ctx.globalAlpha = 1;
+      }
+    }
+    if (!grob || zustand !== "laeuft") return;
+    // Schiebe-Knopf
+    const gedrueckt = schubFinger !== null;
+    const kx = 100;
+    const ky = H - 100;
+    ctx.fillStyle = gedrueckt ? "rgba(245, 217, 122, 0.42)" : "rgba(10, 8, 18, 0.42)";
+    ctx.strokeStyle = gedrueckt ? "#f5d97a" : "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(kx, ky, gedrueckt ? 60 : 64, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = gedrueckt ? "#fff6d6" : "rgba(255,255,255,0.85)";
+    for (const o of [-14, 8]) {
+      ctx.beginPath();
+      ctx.moveTo(kx + o - 8, ky - 22);
+      ctx.lineTo(kx + o + 10, ky - 10);
+      ctx.lineTo(kx + o - 8, ky + 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.font = '11px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.fillText("SCHIEBEN", kx, ky + 30);
+    // Wisch-Hilfe, solange man langsam ist oder gerade erst losfährt
+    laufHilfe = Math.max(0, laufHilfe - dt);
+    if (tempo < 90 || laufHilfe > 0) {
+      ctx.fillStyle = "rgba(10, 8, 18, 0.55)";
+      rund(W - 262, 58, 248, 132, 12);
+      ctx.fill();
+      ctx.textAlign = "left";
+      ctx.font = '11px "Press Start 2P", monospace';
+      ctx.fillStyle = "#9fd0ff";
+      ctx.fillText("RECHTS WISCHEN", W - 248, 80);
+      ctx.font = '13px "Press Start 2P", monospace';
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      // kleine Bilder der Fingerbewegung: erst runter, dann in Trick-Richtung (Pfeilspitze am Ende)
+      const bogen = Array.from({ length: 9 }, (_, i) => [6 + 9 * Math.sin((i / 8) * Math.PI), 8 - 18 * (i / 8)]);
+      const zeilen = [
+        ["Ollie", [[0, -10], [6, 9], [12, -11]]],
+        ["Kickflip", [[0, -10], [4, 9], [22, -9]]],
+        ["Heelflip", [[18, -10], [14, 9], [-4, -9]]],
+        ["Shove-it", [[6, -12], ...bogen]],
+      ];
+      ctx.strokeStyle = "#9fd0ff";
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      zeilen.forEach(([n, pfad], i) => {
+        const ox = W - 240;
+        const oy = 101 + i * 22;
+        ctx.beginPath();
+        pfad.forEach(([x, y], j) => (j ? ctx.lineTo(ox + x, oy + y * 0.8) : ctx.moveTo(ox + x, oy + y * 0.8)));
+        ctx.stroke();
+        const [x1, y1] = pfad[pfad.length - 2];
+        const [x2, y2] = pfad[pfad.length - 1];
+        const w = Math.atan2((y2 - y1) * 0.8, x2 - x1);
+        ctx.beginPath();
+        ctx.moveTo(ox + x2 + Math.cos(w + 2.5) * 6, oy + y2 * 0.8 + Math.sin(w + 2.5) * 6);
+        ctx.lineTo(ox + x2, oy + y2 * 0.8);
+        ctx.lineTo(ox + x2 + Math.cos(w - 2.5) * 6, oy + y2 * 0.8 + Math.sin(w - 2.5) * 6);
+        ctx.stroke();
+        ctx.fillText(n, W - 186, 106 + i * 22);
+      });
+    }
+  }
+  let laufHilfe = 0;
+
   function zeichneHud(t, dt) {
     if (zustand !== "laeuft" && zustand !== "pause") return;
     const w = WELTEN[aktWelt % WELTEN.length];
@@ -2664,7 +2777,9 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
     } else if (k === " " || k === "ArrowUp" || k === "w" || k === "W") {
       if (sp.amBoden) springen();
       else trick("kickflip");
-    } else if (k === "ArrowDown" || k === "s" || k === "S") trick("shove");
+    } else if (k === "q" || k === "Q") trick("heelflip");
+    else if (k === "e" || k === "E") trick("shove360");
+    else if (k === "ArrowDown" || k === "s" || k === "S") trick("shove");
     else if (k === "ArrowLeft" || k === "a" || k === "A") trick("backflip");
   };
   // Sprungtaste früh losgelassen: kleiner Hüpfer statt voller Ollie
@@ -2681,6 +2796,101 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   function anschieben() {
     if (zustand !== "laeuft" || sp.sturz || !sp.amBoden || sp.schub || sp.auf?.art === "rail") return;
     sp.schub = { t: 0 };
+  }
+  // ---------- Wisch-Tricks (Touch, rechte Bildschirmhälfte) ----------
+  // Der Finger zieht erst nach unten (in die Hocke) und schnippt dann nach oben.
+  // Richtung und Bogen der Aufwärtsbewegung entscheiden, welcher Trick kommt.
+  const WISCH_TIPP = 12; // weniger Bewegung = Antippen (CSS-Pixel)
+  const WISCH_LADEN = 18; // so weit nach unten = geladen
+  const WISCH_FLICK = 26; // so weit wieder hoch = Absprung
+  const WISCH_NAMEN = { ollie: "Ollie", nollie: "Nollie", kickflip: "Kickflip", heelflip: "Heelflip", shove: "Pop Shove-it", fsshove: "FS Shove-it", shove360: "360 Shove-it", backflip: "Backflip" };
+  // Summe der Richtungswechsel entlang des Pfads (Bogenmaß, negativ = Bogen über rechts)
+  function drehung(pfad) {
+    const pkt = [pfad[0]];
+    for (const p of pfad) if (Math.hypot(p.x - pkt[pkt.length - 1].x, p.y - pkt[pkt.length - 1].y) >= 8) pkt.push(p);
+    let summe = 0;
+    for (let i = 2; i < pkt.length; i++) {
+      const a = Math.atan2(pkt[i - 1].y - pkt[i - 2].y, pkt[i - 1].x - pkt[i - 2].x);
+      const b = Math.atan2(pkt[i].y - pkt[i - 1].y, pkt[i].x - pkt[i - 1].x);
+      let d = b - a;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      summe += d;
+    }
+    return summe;
+  }
+  // liefert { art, fertig } – fertig = eindeutig, darf schon während der Bewegung auslösen
+  function erkenneWisch(pfad) {
+    const s = pfad[0];
+    const ende = pfad[pfad.length - 1];
+    const weit = pfad.some((p) => Math.hypot(p.x - s.x, p.y - s.y) >= WISCH_TIPP);
+    if (!weit) return { art: "tipp", fertig: false };
+    const erste = pfad.find((p) => Math.hypot(p.x - s.x, p.y - s.y) >= WISCH_TIPP);
+    // erst nach oben: Nollie (hoch, dann runter) bzw. einfacher Schnipp nach oben
+    if (erste.y < s.y && Math.abs(erste.y - s.y) > Math.abs(erste.x - s.x)) {
+      let hoch = 0;
+      for (let i = 1; i < pfad.length; i++) if (pfad[i].y < pfad[hoch].y) hoch = i;
+      if (ende.y - pfad[hoch].y >= WISCH_FLICK) return { art: "nollie", fertig: true };
+      return { art: "hoch", fertig: false, anker: s };
+    }
+    // Tiefpunkt: erste Umkehr nach dem Runterziehen
+    let tief = 0;
+    for (let i = 1; i < pfad.length; i++) {
+      if (pfad[i].y - pfad[tief].y >= 0.5 * Math.abs(pfad[i].x - pfad[tief].x)) tief = i; // geht noch (eher) nach unten
+      else if (pfad[tief].y - pfad[i].y > 8 || Math.abs(pfad[i].x - pfad[tief].x) > 14) break;
+    }
+    const geladen = pfad[tief].y - s.y >= WISCH_LADEN;
+    const a = geladen ? pfad[tief] : s;
+    const rest = pfad.slice(geladen ? tief : 0);
+    const dreh = drehung(rest);
+    const dx = ende.x - a.x;
+    const hochWeg = a.y - ende.y;
+    // Bauch des Bogens: größter seitlicher Abstand von der Linie Tiefpunkt → Ende (+ = rechts)
+    const laenge = Math.hypot(dx, ende.y - a.y) || 1;
+    let bauch = 0;
+    for (const p of rest) {
+      const d = (dx * (p.y - a.y) - (ende.y - a.y) * (p.x - a.x)) / -laenge;
+      if (Math.abs(d) > Math.abs(bauch)) bauch = d;
+    }
+    const krumm = Math.abs(bauch) / laenge;
+    if (Math.abs(dreh) >= Math.PI * 1.5) return { art: "shove360", fertig: false, geladen };
+    if (hochWeg > 0 && (Math.abs(dreh) >= Math.PI * 0.6 || (krumm >= 0.3 && Math.abs(bauch) >= 14))) {
+      const rechts = Math.abs(dreh) >= Math.PI * 0.6 ? dreh < 0 : bauch > 0;
+      return { art: rechts ? "shove" : "fsshove", fertig: false, geladen };
+    }
+    if (hochWeg >= WISCH_FLICK) {
+      const art = dx > hochWeg * 0.5 ? "kickflip" : dx < -hochWeg * 0.5 ? "heelflip" : "ollie";
+      // gerader Schnipp ohne Bogen: sofort abspringen
+      return { art, fertig: hochWeg >= WISCH_FLICK * 1.6 && krumm < 0.15, geladen };
+    }
+    if (geladen && Math.abs(dx) >= 28 && hochWeg < WISCH_FLICK) return { art: "backflip", fertig: false, geladen };
+    return { art: null, fertig: false, geladen };
+  }
+  let fingerSpur = []; // Fingerspur in logischen Koordinaten (zum Zeichnen)
+  let wischAnzeige = null; // erkannter Trick, kurz neben der Spur
+  // erkannten Wisch ausführen: am Boden abspringen (+ Trick), in der Luft nur den Trick
+  function wischAusfuehren(art, amEnde) {
+    if (!art || zustand !== "laeuft" || sp.sturz) return false;
+    if (art === "tipp") art = sp.amBoden ? "ollie" : "kickflip";
+    if (art === "hoch") {
+      if (!amEnde) return false;
+      art = sp.amBoden ? "ollie" : "kickflip";
+    }
+    if (sp.amBoden) {
+      if (sp.auf?.art === "rail" && !zeiger?.geladen && art !== "ollie") return false;
+      springen();
+      if (sp.amBoden) return false; // z. B. auf dem Boost-Streifen
+      sp.sprungSchnitt = false; // Wisch-Sprung ist immer ein voller Ollie
+      sp.halten = false;
+      if (art !== "ollie") trick(art);
+    } else {
+      if (art === "ollie" || art === "nollie") art = "kickflip";
+      if (sp.trick) return false;
+      trick(art);
+    }
+    const p = fingerSpur[fingerSpur.length - 1];
+    if (p) wischAnzeige = { text: WISCH_NAMEN[art], x: p.x, y: p.y, t: 0 };
+    return true;
   }
   let zeiger = null; // Finger für Sprung/Wischen
   let schubFinger = null; // Finger, der links gedrückt hält
@@ -2705,8 +2915,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       anschieben();
       return;
     }
-    zeiger = { id: e.pointerId, x: e.clientX, y: e.clientY, warAmBoden: sp.amBoden, gewischt: false };
-    if (sp.amBoden) springen();
+    zeiger = { id: e.pointerId, pfad: [{ x: e.clientX, y: e.clientY }], fertig: false, gewischt: false, geladen: false };
+    fingerSpur = [{ ...logisch(e), t: 0 }];
   };
   const onMove = (e) => {
     if (zustand === "karte" || zustand === "garage") {
@@ -2714,18 +2924,25 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       canvas.style.cursor = knopfBei(maus) ? "pointer" : "default";
       return;
     }
-    if (!zeiger || zeiger.gewischt || e.pointerId !== zeiger.id) return;
-    const dx = e.clientX - zeiger.x;
-    const dy = e.clientY - zeiger.y;
-    if (Math.hypot(dx, dy) < 26) return;
-    zeiger.gewischt = true;
-    if (sp.amBoden && sp.auf?.art === "rail") {
-      // auf der Stange wischen = Grind-Trick
+    if (!zeiger || e.pointerId !== zeiger.id) return;
+    zeiger.pfad.push({ x: e.clientX, y: e.clientY });
+    fingerSpur.push({ ...logisch(e), t: 0 });
+    if (fingerSpur.length > 60) fingerSpur.shift();
+    if (zeiger.fertig) return;
+    const s = zeiger.pfad[0];
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (sp.amBoden && sp.auf?.art === "rail" && !zeiger.gewischt && Math.hypot(dx, dy) >= 26) {
+      // auf der Stange: erste Wischrichtung = Grind-Trick (danach hochschnippen springt ab)
+      zeiger.gewischt = true;
       grindTrick(Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? "nose" : "board") : dx < 0 ? "tail" : "crooked");
-      return;
     }
-    if (Math.abs(dy) > Math.abs(dx)) trick(dy < 0 ? "kickflip" : "shove");
-    else trick(dx < 0 ? "backflip" : "kickflip");
+    const w = erkenneWisch(zeiger.pfad);
+    if (w.geladen && !zeiger.geladen) {
+      zeiger.geladen = true;
+      if (sp.amBoden) sp.halten = true; // in die Hocke gehen
+    }
+    if (w.fertig && wischAusfuehren(w.art, false)) zeiger.fertig = true;
   };
   const onUp = (e) => {
     if (e.pointerId === schubFinger) {
@@ -2734,9 +2951,14 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
       return;
     }
     if (!zeiger || e.pointerId !== zeiger.id) return;
-    if (!zeiger.gewischt && !zeiger.warAmBoden) trick("kickflip");
+    if (!zeiger.fertig) {
+      const w = erkenneWisch(zeiger.pfad);
+      const aufStange = sp.amBoden && sp.auf?.art === "rail";
+      // auf der Stange nur Antippen oder Runter-Hoch springt ab, sonst bleibt der Grind
+      if (!aufStange || w.art === "tipp" || w.geladen) wischAusfuehren(w.art, true);
+    }
+    if (sp.amBoden) sp.halten = false;
     zeiger = null;
-    sprungLoslassen();
   };
   const onLeave = () => {
     maus = null;
@@ -2751,6 +2973,8 @@ export function start({ canvas, stufe, passeCanvas, status, nachricht, ergebnis 
   canvas.addEventListener("pointerleave", onLeave);
   const ausOverlay = overlayKlick(() => zustand !== "laeuft" && los());
 
+  // nur im Entwicklungsmodus: Zugriff für automatische Tests
+  if (import.meta.env?.DEV) window.__skate = { get: () => ({ zustand, sp, tempo, popups: popups.map((p) => p.text) }) };
   zustand = "karte";
   neu();
   passeAufloesung();
