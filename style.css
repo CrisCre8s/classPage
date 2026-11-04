@@ -1962,6 +1962,70 @@ body.game-on .stage-help {
   margin-top: 12px;
 }
 
+/* Handy: laufendes Spiel im Vollbild (spiele.js setzt .vollbild) */
+body.spiel-vollbild {
+  overflow: hidden;
+}
+
+body.game-on .stage.vollbild,
+body.game-on .stage.vollbild[data-game] {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  border: 0;
+  border-radius: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.stage.vollbild .panel-head {
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-height: 0;
+  margin-bottom: 8px;
+}
+
+.stage.vollbild .panel-head h1 {
+  overflow: hidden;
+  font-size: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stage.vollbild #stage-level {
+  display: none;
+}
+
+.stage.vollbild .stage-status {
+  order: 0;
+  width: auto;
+  min-width: 0;
+  margin: 0 0 0 auto;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stage.vollbild #stage-close {
+  flex: none;
+  min-height: 36px;
+  margin-left: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.stage.vollbild .stage-help {
+  display: none;
+}
+
 .stage-msg {
   position: absolute;
   inset: 0;
