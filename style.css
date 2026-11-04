@@ -2060,11 +2060,21 @@ body.game-on .stage.vollbild[data-game] {
   .stage.vollbild .stage-status:empty {
     display: none;
   }
+  /* nur ein rundes ✕, damit es kaum etwas vom Spiel verdeckt */
   .stage.vollbild #stage-close {
-    min-height: 32px;
+    width: 38px;
+    min-height: 38px;
     margin-left: auto;
-    padding: 0 12px;
-    font-size: 13px;
+    padding: 0;
+    font-size: 0;
+  }
+  .stage.vollbild #stage-close::before {
+    content: "✕";
+    font-size: 16px;
+  }
+  /* Stick-Skater zeigt Münzen und Strecke selbst im Bild */
+  .stage.vollbild[data-game="skate"] .stage-status {
+    display: none;
   }
   .stage.vollbild .stage-body {
     flex: none;
@@ -2124,6 +2134,81 @@ body.game-on .stage.vollbild[data-game] {
 
 .stage-msg button {
   margin-top: 6px;
+}
+
+/* Stick-Skater: Auswertung nach dem Level */
+.stage-msg .skate-sterne {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  font-size: 46px;
+  line-height: 1;
+}
+
+.skate-stern {
+  color: rgba(255, 255, 255, 0.16);
+  transform: scale(0.4);
+  opacity: 0;
+  animation: skate-stern 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+  animation-delay: calc(0.25s + var(--i) * 0.32s);
+}
+
+.skate-stern.an {
+  color: #f5d97a;
+  text-shadow: 0 0 18px rgba(245, 217, 122, 0.75);
+}
+
+@keyframes skate-stern {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.stage-msg .skate-liste {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.skate-liste li span {
+  display: inline-block;
+  width: 1.4em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.skate-liste li.ok {
+  color: var(--text, #f4f1f8);
+}
+
+.skate-liste li.ok span {
+  color: #f5d97a;
+}
+
+.stage-msg .skate-frei {
+  margin: 0;
+  font-weight: 600;
+  color: #5fc39c;
+}
+
+.stage-msg .skate-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skate-stern {
+    transform: none;
+    opacity: 1;
+    animation: none;
+  }
 }
 
 .stage-help {
