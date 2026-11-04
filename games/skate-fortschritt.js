@@ -30,6 +30,49 @@ export const boardFaktoren = (b) => ({
   schub: 1 + (b.werte.schub - 3) * 0.07,
 });
 
+// ---------- Fahrer anpassen ----------
+// Kopfbedeckungen kosten Münzen, besondere Farben gibt es für Sterne
+export const KOPF = [
+  { id: "cap", name: "Cap", preis: 0 },
+  { id: "ohne", name: "Ohne", preis: 0 },
+  { id: "beanie", name: "Mütze", preis: 60 },
+  { id: "stirnband", name: "Stirnband", preis: 90 },
+  { id: "helm", name: "Helm", preis: 150 },
+  { id: "kopfhoerer", name: "Kopfhörer", preis: 250 },
+  { id: "irokese", name: "Irokese", preis: 400 },
+  { id: "krone", name: "Krone", sterne: 50 },
+];
+export const KOPF_FARBEN = ["#b48ef0", "#e5566f", "#5fc39c", "#7fb8ff", "#f5d97a", "#f0a35e", "#ff7fb0", "#2a2733", "#ffffff"];
+export const KOERPER = [
+  { farbe: "#ffffff", name: "Weiß", sterne: 0 },
+  { farbe: "#9fd0ff", name: "Eisblau", sterne: 6 },
+  { farbe: "#ffd36a", name: "Sonnengelb", sterne: 12 },
+  { farbe: "#5ff7e4", name: "Neon", sterne: 20 },
+  { farbe: "#ff9fb0", name: "Rosa", sterne: 30 },
+  { farbe: "#c7ff6a", name: "Limette", sterne: 40 },
+  { farbe: "gold", name: "Gold", sterne: 63 },
+];
+export const SCHUH_FARBEN = ["#e5566f", "#ffffff", "#2a2733", "#5fc39c", "#7fb8ff", "#f5d97a", "#b48ef0"];
+
+// ---------- Erfolge (je +50 Münzen) ----------
+export const sterneVon = (f) => Object.values(f.lv || {}).reduce((a, l) => a + (l.s || []).filter(Boolean).length, 0);
+export const ERFOLGE = [
+  { id: "erstes", name: "Erste Ziel-Linie", text: "Schaff dein erstes Level", pruef: (f) => (f.stat.geschafft || 0) >= 1 },
+  { id: "stadt", name: "Stadtkind", text: "Alle 3 Stadt-Level geschafft", pruef: (f) => [1, 2, 3].every((i) => f.lv[i]?.s?.[0]) },
+  { id: "sterne10", name: "Sternenfänger", text: "10 Sterne gesammelt", pruef: (f) => sterneVon(f) >= 10 },
+  { id: "sterne30", name: "Sternenregen", text: "30 Sterne gesammelt", pruef: (f) => sterneVon(f) >= 30 },
+  { id: "kick100", name: "Kickflip-Profi", text: "100 Kickflips", pruef: (f) => (f.stat.kickflip || 0) >= 100 },
+  { id: "grind100", name: "Grind-König", text: "100-mal gegrindet", pruef: (f) => (f.stat.grind || 0) >= 100 },
+  { id: "ring10", name: "Feuerspringer", text: "Durch 10 Ringe gesprungen", pruef: (f) => (f.stat.ring || 0) >= 10 },
+  { id: "combo3", name: "Combo-Meister", text: "3 Tricks in einem Sprung", pruef: (f) => (f.stat.combo || 0) >= 3 },
+  { id: "muenzen1000", name: "Sparschwein", text: "1000 Münzen eingesammelt", pruef: (f) => (f.stat.muenzen || 0) >= 1000 },
+  { id: "fehlerfrei", name: "Fehlerfrei", text: "5 Level ohne Sturz", pruef: (f) => Object.values(f.lv).filter((l) => l.s?.[2]).length >= 5 },
+  { id: "boards4", name: "Board-Sammler", text: "4 Boards besitzen", pruef: (f) => f.boards.length >= 4 },
+  { id: "style", name: "Stilikone", text: "4 Kopfbedeckungen besitzen", pruef: (f) => f.koepfe.length >= 4 },
+  { id: "legende", name: "Legende", text: "Meteoritenschauer geschafft", pruef: (f) => !!f.lv[21]?.s?.[0] },
+  { id: "perfekt", name: "Perfektionist", text: "Alle Sterne gesammelt", pruef: (f, max) => sterneVon(f) >= max },
+];
+
 // ---------- Aufgaben ----------
 // lauf: zählt nur innerhalb eines Laufs (bester Lauf wird angezeigt)
 const VORLAGEN = [
@@ -73,6 +116,10 @@ export function laden(welten) {
     f = null;
   }
   f = { muenzen: 0, welten: 0, boards: ["klassik"], board: "klassik", aufgaben: [], weiteste: 0, startWelt: 0, ...(f || {}) };
+  f.fahrer = { kopf: "cap", kopfFarbe: "#b48ef0", koerper: "#ffffff", schuhe: "#e5566f", ...(f.fahrer || {}) };
+  if (!Array.isArray(f.koepfe)) f.koepfe = ["cap", "ohne"];
+  if (!f.stat || typeof f.stat !== "object") f.stat = {};
+  if (!Array.isArray(f.erfolge)) f.erfolge = [];
   if (!Array.isArray(f.boards) || !f.boards.includes("klassik")) f.boards = ["klassik", ...(f.boards || [])];
   f.welten = Math.max(0, Math.min(welten.length - 1, f.welten | 0));
   f.startWelt = Math.max(0, Math.min(f.welten, f.startWelt | 0));
