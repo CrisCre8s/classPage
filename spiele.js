@@ -251,8 +251,55 @@ function beenden() {
   rangAus();
 }
 
+// ---------- Handy: Spiele im Vollbild ----------
+// Auf dem Handy füllt das laufende Spiel den ganzen Bildschirm. Wo der Browser es erlaubt (z. B. Android),
+// geht die Seite in echtes Vollbild und breite Spiele drehen sich quer; auf dem iPhone füllt das Spiel
+// die Browserfläche. „Schließen“ oder die Zurück-Taste führen wieder zur Spieleauswahl.
+const handy = () => matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+let vollbildVerlauf = false; // Eintrag im Browserverlauf, damit „Zurück“ das Spiel schließt
+
+function vollbildAn() {
+  if (!handy()) return;
+  document.getElementById("stage").classList.add("vollbild");
+  document.body.classList.add("spiel-vollbild");
+  document.getElementById("stage-close").textContent = "✕ Schließen";
+  const el = document.documentElement;
+  if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen({ navigationUI: "hide" }).then(querDrehen).catch(() => {});
+  if (!vollbildVerlauf) {
+    history.pushState({ spielVollbild: true }, "");
+    vollbildVerlauf = true;
+  }
+}
+
+// breite Canvas-Spiele (z. B. Stick-Skater) im echten Vollbild quer stellen
+function querDrehen() {
+  const canvas = document.getElementById("game-canvas");
+  if (!document.fullscreenElement || canvas.hidden || !canvas.width) return;
+  if (canvas.width / canvas.height >= 1.4) screen.orientation?.lock?.("landscape").catch(() => {});
+}
+
+function vollbildAus() {
+  document.getElementById("stage").classList.remove("vollbild");
+  document.body.classList.remove("spiel-vollbild");
+  document.getElementById("stage-close").textContent = "Beenden";
+  try {
+    screen.orientation?.unlock?.();
+  } catch {
+    /* nicht unterstützt */
+  }
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+// Spiel schließen und zurück zur Auswahl
+function schliessen() {
+  beenden();
+  vollbildAus();
+  if (location.hash || location.search) history.replaceState(null, "", location.pathname);
+}
+
 async function starten(spiel) {
   beenden();
+  vollbildAn(); // noch während des Antippens, sonst erlaubt der Browser kein Vollbild
   const info = NACH_ID[spiel];
   const stufe = stufeVon(spiel);
 
@@ -318,6 +365,7 @@ async function starten(spiel) {
   if (info.kat === "klassiker") muenzenAn();
   rangStart(spiel, stufe);
   einpassen();
+  querDrehen();
   if (!modul.DOM) canvas.focus({ preventScroll: true });
 }
 
@@ -665,8 +713,14 @@ function initKarten() {
   });
 
   document.getElementById("stage-close").addEventListener("click", () => {
-    beenden();
-    if (location.hash || location.search) history.replaceState(null, "", location.pathname);
+    // im Handy-Vollbild über den Verlauf schließen, damit kein toter „Zurück“-Eintrag bleibt
+    if (vollbildVerlauf) history.back();
+    else schliessen();
+  });
+  window.addEventListener("popstate", () => {
+    if (!vollbildVerlauf) return;
+    vollbildVerlauf = false;
+    schliessen();
   });
   new ResizeObserver(einpassen).observe(document.getElementById("stage-body"));
 
