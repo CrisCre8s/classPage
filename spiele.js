@@ -252,42 +252,74 @@ function beenden() {
 }
 
 // ---------- Handy: Spiele im Vollbild ----------
-// Auf dem Handy füllt das laufende Spiel den ganzen Bildschirm. Wo der Browser es erlaubt (z. B. Android),
-// geht die Seite in echtes Vollbild und breite Spiele drehen sich quer; auf dem iPhone füllt das Spiel
-// die Browserfläche. „Schließen“ oder die Zurück-Taste führen wieder zur Spieleauswahl.
+// Auf dem Handy füllt das laufende Spiel den ganzen Bildschirm. Wo der Browser es erlaubt (Android, iPad),
+// geht die Seite in echtes Vollbild und breite Spiele drehen sich quer. Das iPhone erlaubt Webseiten kein
+// Vollbild – dort hilft nur „Zum Home-Bildschirm“ (manifest.webmanifest), dann fehlt die Browserleiste.
+// „Schließen“ oder die Zurück-Taste führen wieder zur Spieleauswahl.
 const handy = () => matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+const alsApp = () => matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches || navigator.standalone === true;
+const iPhone = () => /iPhone|iPod/.test(navigator.userAgent);
 let vollbildVerlauf = false; // Eintrag im Browserverlauf, damit „Zurück“ das Spiel schließt
+const viewportMeta = document.querySelector('meta[name="viewport"]');
+const viewportNormal = viewportMeta?.content || "";
+
+const imVollbild = () => document.fullscreenElement || document.webkitFullscreenElement;
+function echtesVollbild() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!req || imVollbild()) return;
+  try {
+    const r = req.call(el, { navigationUI: "hide" });
+    r?.then?.(querDrehen).catch(() => {});
+  } catch {
+    /* nicht erlaubt */
+  }
+}
 
 function vollbildAn() {
   if (!handy()) return;
-  document.getElementById("stage").classList.add("vollbild");
+  const stage = document.getElementById("stage");
+  stage.classList.add("vollbild");
+  stage.dataset.hinweis = iPhone() && !alsApp() ? "iphone" : "";
   document.body.classList.add("spiel-vollbild");
   document.getElementById("stage-close").textContent = "✕ Schließen";
-  const el = document.documentElement;
-  if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen({ navigationUI: "hide" }).then(querDrehen).catch(() => {});
+  // bis in die Ecken (Notch/abgerundete Ränder), Abstände regelt das CSS mit safe-area
+  if (viewportMeta) viewportMeta.content = `${viewportNormal}, viewport-fit=cover`;
+  echtesVollbild();
   if (!vollbildVerlauf) {
     history.pushState({ spielVollbild: true }, "");
     vollbildVerlauf = true;
   }
 }
 
-// breite Canvas-Spiele (z. B. Stick-Skater) im echten Vollbild quer stellen
+// Ohne Antippen (z. B. Start über einen Link vom Hub) oder nachdem man das Vollbild verlassen hat,
+// lehnt der Browser das Vollbild ab – darum beim nächsten Antippen im Spiel noch einmal versuchen
+function nochmalVollbild(e) {
+  if (e.target.closest?.("#stage-close")) return;
+  if (document.getElementById("stage").classList.contains("vollbild")) echtesVollbild();
+}
+
+// breite Canvas-Spiele (z. B. Stick-Skater) quer stellen; im Hochformat Hinweis zum Drehen
 function querDrehen() {
   const canvas = document.getElementById("game-canvas");
-  if (!document.fullscreenElement || canvas.hidden || !canvas.width) return;
-  if (canvas.width / canvas.height >= 1.4) screen.orientation?.lock?.("landscape").catch(() => {});
+  const breit = !canvas.hidden && canvas.width && canvas.width / canvas.height >= 1.4;
+  document.getElementById("stage").classList.toggle("breit", !!breit);
+  if (breit && imVollbild()) screen.orientation?.lock?.("landscape").catch(() => {});
 }
 
 function vollbildAus() {
-  document.getElementById("stage").classList.remove("vollbild");
+  const stage = document.getElementById("stage");
+  stage.classList.remove("vollbild", "breit");
   document.body.classList.remove("spiel-vollbild");
   document.getElementById("stage-close").textContent = "Beenden";
+  if (viewportMeta) viewportMeta.content = viewportNormal;
   try {
     screen.orientation?.unlock?.();
   } catch {
     /* nicht unterstützt */
   }
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else if (document.webkitFullscreenElement) document.webkitExitFullscreen?.();
 }
 
 // Spiel schließen und zurück zur Auswahl
@@ -717,6 +749,9 @@ function initKarten() {
     if (vollbildVerlauf) history.back();
     else schliessen();
   });
+  const stageEl = document.getElementById("stage");
+  stageEl.addEventListener("touchend", nochmalVollbild);
+  stageEl.addEventListener("click", nochmalVollbild);
   window.addEventListener("popstate", () => {
     if (!vollbildVerlauf) return;
     vollbildVerlauf = false;
