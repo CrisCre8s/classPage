@@ -58,7 +58,7 @@ export const HINDERNISSE = {
 
 const zufall = (a, b) => a + Math.random() * (b - a);
 // kleiner Zufallsgenerator mit Startwert (damit Deko beim Neuzeichnen gleich bleibt)
-function sr(seed) {
+export function sr(seed) {
   let r = Math.floor(Math.abs(seed) * 1e6) % 233280;
   return () => (r = (r * 9301 + 49297) % 233280) / 233280;
 }
@@ -67,7 +67,7 @@ function sr(seed) {
 // Hintergründe
 // ---------------------------------------------------------------------------
 const BREITE = 2400;
-function schicht(f, n, erzeuge) {
+export function schicht(f, n, erzeuge) {
   const liste = [];
   let x = 0;
   while (x < BREITE) {
@@ -78,7 +78,7 @@ function schicht(f, n, erzeuge) {
   }
   return { f, liste, breite: Math.max(BREITE, x) };
 }
-function parallax(ctx, s, kamX, kamY, W, H, fn) {
+export function parallax(ctx, s, kamX, kamY, W, H, fn) {
   const off = (((kamX * s.f) % s.breite) + s.breite) % s.breite;
   const basis = H + 40 - (kamY + H * 0.68) * s.f * 0.6;
   for (const rep of [0, s.breite]) {
@@ -89,25 +89,25 @@ function parallax(ctx, s, kamX, kamY, W, H, fn) {
     }
   }
 }
-function verlauf(ctx, H, W, stops) {
+export function verlauf(ctx, H, W, stops) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
   stops.forEach(([k, c]) => g.addColorStop(k, c));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 }
-function glanz(ctx, x, y, r, farbe, a) {
+export function glanz(ctx, x, y, r, farbe, a) {
   const g = ctx.createRadialGradient(x, y, 0, x, y, r);
   g.addColorStop(0, farbe.replace("A", a));
   g.addColorStop(1, farbe.replace("A", 0));
   ctx.fillStyle = g;
   ctx.fillRect(x - r, y - r, r * 2, r * 2);
 }
-function kreis(ctx, x, y, r) {
+export function kreis(ctx, x, y, r) {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
 }
-function sterneMalen(ctx, liste, t, farbig = false) {
+export function sterneMalen(ctx, liste, t, farbig = false) {
   for (const s of liste) {
     ctx.globalAlpha = 0.4 + 0.45 * Math.sin(t / 700 + s.p);
     ctx.fillStyle = farbig && s.p > 5.2 ? "#ffd9a8" : farbig && s.p < 0.6 ? "#a8c8ff" : "#ffffff";
@@ -115,7 +115,7 @@ function sterneMalen(ctx, liste, t, farbig = false) {
   }
   ctx.globalAlpha = 1;
 }
-const sterneErzeugen = (n, hoehe, W) => Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * hoehe, r: Math.random() < 0.15 ? 1.6 : 0.9, p: Math.random() * 6.28 }));
+export const sterneErzeugen = (n, hoehe, W) => Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * hoehe, r: Math.random() < 0.15 ? 1.6 : 0.9, p: Math.random() * 6.28 }));
 
 const CACHE_BAUER = {
   stadt(W) {
@@ -183,12 +183,12 @@ const CACHE_BAUER = {
 };
 
 const caches = {};
-function cache(welt, W) {
+export function cache(welt, W) {
   if (!caches[welt]) caches[welt] = CACHE_BAUER[welt](W);
   return caches[welt];
 }
 
-const HINTERGRUND = {
+export const HINTERGRUND = {
   stadt(ctx, t, kamX, kamY, W, H, c) {
     verlauf(ctx, H, W, [[0, "#07060d"], [0.55, "#181332"], [1, "#33264f"]]);
     sterneMalen(ctx, c.sterne, t);
@@ -627,7 +627,7 @@ const HINTERGRUND = {
   },
 };
 
-function palmeSilhouette(ctx, x, fuss, it, t, farbe) {
+export function palmeSilhouette(ctx, x, fuss, it, t, farbe) {
   const wind = Math.sin(t / 1100 + it.seed * 7) * 0.05;
   const kx = x + Math.sin(it.neig) * it.h;
   const ky = fuss - it.h;
@@ -650,14 +650,14 @@ function palmeSilhouette(ctx, x, fuss, it, t, farbe) {
   }
 }
 
-export function zeichneHintergrund(ctx, welt, t, kamX, kamY, W, H) {
+export function zeichneHintergrund(ctx, welt, t, kamX, kamY, W, H, v = 0) {
   const fn = HINTERGRUND[welt] || HINTERGRUND.stadt;
-  fn(ctx, t, kamX, kamY, W, H, cache(welt in HINTERGRUND ? welt : "stadt", W));
+  fn(ctx, t, kamX, kamY, W, H, cache(welt in HINTERGRUND ? welt : "stadt", W), v);
 }
 
 // Wetter vor der Szene: Schnee, Glut, Glühwürmchen, Funkeln
 const wetterTeile = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), v: 0.6 + Math.random() * 0.8, p: Math.random() * 6.28, r: 0.8 + Math.random() * 1.8 }));
-export function zeichneWetter(ctx, welt, t, kamX, W, H) {
+export function zeichneWetter(ctx, welt, t, kamX, W, H, v = 0) {
   if (welt === "eis") {
     ctx.fillStyle = "rgba(255,255,255,0.8)";
     for (const p of wetterTeile) {
@@ -1289,6 +1289,49 @@ const lerpQ = (a, b, c, k) => (1 - k) * (1 - k) * a + 2 * (1 - k) * k * b + k * 
 // ---------------------------------------------------------------------------
 export function zeichneKleinWelt(ctx, o, t) {
   const { x, y, w, h } = o;
+  if (o.stil === "meteorit") {
+    // eingeschlagener Meteorit: glühender Brocken im kleinen Krater
+    ctx.fillStyle = "#3a3b46";
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y, w * 0.85, 7, 0, Math.PI, 0);
+    ctx.fill();
+    glanz(ctx, x + w / 2, y - h / 2, w, "rgba(255, 120, 50, A)", 0.25 + 0.1 * Math.sin(t / 200));
+    ctx.fillStyle = "#4a3e3c";
+    ctx.beginPath();
+    ctx.moveTo(x + 2, y);
+    ctx.lineTo(x + 6, y - h * 0.7);
+    ctx.lineTo(x + w * 0.45, y - h);
+    ctx.lineTo(x + w - 4, y - h * 0.75);
+    ctx.lineTo(x + w, y);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255, 140, 60, ${0.6 + 0.3 * Math.sin(t / 150)})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 10, y - h * 0.5);
+    ctx.lineTo(x + w * 0.45, y - h * 0.62);
+    ctx.lineTo(x + w * 0.7, y - h * 0.3);
+    ctx.stroke();
+    return true;
+  }
+  if (o.stil === "eiszapfen") {
+    // abgebrochener Eiszapfen, steckt im Schnee
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y, w * 0.7, 5, 0, Math.PI, 0);
+    ctx.fill();
+    const g = ctx.createLinearGradient(x, y - h, x + w, y);
+    g.addColorStop(0, "#ffffff");
+    g.addColorStop(1, "#7fb8e8");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(x + 2, y);
+    ctx.lineTo(x + w * 0.3, y - h);
+    ctx.lineTo(x + w * 0.55, y - h * 0.55);
+    ctx.lineTo(x + w * 0.75, y - h * 0.9);
+    ctx.lineTo(x + w - 2, y);
+    ctx.fill();
+    return true;
+  }
   if (o.stil === "sandburg") {
     ctx.fillStyle = "#e8c48a";
     ctx.fillRect(x, y - h * 0.55, w, h * 0.55);

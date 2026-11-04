@@ -42,11 +42,11 @@ const VORLAGEN = [
   { typ: "ring", n: [1, 3], text: (n) => `Spring durch ${n} Feuerring${n > 1 ? "e" : ""}`, lohn: (n) => n * 25 },
   { typ: "treppe", n: [1, 3], text: (n) => `Spring ${n === 1 ? "eine Treppe" : `${n} Treppen`} mit 5+ Stufen ganz`, lohn: (n) => n * 18 },
   { typ: "auto", n: [1, 3], text: (n) => `Grinde ${n === 1 ? "ein Auto" : `${n} Autos`}`, lohn: (n) => n * 15 },
-  { typ: "muenzenLauf", lauf: true, n: [30, 110], schritt: 10, text: (n) => `Sammle ${n} Münzen in einem Lauf`, lohn: (n) => Math.round(n / 2 + 10) },
-  { typ: "meterLauf", lauf: true, n: [400, 1600], schritt: 100, text: (n) => `Fahre ${n} m in einem Lauf`, lohn: (n) => Math.round(n / 20) },
+  { typ: "muenzenLauf", lauf: true, n: [30, 70], schritt: 5, text: (n) => `Sammle ${n} Münzen in einem Lauf`, lohn: (n) => Math.round(n / 2 + 10) },
+  { typ: "meterLauf", lauf: true, n: [250, 550], schritt: 50, text: (n) => `Fahre ${n} m in einem Lauf`, lohn: (n) => Math.round(n / 12) },
   { typ: "combo", lauf: true, n: [2, 3], text: (n) => `${n}er-Combo in einem Sprung`, lohn: (n) => n * 15 },
   { typ: "pilz", n: [3, 8], text: (n) => `Hüpf ${n}-mal auf Pilzen (Dschungel)`, lohn: (n) => n * 6, ab: 2 },
-  { typ: "welt", text: (_n, f) => `Erreiche ${f.zielName}`, lohn: () => 60 },
+  { typ: "welt", text: (_n, f) => `Schalte ${f.zielName} frei`, lohn: () => 60 },
 ];
 
 function ganz(a, b, schritt = 1) {
@@ -78,6 +78,8 @@ export function laden(welten) {
   f.startWelt = Math.max(0, Math.min(f.welten, f.startWelt | 0));
   if (!Array.isArray(f.aufgaben)) f.aufgaben = [];
   f.aufgaben = f.aufgaben.filter((a) => a && a.typ && a.ziel);
+  // seit es Level gibt (400–700 m), sind sehr lange Strecken nicht mehr machbar
+  f.aufgaben = f.aufgaben.filter((a) => !(a.typ === "meterLauf" && a.ziel > 550) && !(a.typ === "muenzenLauf" && a.ziel > 70));
   while (f.aufgaben.length < 3) f.aufgaben.push(neueAufgabe(f, welten));
   return f;
 }
