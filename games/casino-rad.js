@@ -9,12 +9,13 @@ export function baue(ziel, api) {
     <div class="rad">
       <div class="rad-buehne"><canvas class="rad-canvas" width="600" height="600" aria-label="Glücksrad"></canvas><div class="rad-zeiger" aria-hidden="true"></div></div>
       <p class="rad-ergebnis" aria-live="polite">&nbsp;</p>
+      <p class="rad-bilanz casino-klein" aria-live="polite">&nbsp;</p>
       <div class="casino-steuerung">
         <div class="einsatz-platz"></div>
         <button type="button" class="btn casino-los" data-los>Drehen</button>
       </div>
       <details class="casino-regeln"><summary>Felder</summary>
-        <p class="casino-klein">20 gleich große Felder: ${[...new Set(FELDER)].sort((a, b) => a - b).map((m) => `${FELDER.filter((x) => x === m).length}× ${text(m)}`).join(" · ")}. Im Schnitt kommen 97,5 % der Einsätze zurück, auf Dauer verliert man also ein wenig.</p>
+        <p class="casino-klein">20 gleich große Felder: ${[...new Set(FELDER)].sort((a, b) => a - b).map((m) => `${FELDER.filter((x) => x === m).length}× ${text(m)}`).join(" · ")}. Mehr als den Einsatz gibt es nur bei 1,5×, 2× und 10× – also in 4 von 20 Feldern (20 %). 0,5× ist ein Verlust. Im Schnitt kommen 97,5 % der Einsätze zurück, auf Dauer verliert man also ein wenig.</p>
       </details>
     </div>`;
   const el = (s) => ziel.querySelector(s);
@@ -29,6 +30,9 @@ export function baue(ziel, api) {
   let dreht = false;
   let raf = 0;
   let offen = null; // { m, e } während das Rad dreht
+  // Bilanz seit dem Öffnen: Drehungen, echte Gewinne (mehr als der Einsatz) und Plus/Minus
+  const bilanz = { n: 0, plus: 0, netto: 0 };
+  const vz = (x) => (x > 0 ? `+${api.fmt(x)}` : x < 0 ? `−${api.fmt(-x)}` : "±0");
 
   function zeichne(hervor = -1) {
     const r = 290;
@@ -120,20 +124,26 @@ export function baue(ziel, api) {
         const gewinn = Math.round(e * m);
         if (gewinn) api.gutschrift(gewinn);
         zeichne(ziel_);
+        // Anzeige immer mit dem Ergebnis gegenüber dem Einsatz, damit 0,5× nicht wie ein Gewinn aussieht
+        const netto = gewinn - e;
         if (m > 1) {
-          ergebnisEl.textContent = `${text(m)}: +${api.fmt(gewinn)}`;
+          ergebnisEl.textContent = `${text(m)}: ${api.fmt(gewinn)} zurück · Gewinn ${vz(netto)}`;
           ergebnisEl.className = `rad-ergebnis gewinn${m >= 10 ? " gross" : ""}`;
-          if (m >= 10) api.meldung(`10×! +${api.fmt(gewinn)}`, "gewinn");
+          if (m >= 10) api.meldung(`10×! Gewinn ${vz(netto)}`, "gewinn");
         } else if (m === 1) {
-          ergebnisEl.textContent = "1×: Einsatz zurück";
+          ergebnisEl.textContent = "1×: Einsatz zurück · ±0";
           ergebnisEl.className = "rad-ergebnis zurueck";
         } else if (m > 0) {
-          ergebnisEl.textContent = `${text(m)}: ${api.fmt(gewinn)} zurück`;
-          ergebnisEl.className = "rad-ergebnis zurueck";
+          ergebnisEl.textContent = `${text(m)}: nur ${api.fmt(gewinn)} zurück · Verlust ${vz(netto)}`;
+          ergebnisEl.className = "rad-ergebnis nichts";
         } else {
-          ergebnisEl.textContent = "Niete. Nochmal?";
+          ergebnisEl.textContent = `Niete · Verlust ${vz(netto)}`;
           ergebnisEl.className = "rad-ergebnis nichts";
         }
+        bilanz.n++;
+        if (m > 1) bilanz.plus++;
+        bilanz.netto += netto;
+        el(".rad-bilanz").textContent = `Bisher: ${bilanz.n} Drehung${bilanz.n === 1 ? "" : "en"} · echter Gewinn in ${bilanz.plus} · Bilanz ${vz(bilanz.netto)}`;
         api.runde(gewinn - e);
         dreht = false;
         los.disabled = false;
