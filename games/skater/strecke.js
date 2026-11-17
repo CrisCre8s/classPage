@@ -5,7 +5,9 @@ import { WELTEN } from "./level.js";
 
 export const BODEN_Y = 400; // Starthöhe des Bodens (logische Pixel, y nach unten)
 export const TEMPO = 380; // Grundtempo (px/s)
-export const OLLIE = 820; // Absprung (px/s)
+export const OLLIE = 600; // Absprung (px/s): kurz tippen = kleiner Sprung
+export const HALT_ZEIT = 0.24; // so lange wirkt Gedrückthalten …
+export const HALT_G = 0.3; // … und so stark ist die Schwerkraft dabei (lang halten = großer Sprung)
 export const G = 2400; // Schwerkraft (px/s²)
 
 // Kleiner, fester Zufall: gleiche Strecke bei jedem Versuch
@@ -40,13 +42,31 @@ const GRIND = {
   tafel: { h0: 88, h1: 88, fest: false },
 };
 
-// Flugbahn eines normalen Ollies (für die Tropfen-Bögen, die zeigen, wo man springen muss)
-function bogen(st, x0, y0, v, anzahl, dim = 0, von = 0.12, bis = 0.88) {
-  const T = (2 * OLLIE) / G;
+// Flugbahn eines Ollies (kurz oder lang gehalten) – für die Tropfen-Bögen, die zeigen, wo man springen muss
+const bahnCache = {};
+export function sprungBahn(lang) {
+  const k = lang ? "l" : "k";
+  if (bahnCache[k]) return bahnCache[k];
+  const pts = [];
+  let t = 0;
+  let h = 0;
+  let vy = OLLIE;
+  const dt = 1 / 120;
+  do {
+    const g = lang && t < HALT_ZEIT ? G * HALT_G : G;
+    vy -= g * dt;
+    h += vy * dt;
+    t += dt;
+    pts.push([t, Math.max(0, h)]);
+  } while (h > 0);
+  return (bahnCache[k] = { pts, T: t });
+}
+function bogen(st, x0, y0, v, anzahl, dim = 0, von = 0.12, bis = 0.88, lang = true) {
+  const b = sprungBahn(lang);
   for (let i = 0; i < anzahl; i++) {
     const f = von + ((bis - von) * i) / Math.max(1, anzahl - 1);
-    const t = T * f;
-    st.tropfen.push({ x: x0 + v * t, y: y0 - (OLLIE * t - (G / 2) * t * t) - 34, dim, weg: false });
+    const [t, h] = b.pts[Math.min(b.pts.length - 1, Math.floor(f * b.pts.length))];
+    st.tropfen.push({ x: x0 + v * t, y: y0 - h - 34, dim, weg: false });
   }
 }
 
@@ -102,8 +122,8 @@ function hindernis(st, x, art) {
   const [aw, ah] = HINDERNIS[alt];
   st.hind.push({ x, y: st.cy, w, h, art, alt, aw, ah, typ: art === "ratte" ? "ratte" : "fest" });
   // Tropfen-Bogen: zeigt, wo man abspringen muss
-  const T = (2 * OLLIE) / G;
-  bogen(st, x + w / 2 - (st.tempo * T) / 2, st.cy, st.tempo, 5);
+  const T = sprungBahn(false).T;
+  bogen(st, x + w / 2 - (st.tempo * T) / 2, st.cy, st.tempo, 5, 0, 0.12, 0.88, false);
 }
 
 function grind(st, x0, x1, art, yBasis0 = st.cy, yBasis1 = st.cy) {
@@ -111,14 +131,17 @@ function grind(st, x0, x1, art, yBasis0 = st.cy, yBasis1 = st.cy) {
   const seg = { x0, y0: yBasis0 - g.h0, x1, y1: yBasis1 - g.h1, art };
   st.grinds.push(seg);
   if (g.fest) st.hind.push({ x: x0, y: yBasis0, w: x1 - x0, h: g.h0, art, typ: "kante" });
-  // Bogen, der auf die Stange führt
-  const T = (2 * OLLIE) / G;
+  // Bogen, der auf die Stange führt (lang gehaltener Ollie)
   const v = st.tempo;
+  const b = sprungBahn(true);
+  const apex = b.pts.reduce((m, p) => (p[1] > m[1] ? p : m));
+  // Absprung so, dass man im Fallen auf der Stange landet
+  let tLand = apex[0];
+  for (const [t, h] of b.pts) if (t > apex[0] && h >= g.h0 + 4) tLand = t;
   for (let i = 0; i < 4; i++) {
-    const t = T * (0.15 + i * 0.12);
-    const yy = yBasis0 - (OLLIE * t - (G / 2) * t * t);
-    if (yBasis0 - yy < g.h0 * 0.6 && i > 1) break;
-    st.tropfen.push({ x: x0 - v * 0.42 + v * t, y: yy - 34, dim: 0, weg: false });
+    const t = tLand * (0.2 + i * 0.22);
+    const h = b.pts[Math.min(b.pts.length - 1, Math.floor(t * 120))][1];
+    st.tropfen.push({ x: x0 + 10 - v * tLand + v * t, y: yBasis0 - h - 34, dim: 0, weg: false });
   }
   for (let x = x0 + 50; x < x1 - 20; x += 70) {
     const f = (x - x0) / (x1 - x0);
@@ -133,14 +156,14 @@ function riss(st, x, y) {
 }
 
 // Bausteine, an deren Anfang man springen muss, bekommen genug Anlauf (auch nach einem Grind)
-const MIT_ANLAUF = new Set(["l", "l+", "lg", "t", "t-", "h", "dach", "zug", "panels"]);
+const MIT_ANLAUF = new Set(["l", "l+", "lg", "t", "t-", "h", "dach", "zug", "panels", "presse", "presse2"]);
 function baustein(st, token) {
   const [b, arg] = token.split(":");
   if (MIT_ANLAUF.has(b)) flach(st, b === "dach" || b === "lg" ? 220 : 180);
   const W = WELTEN[st.welt];
   const r = st.rnd;
   const v = st.tempo;
-  const T = (2 * OLLIE) / G;
+  const T = sprungBahn(true).T;
   const railArt = W.rail;
   switch (b) {
     case "f": {
@@ -191,7 +214,7 @@ function baustein(st, token) {
     }
     case "h": {
       // Kante hoch: gegen die Wand fahren = Sturz
-      bogen(st, st.cx - v * 0.2, st.cy, v, 4, 0, 0.12, 0.5);
+      bogen(st, st.cx - v * 0.12, st.cy, v, 4, 0, 0.12, 0.5, false);
       st.cy -= 56;
       flach(st, 400, true);
       break;
@@ -212,8 +235,8 @@ function baustein(st, token) {
       const x = st.cx;
       flach(st, 460, true);
       if (b === "riss") {
-        riss(st, x + 260, st.cy - 150);
-        bogen(st, x + 260 - v * 0.34, st.cy, v, 3, 0, 0.12, 0.35);
+        riss(st, x + 260, st.cy - 130);
+        bogen(st, x + 260 - v * 0.33, st.cy, v, 3, 0, 0.12, 0.4);
       } else riss(st, x + 260, st.cy - 46);
       break;
     }

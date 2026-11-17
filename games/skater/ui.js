@@ -1,6 +1,7 @@
 // Stick-Skater – Menüs als aufgeklebte Comic-Sticker und Panels: Startbildschirm, Weltkarte als Comic-Seite,
 // Levelauswahl, Garderobe/Shop, Erfolge, Einstellungen, Pause und Ergebnis.
 import { LEVEL, WELTEN, STERNE_FUER_WELT, levelName, levelDerWelt } from "./level.js";
+import { TRICKS } from "./logik.js";
 import { KOSTUEME, BOARDS, ERFOLGE, sterneGesamt, sterneVonLevel, weltFrei, levelFrei, itemBesessen, itemKaufbar } from "./fortschritt.js";
 
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -9,6 +10,10 @@ const stern = (an, i = 0, pop = false) => `<span class="sk-stern${an ? " an" : "
 const sterne = (arr, pop = false) => arr.map((a, i) => stern(a, i, pop)).join("");
 const tropfen = (n) => `<span class="sk-tropfen"><i aria-hidden="true"></i>${zahl(n)}</span>`;
 const WELT_FARBEN = [["#ff2bd6", "#00e5ff", "#3a1162"], ["#39ff88", "#1de9d0", "#06303a"], ["#ff8a1f", "#ffd31a", "#4a1a0c"], ["#ffd400", "#2f6bff", "#0d1426"], ["#ff4fa0", "#ff8a3c", "#5a2a78"], ["#ff00a8", "#00ffd0", "#220040"]];
+
+const trickListe = () => `<ul class="sk-tricks">${Object.values(TRICKS)
+  .map((t) => `<li><kbd>${t.tasten}</kbd><b>${esc(t.name)}</b><small>${t.punkte}</small></li>`)
+  .join("")}</ul>`;
 
 export function erstelleUI(wurzel, aktion) {
   const ui = { name: null, wurzel };
@@ -47,11 +52,12 @@ export function erstelleUI(wurzel, aktion) {
           <button type="button" class="sk-knopf gelb gross" data-a="karte" data-fokus>SPIELEN</button>
           <button type="button" class="sk-knopf cyan" data-a="garderobe">GARDEROBE</button>
           <button type="button" class="sk-knopf magenta" data-a="erfolge">ERFOLGE</button>
+          <button type="button" class="sk-knopf gelb" data-a="tricks">TRICKS</button>
           <button type="button" class="sk-knopf weiss" data-a="einstellungen">EINSTELLUNGEN</button>
         </div>
         <p class="sk-konto">${tropfen(f.tropfen)} <span class="sk-sterne-ges">★ ${sterneGesamt(f)}/${LEVEL.length * 3}</span></p>
         ${f.uebernommen ? `<p class="sk-hinweis">Aus dem alten Stick-Skater übernommen: ${zahl(f.uebernommen)} Münzen → Tinten-Tropfen.</p>` : ""}
-        <p class="sk-steuer">Leertaste/Tippen = Ollie · Pfeile/Wischen in der Luft = Tricks · beim Grinden ← → = Balance</p>
+        <p class="sk-steuer">Leertaste/Tippen = Ollie (kurz = klein, halten = hoch) · Pfeile/Wischen in der Luft = Tricks, zwei Pfeile = Kombi-Trick · beim Grinden ← → = Balance</p>
       </div>`,
     );
 
@@ -161,6 +167,18 @@ export function erstelleUI(wurzel, aktion) {
       </div>`,
     );
 
+  ui.tricks = () =>
+    setze(
+      "tricks",
+      `<div class="sk-seite schmal">
+        <header class="sk-kopf"><button type="button" class="sk-knopf klein weiss" data-a="titel">◀ ZURÜCK</button><h2>TRICKS</h2><span></span></header>
+        <div class="sk-einst">
+          <p class="sk-trickhilfe">In der Luft: eine Pfeiltaste für einen Grundtrick. Zwei Pfeiltasten gleichzeitig (oder die zweite ganz kurz danach) machen daraus einen Kombi-Trick. Handy: wischen – schräg wischen oder zweimal schnell wischen für Kombis. Der Trick muss vor der Landung fertig sein, also lang springen (Leertaste halten) für die großen Tricks.</p>
+          ${trickListe()}
+        </div>
+      </div>`,
+    );
+
   ui.einstellungen = (f, zurueck = "titel") => {
     const e = f.einstellungen;
     setze(
@@ -183,6 +201,7 @@ export function erstelleUI(wurzel, aktion) {
       "pause",
       `<div class="sk-box">
         <h2 class="sk-gross">PAUSE</h2>
+        <details class="sk-pausetricks"><summary>Trickliste</summary>${trickListe()}</details>
         ${l ? `<ul class="sk-aufgliste">${l.aufgaben.map((a, i) => `<li class="${sterneVorher[i] || stand[i] ? "ok" : ""}">${stern(sterneVorher[i] || stand[i])} ${esc(a.text)}</li>`).join("")}</ul>` : ""}
         <div class="sk-menue">
           <button type="button" class="sk-knopf gelb gross" data-a="weiter" data-fokus>WEITER</button>

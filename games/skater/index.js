@@ -3,8 +3,8 @@
 import { LEVEL, WELTEN, levelName } from "./level.js";
 import { laden, speichern, loeschen, sterneVonLevel, weltFrei, levelFrei, KOSTUEME, BOARDS, kaufen, pruefeErfolge, boardWerte } from "./fortschritt.js";
 import { baueStrecke } from "./strecke.js";
-import { DT, neuesSpiel, schritt, autopilot, aufgabeErfuellt, WELT_STILE } from "./logik.js";
-import { erstelleRenderer } from "./render.js";
+import { DT, neuesSpiel, schritt, autopilot, aufgabeErfuellt, WELT_STILE, TRICKS } from "./logik.js";
+import { erstelleRenderer, BILDER } from "./render.js";
 import { erstelleTon } from "./ton.js";
 import { erstelleEingabe } from "./eingabe.js";
 import { erstelleUI } from "./ui.js";
@@ -13,7 +13,7 @@ import { palette } from "./welten.js";
 
 export const DOM = true;
 export const HILFE =
-  "Leertaste oder Tippen: Ollie (gedrückt halten = höher). In der Luft Pfeiltasten oder Wischen: ↑ Kickflip, ↓ Heelflip, ← 360 Shove-it, → Impossible – vor der Landung fertig werden! Geländer, Rohre und Kanten: draufspringen = Grind, mit ← → (Handy: linke/rechte Seite halten) die Balance halten. Combo: Punkte multiplizieren sich, bis du wieder normal landest. Leuchtende Risse: 8 Sekunden Parallelwelt mit doppelten Punkten. Am Boden: → anschieben, ← bremsen. Esc oder P: Pause.";
+  "Leertaste oder Tippen: Ollie – kurz tippen = kleiner Sprung, gedrückt halten = großer Sprung. In der Luft Pfeiltasten oder Wischen: ↑ Kickflip, ↓ Heelflip, ← 360 Shove-it, → Impossible. Zwei Pfeile zusammen oder kurz nacheinander = Kombi-Trick (z. B. ↑+← Varial Kickflip, ↓+→ Laser Flip, → → 360 Flip) – vor der Landung fertig werden! Geländer, Rohre und Kanten: draufspringen = Grind, mit ← → (Handy: linke/rechte Seite halten) die Balance halten. Combo: Punkte multiplizieren sich, bis du wieder normal landest. Leuchtende Risse: 8 Sekunden Parallelwelt mit doppelten Punkten. Am Boden: → anschieben, ← bremsen. Esc oder P: Pause.";
 
 const LEER = { sprung: false, sprungNeu: false, trick: null, links: false, rechts: false };
 
@@ -123,6 +123,9 @@ export function start({ dom, status, ergebnis }) {
       case "erfolge":
         ui.erfolge(f);
         break;
+      case "tricks":
+        ui.tricks();
+        break;
       case "einstellungen":
         ui.einstellungen(f, arg || "titel");
         break;
@@ -151,6 +154,7 @@ export function start({ dom, status, ergebnis }) {
       case "karte":
       case "garderobe":
       case "erfolge":
+      case "tricks":
       case "einstellungen":
         probe = null;
         if (a === "karte" && (modus === "pause" || modus === "ende")) return zumMenue("karte");
@@ -473,8 +477,8 @@ export function start({ dom, status, ergebnis }) {
     g.stroke();
     const kostuem = probe?.art === "kostuem" ? probe.id : f.kostuem;
     const board = probe?.art === "board" ? probe.id : f.board;
-    const frame = Math.floor(t * 12);
-    const zq = frame / 12;
+    const frame = Math.floor(t * BILDER);
+    const zq = frame / BILDER;
     const zyk = zq % 2.6;
     const q = { c: 0.15 + Math.sin(zq * 6) * 0.04, lean: 0.06, arme: "locker", phase: zq, fuss: 0, brett: { rot: 0, art: null, ph: 0 }, bal: 0, schiebt: false };
     let y = 0;
@@ -483,12 +487,14 @@ export function start({ dom, status, ergebnis }) {
       y = -Math.sin(u * Math.PI) * 38;
       q.c = 0.65;
       q.arme = "trick";
-      q.brett.art = ["kickflip", "shove360", "heelflip", "impossible"][Math.floor(zq / 2.6) % 4];
+      const arten = Object.keys(TRICKS);
+      q.brett.art = arten[Math.floor(zq / 2.6) % arten.length];
       q.brett.ph = Math.min(1, u * 1.15);
       q.fuss = Math.sin(Math.min(1, u * 1.15) * Math.PI);
     }
     zeichneFigur(g, 160, 250 + y, q, { P, kostuem, board, frame, zeit: t, groesse: 2.2 });
     r.comicText(g, KOSTUEME.find((k) => k.id === kostuem)?.name.toUpperCase() || "", 160, 30, 26, "#ffe600", -0.05);
+    if (q.brett.art) r.comicText(g, TRICKS[q.brett.art].name.toUpperCase(), 160, 284, 18, "#00e5ff", 0.03);
   }
 
   // ---------- Größe / Hochformat ----------
