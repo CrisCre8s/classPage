@@ -1,16 +1,28 @@
 // Stick-Skater – Spiel-Logik: Physik, Ollie, Tricks, Grinds mit Balance, Combo, Sturz mit Ragdoll,
 // Dimensionsrisse und Parallelwelt, Sterne-Aufgaben. Kein Zeichnen hier, nur Zustand.
 // Läuft mit festem Zeitschritt (1/120 s). Ereignisse (für Ton und Bild) landen in s.ev.
-import { G, OLLIE, zufall, flaecheY, grindY, presseUnten, PRESSE_HUB, endlosWeiter, aufraeumen } from "./strecke.js";
+import { G, OLLIE, HALT_ZEIT, HALT_G, zufall, flaecheY, grindY, presseUnten, PRESSE_HUB, endlosWeiter, aufraeumen } from "./strecke.js";
 
 export const DT = 1 / 120;
+// Tricks: eine Pfeiltaste = Grundtrick, zwei Tasten (gleichzeitig oder kurz nacheinander) = Kombi-Trick
 export const TRICKS = {
-  kickflip: { name: "Kickflip", dauer: 0.42, punkte: 100, ruf: "FLIP!" },
-  heelflip: { name: "Heelflip", dauer: 0.42, punkte: 100, ruf: "HEEL!" },
-  shove360: { name: "360 Shove-it", dauer: 0.5, punkte: 200, ruf: "SHOVE!" },
-  impossible: { name: "Impossible", dauer: 0.55, punkte: 300, ruf: "WRAP!" },
+  kickflip: { name: "Kickflip", dauer: 0.38, punkte: 100, ruf: "FLIP!", tasten: "↑" },
+  heelflip: { name: "Heelflip", dauer: 0.38, punkte: 100, ruf: "HEEL!", tasten: "↓" },
+  shove360: { name: "360 Shove-it", dauer: 0.44, punkte: 200, ruf: "SHOVE!", tasten: "←" },
+  impossible: { name: "Impossible", dauer: 0.48, punkte: 250, ruf: "WRAP!", tasten: "→" },
+  varial: { name: "Varial Kickflip", dauer: 0.46, punkte: 250, ruf: "VARIAL!", tasten: "↑ + ←" },
+  hardflip: { name: "Hardflip", dauer: 0.48, punkte: 300, ruf: "HARD!", tasten: "↑ + →" },
+  inward: { name: "Inward Heelflip", dauer: 0.46, punkte: 250, ruf: "INWARD!", tasten: "↓ + ←" },
+  laser: { name: "Laser Flip", dauer: 0.54, punkte: 400, ruf: "LASER!", tasten: "↓ + →" },
+  doppelkick: { name: "Double Kickflip", dauer: 0.54, punkte: 350, ruf: "DOUBLE!", tasten: "↑ ↑" },
+  doppelheel: { name: "Double Heelflip", dauer: 0.54, punkte: 350, ruf: "DOUBLE HEEL!", tasten: "↓ ↓" },
+  shove540: { name: "540 Shove-it", dauer: 0.58, punkte: 450, ruf: "540!", tasten: "← ←" },
+  treflip: { name: "360 Flip", dauer: 0.58, punkte: 500, ruf: "TRE FLIP!", tasten: "→ →" },
 };
 export const TRICK_TASTE = { hoch: "kickflip", runter: "heelflip", links: "shove360", rechts: "impossible" };
+const KOMBI = { "hoch+links": "varial", "hoch+rechts": "hardflip", "runter+links": "inward", "runter+rechts": "laser", "hoch+hoch": "doppelkick", "runter+runter": "doppelheel", "links+links": "shove540", "rechts+rechts": "treflip" };
+const kombi = (a, b) => KOMBI[`${a}+${b}`] || KOMBI[`${b}+${a}`];
+const KOMBI_FENSTER = 0.22; // so lange nach der ersten Taste zählt die zweite noch zum selben Trick
 const PARALLEL_DAUER = 8;
 const STURZ_DAUER = 1.7;
 export const STILE = ["noir", "manga", "zine", "pixel"];
@@ -292,8 +304,8 @@ function luftSchritt(s, ein, dt) {
   const p = s.p;
   p.luftT += dt;
   let g = G * schwerkraft(s, p.x);
-  if (ein.sprung && p.halt < 0.2 && p.vy < 0) {
-    g *= 0.5;
+  if (ein.sprung && p.halt < HALT_ZEIT && p.vy < 0) {
+    g *= HALT_G;
     p.halt += dt;
   } else p.halt = 1;
   p.vy += g * dt;
@@ -312,9 +324,23 @@ function luftSchritt(s, ein, dt) {
       p.trick = null;
     }
   }
-  if (ein.trick && !p.trick && p.luftT > 0.04) {
-    p.trick = { art: ein.trick, t: 0, dauer: TRICKS[ein.trick].dauer * s.board.dreh };
-    emit(s, "trickStart", { art: ein.trick });
+  for (const eingabeTrick of ein.tricks || (ein.trick ? [ein.trick] : [])) {
+    const richtung = TRICK_TASTE[eingabeTrick] ? eingabeTrick : null;
+    if (p.trick && p.trick.richtung && richtung && p.trick.t < KOMBI_FENSTER) {
+      // zweite Taste: Grundtrick wird zum Kombi-Trick
+      const art = kombi(p.trick.richtung, richtung);
+      if (art) {
+        p.trick.art = art;
+        p.trick.richtung = null;
+        p.trick.dauer = TRICKS[art].dauer * s.board.dreh;
+        emit(s, "trickStart", { art, kombi: true });
+      }
+    } else if (!p.trick && p.luftT > 0.03) {
+      const art = richtung ? TRICK_TASTE[richtung] : eingabeTrick;
+      if (!TRICKS[art]) continue;
+      p.trick = { art, t: 0, dauer: TRICKS[art].dauer * s.board.dreh, richtung };
+      emit(s, "trickStart", { art });
+    }
   }
 
   if (p.vy > 0) {
@@ -331,7 +357,8 @@ function luftSchritt(s, ein, dt) {
     }
     // Landung?
     let land = null;
-    for (const q of flaechenBei(s, p.x)) if (py <= q.y + 2 && p.y >= q.y && (!land || q.y < land.y)) land = q;
+    // etwas Nachsicht an Kanten: wer knapp unter der Oberkante ankommt, landet trotzdem
+    for (const q of flaechenBei(s, p.x)) if (py <= q.y + 12 && p.y >= q.y && (!land || q.y < land.y)) land = q;
     if (land) {
       p.y = land.y;
       if (land.ref.art === "treppe") return sturz(s, "treppe");
@@ -424,7 +451,7 @@ function grindSchritt(s, ein, dt) {
     p.ignor = seg;
     p.ignorT = 0.25;
     p.grind = null;
-    ollie(s, OLLIE * 0.86);
+    ollie(s, OLLIE);
   }
 }
 
@@ -607,6 +634,8 @@ export function aufgabeStand(s, a) {
 // =====================================================================
 function simuliere(s, plan, max = 1.5) {
   const p = s.p;
+  // schon angeknackste Panels brechen gleich weg: darauf plant der Autopilot nicht
+  const simF = (x, t) => flaechenBei(s, x, t).filter((q) => !(q.ref.kruemel && q.ref.kt != null));
   let x = p.x;
   let y = p.y;
   let vx = p.vx;
@@ -619,7 +648,7 @@ function simuliere(s, plan, max = 1.5) {
   let gelandet = -1;
   let riss = false;
   let grind = false;
-  if (p.zustand === "grind") vy = plan.sprungIn === 0 ? -OLLIE * 0.86 : 0;
+  if (p.zustand === "grind") vy = plan.sprungIn === 0 ? -OLLIE : 0;
   const vz = s.st.tempo * s.board.tempo * (plan.tempo === "schieben" ? 1.42 : plan.tempo === "bremsen" ? 0.55 : 1);
   for (let t = 0; t < max; t += dt) {
     if (zust === "boden") {
@@ -633,7 +662,7 @@ function simuliere(s, plan, max = 1.5) {
       const extra = ref && ref.art === "band" ? ref.v : ref && ref.gx0 != null ? ref.v : 0;
       const nx = x + (vx + extra) * dt;
       let beste = null;
-      for (const q of flaechenBei(s, nx, t)) {
+      for (const q of simF(nx, t)) {
         if (q.y < y - 9) {
           if (q.ref.art !== "treppe") return { ok: false, t, landT: gelandet };
           continue;
@@ -652,8 +681,8 @@ function simuliere(s, plan, max = 1.5) {
       }
     } else {
       let g = G * schwerkraft(s, x);
-      if (halt < 0.2 && vy < 0) {
-        g *= 0.5;
+      if (halt < HALT_ZEIT && vy < 0) {
+        g *= HALT_G;
         halt += dt;
       }
       vy += g * dt;
@@ -675,9 +704,11 @@ function simuliere(s, plan, max = 1.5) {
           }
         }
         let land = null;
-        for (const q of flaechenBei(s, x, t)) if (py <= q.y + 2 && y >= q.y && (!land || q.y < land.y)) land = q;
+        for (const q of simF(x, t)) if (py <= q.y + 2 && y >= q.y && (!land || q.y < land.y)) land = q;
         if (land) {
           if (land.ref.art === "treppe") return { ok: false, t, landT: gelandet };
+          // der Autopilot will sicher landen, nicht auf der Kante
+          if (land.ref.x0 != null && x < land.ref.x0 + 10 && !land.ref.kruemel) return { ok: false, t, landT: gelandet };
           y = land.y;
           zust = "boden";
           ref = land.ref;
@@ -685,13 +716,13 @@ function simuliere(s, plan, max = 1.5) {
           if (gelandet < 0) gelandet = t;
         }
       }
-      for (const q of flaechenBei(s, x, t)) if (y > q.y + 8 && py > q.y + 2 && (px < (q.ref.x0 ?? -1e9) + 2 || q.zug)) return { ok: false, t, landT: gelandet };
-      if (y > tief + 40 && !flaechenBei(s, x, t).length) return { ok: false, t, landT: gelandet };
+      for (const q of simF(x, t)) if (y > q.y + 8 && py > q.y + 2 && (px < (q.ref.x0 ?? -1e9) + 2 || q.zug)) return { ok: false, t, landT: gelandet };
+      if (y > tief + 40 && !simF(x, t).length) return { ok: false, t, landT: gelandet };
     }
     const k = kollision(s, x, y, zust === "luft", t, 7);
     if (k) return { ok: false, t, landT: gelandet, grund: k };
     if (!riss && !s.par) for (const r of s.st.risse) if (!r.weg && Math.hypot(r.x - x, r.y - (y - 30)) < r.r + 8) riss = true;
-    if (gelandet >= 0 && t > gelandet + 0.45) return { ok: true, t, landT: gelandet, riss, grind };
+    if (gelandet >= 0 && t > gelandet + (ref?.kruemel ? 0.12 : 0.45)) return { ok: true, t, landT: gelandet, riss, grind };
   }
   return { ok: zust === "boden" || plan.sprungIn == null, t: max, landT: gelandet, riss, grind, inLuft: zust !== "boden" };
 }
@@ -712,10 +743,23 @@ export function autopilot(s, merk, wunschTrick) {
     }
     if (merk.t < (merk.naechste || 0)) return ein;
     merk.naechste = merk.t + 1 / 40;
+    // Presse voraus: früh das Tempo so wählen, dass man unter ihr durchkommt
+    const presseVorn = s.st.pressen.find((pr) => pr.x + pr.w > p.x - 10 && pr.x < p.x + 650);
+    if (presseVorn) {
+      let gewaehlt = merk.tempo || null;
+      for (const tempo of [merk.tempo || null, null, "schieben", "bremsen"]) {
+        const r = simuliere(s, { sprungIn: null, tempo }, 1.8);
+        if (r.ok || r.grund !== "presse") {
+          gewaehlt = tempo;
+          break;
+        }
+      }
+      merk.tempo = gewaehlt;
+    }
     const gerade = simuliere(s, { sprungIn: null, tempo: merk.tempo || null }, 0.75);
     if (!gerade.ok) {
-      for (const halt of [0.2, 0.08, 0]) {
-        const r = simuliere(s, { sprungIn: 0, halt: 0.2 - halt, tempo: merk.tempo || null }, 1.8);
+      for (const halt of [HALT_ZEIT, HALT_ZEIT * 0.5, 0]) {
+        const r = simuliere(s, { sprungIn: 0, halt: HALT_ZEIT - halt, tempo: merk.tempo || null }, 1.8);
         if (r.ok) {
           ein.sprungNeu = true;
           ein.sprung = true;
@@ -734,16 +778,16 @@ export function autopilot(s, merk, wunschTrick) {
       if (gerade.t < 0.12) {
         ein.sprungNeu = true;
         ein.sprung = true;
-        merk.halt = 0.2;
+        merk.halt = HALT_ZEIT;
       }
       return ein;
     }
-    merk.tempo = null;
+    if (!presseVorn) merk.tempo = null;
     // Bonus: Grind-Stangen und Risse in der Luft mitnehmen
     const vorne = s.st.grinds.some((g) => g.x0 > p.x - 20 && g.x0 < p.x + 300) || s.st.risse.some((r) => !r.weg && r.x > p.x && r.x < p.x + 320);
     if (vorne) {
-      for (const halt of [0.2, 0.1, 0]) {
-        const r = simuliere(s, { sprungIn: 0, halt: 0.2 - halt }, 1.8);
+      for (const halt of [HALT_ZEIT, HALT_ZEIT * 0.5, 0]) {
+        const r = simuliere(s, { sprungIn: 0, halt: HALT_ZEIT - halt }, 1.8);
         if (r.ok && (r.grind || (r.riss && !s.par))) {
           ein.sprungNeu = true;
           ein.sprung = true;
@@ -762,7 +806,8 @@ export function autopilot(s, merk, wunschTrick) {
     if (!p.trick && p.luftT > 0.05) {
       const r = simuliere(s, { sprungIn: null }, 1.6);
       const rest = r.landT >= 0 ? r.landT : r.t;
-      const art = wunschTrick || ["kickflip", "heelflip", "shove360", "impossible"][Math.floor(merk.t * 3) % 4];
+      const alle = Object.keys(TRICKS);
+      const art = wunschTrick || alle[Math.floor(merk.t * 7) % alle.length];
       if (rest > TRICKS[art].dauer * s.board.dreh + 0.05) ein.trick = art;
       else if (rest > TRICKS.kickflip.dauer * s.board.dreh + 0.05) ein.trick = "kickflip";
     }
@@ -780,7 +825,7 @@ export function autopilot(s, merk, wunschTrick) {
     const rest = g.seg.x1 - p.x;
     if (rest < 70 && !merk.grindSprung && merk.t >= (merk.naechste || 0)) {
       merk.naechste = merk.t + 1 / 40;
-      const varianten = [0, 0.1, 0.2].map((h) => [h, simuliere(s, { sprungIn: 0, halt: h }, 1.6)]);
+      const varianten = [0, HALT_ZEIT * 0.5, HALT_ZEIT].map((h) => [h, simuliere(s, { sprungIn: 0, halt: h }, 1.6)]);
       const kette = varianten.find(([, j]) => j.ok && j.grind);
       let wahl = merk.combo && kette ? kette : null;
       if (!wahl && rest < 14) {
@@ -791,7 +836,7 @@ export function autopilot(s, merk, wunschTrick) {
         merk.grindSprung = true;
         ein.sprungNeu = true;
         ein.sprung = true;
-        merk.halt = 0.2 - wahl[0];
+        merk.halt = HALT_ZEIT - wahl[0];
       }
     }
     if (g.seg.x1 - p.x > 80) merk.grindSprung = false;

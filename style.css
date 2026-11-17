@@ -6104,3 +6104,37 @@ body.game-on .stage[data-game="skate"] .game-dom {
     margin-top: 4px;
   }
 }
+/* Stick-Skater: Trickliste */
+.sk-tricks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+.sk-tricks li {
+  display: grid;
+  grid-template-columns: 4.6em 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #fff;
+  border: 2px solid var(--tinte);
+  font-size: 16px;
+}
+.sk-tricks kbd {
+  padding: 1px 4px;
+  background: var(--tinte);
+  color: var(--gelb);
+  font: 15px var(--comic);
+  text-align: center;
+  border-radius: 3px;
+}
+.sk-tricks b { font-weight: normal; }
+.sk-tricks small { color: #6b2a8a; font-size: 13px; }
+.sk-trickhilfe { margin: 0; font: 14px/1.4 system-ui, sans-serif; letter-spacing: 0; }
+.sk-pausetricks { width: 100%; text-align: left; font-size: 18px; }
+.sk-pausetricks summary { cursor: pointer; text-align: center; }
+.sk-pausetricks .sk-tricks { margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.sk-pausetricks .sk-tricks li { font-size: 14px; }

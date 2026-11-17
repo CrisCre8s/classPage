@@ -6,6 +6,7 @@ import { TRICKS, zugX, hindBox, aufgabeStand, aufgabeErfuellt } from "./logik.js
 import { palette, malEbene, muster, TILE_W, TILE_H, STIL_NAME, glitchCacheLeeren } from "./welten.js";
 import { poseAus, zeichneFigur, zeichneRagdoll } from "./figur.js";
 
+export const BILDER = 18; // Animationsbilder pro Sekunde für Figur und Tuschelinien
 const FONT = "Bangers, 'Comic Sans MS', Impact, sans-serif";
 const RUFE_COMBO = ["", "", "NICE!", "SICK!", "RAD!", "WOW!", "MEGA!", "IRRE!", "LEGENDÄR!"];
 const GLITCH_FILTER = { noir: "grayscale(1) contrast(1.6) brightness(0.75)", manga: "grayscale(1) contrast(1.3) brightness(1.6)", zine: "sepia(0.7) contrast(1.3) brightness(1.15)", pixel: "saturate(1.8) contrast(1.2)" };
@@ -199,7 +200,7 @@ export function erstelleRenderer(canvas, einst) {
   // ---------- Hauptbild ----------
   r.zeichne = function (s, dt, opt = {}) {
     r.zeit += dt;
-    const q = Math.floor(r.zeit * 12);
+    const q = Math.floor(r.zeit * BILDER);
     const neuerFrame = q !== r.frame;
     r.frame = q;
     const g = ctx;
@@ -281,11 +282,20 @@ export function erstelleRenderer(canvas, einst) {
     zeichneTropfen(g, s, P, kx);
     zeichneRisse(g, s, P, kx);
     // Figur
-    const figOpt = { P, kostuem: opt.kostuem, board: opt.board, frame: r.frame, zeit: r.zeit };
-    if (p.zustand === "sturz" && p.ragdoll) zeichneRagdoll(g, p.ragdoll, figOpt);
+    // Figur etwas größer als die Kollisionsbox, damit man Brett und Tricks gut sieht
+    const figOpt = { P, kostuem: opt.kostuem, board: opt.board, frame: r.frame, zeit: r.zeit, groesse: 1.15 };
+    if (p.zustand === "sturz" && p.ragdoll) {
+      const h = p.ragdoll.pts.huefte;
+      g.save();
+      g.translate(h.x, h.y);
+      g.scale(1.15, 1.15);
+      g.translate(-h.x, -h.y);
+      zeichneRagdoll(g, p.ragdoll, figOpt);
+      g.restore();
+    }
     else if (!(p.unverw > 0 && Math.floor(r.zeit * 14) % 2 === 0)) {
-      // Pose nur 12× pro Sekunde neu („auf Zweiern“)
-      if (neuerFrame || !r.pose) r.pose = poseAus(s, r.frame / 12);
+      // Pose nur 18× pro Sekunde neu: leicht ruckeliger Comic-Look, Kamera bleibt flüssig
+      if (neuerFrame || !r.pose) r.pose = poseAus(s, r.frame / BILDER);
       zeichneBewegung(g, s, P);
       if (opt.kostuem === "glitch") glitchFigur(g, p, r.pose, figOpt);
       zeichneFigur(g, p.x, p.y, r.pose, figOpt);
@@ -1810,9 +1820,12 @@ export function erstelleRenderer(canvas, einst) {
         g.fillRect(ax, y - 15, 206, 20);
         comicStern(g, ax + 11, y - 5, 7, ok ? "#ffe600" : "#555", "#0b0a10", 0);
         g.fillStyle = ok ? "#ffe600" : "#fff";
-        g.font = `14px ${FONT}`;
         const stand = a.typ === "ohneSturz" ? "" : ` (${Math.min(a.n, Math.floor(aufgabeStand(s, a))).toLocaleString("de-DE")}/${a.n.toLocaleString("de-DE")})`;
-        g.fillText((a.text + stand).slice(0, 34), ax + 23, y);
+        const text = a.text + stand;
+        g.font = `14px ${FONT}`;
+        const b = g.measureText(text).width;
+        if (b > 178) g.font = `${Math.max(10, Math.floor((14 * 178) / b))}px ${FONT}`;
+        g.fillText(text, ax + 23, y);
       });
     }
   }

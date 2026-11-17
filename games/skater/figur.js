@@ -1,6 +1,6 @@
 // Stick-Skater – die Figur: Strichmännchen mit dicken, zitternden Tuschelinien, Kostüme und Boards,
-// Trick-Animationen am Brett und Ragdoll beim Sturz. Die Pose springt bewusst nur 12-mal pro Sekunde
-// („auf Zweiern“), die Position bleibt flüssig.
+// Trick-Animationen am Brett und Ragdoll beim Sturz. Die Pose springt bewusst nur 18-mal pro Sekunde
+// (leicht ruckeliger Comic-Look), die Position bleibt flüssig.
 import { zufall } from "./strecke.js";
 
 const rot = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
@@ -67,7 +67,7 @@ export function poseAus(s, zeitQ) {
 export function zeichneFigur(g, x, y, q, opt) {
   const { P, kostuem = "basic", board = "standard", frame = 0, groesse = 1 } = opt;
   const rnd = zufall(frame * 31 + 7);
-  const j = () => (rnd() - 0.5) * 1.3; // Zittern der Linie (pro Zeichnung neu, 12 fps)
+  const j = () => (rnd() - 0.5) * 1.1; // Zittern der Linie (pro Animationsbild neu)
   g.save();
   g.translate(x, y);
   g.scale(groesse, groesse);
@@ -75,10 +75,10 @@ export function zeichneFigur(g, x, y, q, opt) {
 
   // Gelenke berechnen
   const c = q.c;
-  const lift = q.fuss * 15;
-  const fussH = [-10, -9 - lift];
-  const fussV = [10, -9 - lift * 0.8];
-  const huefte = [-2 + q.lean * 10, -36 + c * 13 - lift * 0.4];
+  const lift = q.fuss * 24;
+  const fussH = [-10, -12 - lift];
+  const fussV = [10, -12 - lift * 0.8];
+  const huefte = [-2 + q.lean * 10, -36 + c * 13 - lift * 0.55];
   const [nx, ny] = rot(0, -26, q.lean);
   const hals = [huefte[0] + nx, huefte[1] + ny];
   const [kx, ky] = rot(3, -11, q.lean * 0.6);
@@ -358,105 +358,209 @@ function kostuemFarben(k, P, zeit) {
 }
 
 // ---------- Boards ----------
+// ---------- Boards in 2,5D ----------
+// Das Brett ist ein kleines 3D-Modell (Deck mit Kicktails, Achsen, Rollen), leicht von oben gesehen.
+// Tricks drehen es um seine Achsen: Flip = Längsachse, Shove-it = Hochachse, Impossible = Querachse.
 const BRETT_FARBEN = {
-  standard: { deck: "#c9853f", unten: "#e94b3c", rolle: "#f4f0e6" },
-  neon: { deck: "#101018", unten: "#00e5ff", rolle: "#ff2bd6", leuchten: "#00e5ff" },
-  stahl: { deck: "#8e98a3", unten: "#5b636c", rolle: "#2b2f35", nieten: true },
-  schleim: { deck: "#2d5a3a", unten: "#39ff88", rolle: "#39ff88", schleim: true },
-  riss: { deck: "#2a0f4a", unten: "#ff00a8", rolle: "#00ffd0", riss: true },
+  standard: { kante: "#c9853f", oben: "#2b2830", unten: "#e94b3c", motiv: "#ffe600", rolle: "#f4f0e6", achse: "#9aa3ad" },
+  neon: { kante: "#0f0f18", oben: "#16161f", unten: "#00e5ff", motiv: "#ff2bd6", rolle: "#ff2bd6", achse: "#d9e2ea", leuchten: "#00e5ff" },
+  stahl: { kante: "#6e7782", oben: "#8e98a3", unten: "#4e565f", motiv: "#ffd31a", rolle: "#2b2f35", achse: "#c8d0da", nieten: true },
+  schleim: { kante: "#1c3a26", oben: "#22302a", unten: "#39ff88", motiv: "#1c3a26", rolle: "#39ff88", achse: "#8fa59a", schleim: true },
+  riss: { kante: "#1a0730", oben: "#2a0f4a", unten: "#ff00a8", motiv: "#00ffd0", rolle: "#00ffd0", achse: "#c9b8ff", riss: true },
 };
-function zeichneBrett(g, b, board, P, lift, opt, rnd) {
+const BLICK_NEIGUNG = 0.5; // man sieht leicht von oben auf das Brett
+const BLICK_DREH = 0.16; // und ein bisschen schräg von vorn
+const HL = 15; // halbe Länge des geraden Mittelteils
+const HB = 6.5; // halbe Breite
+const DICK = 1.6; // halbe Deckdicke
+
+// Umriss des Decks (Stadion-Form mit hochgezogenen Enden)
+const UMRISS = (() => {
+  const pts = [];
+  const tail = (x) => Math.max(0, Math.abs(x) - HL + 3) * 0.62;
+  for (let x = -HL; x <= HL; x += 5) pts.push([x, -HB]);
+  for (let a = -Math.PI / 2; a <= Math.PI / 2 + 0.01; a += Math.PI / 8) pts.push([HL + Math.cos(a) * HB, Math.sin(a) * HB]);
+  for (let x = HL; x >= -HL; x -= 5) pts.push([x, HB]);
+  for (let a = Math.PI / 2; a <= (Math.PI * 3) / 2 + 0.01; a += Math.PI / 8) pts.push([-HL + Math.cos(a) * HB, Math.sin(a) * HB]);
+  return pts.map(([x, z]) => [x, tail(x), z]);
+})();
+const ROLLEN = [[-12, -5], [-12, 5], [12, -5], [12, 5]];
+
+// Drehung je Trick (Fortschritt ph von 0 bis 1)
+function trickDrehung(art, ph) {
+  const T = Math.PI * 2;
+  switch (art) {
+    case "kickflip":
+      return { rx: T * ph };
+    case "heelflip":
+      return { rx: -T * ph };
+    case "shove360":
+      return { ry: T * ph };
+    case "impossible":
+      return { rz: -T * ph, pivot: -8 };
+    case "varial":
+      return { rx: T * ph, ry: Math.PI * ph };
+    case "hardflip":
+      return { rx: T * ph, rz: -Math.sin(Math.PI * ph) * 1.25 };
+    case "inward":
+      return { rx: -T * ph, ry: Math.PI * ph };
+    case "laser":
+      return { rx: -T * ph, ry: -T * ph };
+    case "doppelkick":
+      return { rx: 2 * T * ph };
+    case "doppelheel":
+      return { rx: -2 * T * ph };
+    case "shove540":
+      return { ry: 1.5 * T * ph };
+    case "treflip":
+      return { rx: T * ph, ry: T * ph };
+    default:
+      return {};
+  }
+}
+
+function macheTransform({ rx = 0, ry = 0, rz = 0, pivot = 0 }, spin = 0) {
+  const cx = Math.cos(rx), sx = Math.sin(rx);
+  const cy = Math.cos(ry), sy = Math.sin(ry);
+  const cz = Math.cos(rz + spin), sz = Math.sin(rz + spin);
+  const ca = Math.cos(BLICK_NEIGUNG), sa = Math.sin(BLICK_NEIGUNG);
+  const cb = Math.cos(BLICK_DREH), sb = Math.sin(BLICK_DREH);
+  const dreh = (x, y, z) => {
+    // Querachse (um den hinteren Fuß), Längsachse, Hochachse
+    let px = x - pivot;
+    let py = y;
+    [px, py] = [px * cz - py * sz, px * sz + py * cz];
+    px += pivot;
+    let qy = py * cx - z * sx;
+    let qz = py * sx + z * cx;
+    let qx = px * cy + qz * sy;
+    qz = -px * sy + qz * cy;
+    // Blick: Hochachse, dann Neigung
+    const vx = qx * cb + qz * sb;
+    let vz = -qx * sb + qz * cb;
+    const vy = qy * ca - vz * sa;
+    vz = qy * sa + vz * ca;
+    return [vx, -vy, vz];
+  };
+  return dreh;
+}
+
+function zeichneBrett(g, b, board, P, lift, opt, rnd, spin = 0) {
   const F = BRETT_FARBEN[board] || BRETT_FARBEN.standard;
-  const ph = b.ph;
+  const tinte = P.tinte;
+  const manga = P.papier === "#ffffff";
   g.save();
-  g.translate(0, -6 - lift * 0.55);
-  let sx = 1;
-  let sy = 1;
-  let zeigeUnten = false;
-  if (b.art === "kickflip" || b.art === "heelflip") {
-    const w = ph * Math.PI * 2 * (b.art === "heelflip" ? -1 : 1);
-    sy = Math.cos(w);
-    zeigeUnten = sy < 0;
-  } else if (b.art === "shove360") {
-    const w = ph * Math.PI * 2;
-    sx = Math.cos(w);
-    zeigeUnten = false;
-  } else if (b.art === "impossible") {
-    g.translate(-14, 0);
-    g.rotate(-ph * Math.PI * 2);
-    g.translate(14, 0);
-  }
-  if (F.leuchten && opt.P.papier !== "#ffffff") {
-    g.strokeStyle = F.leuchten;
-    g.globalAlpha = 0.28;
-    g.lineWidth = 14;
+  g.translate(0, -9 - lift * 0.22);
+  const T = macheTransform(trickDrehung(b.art, b.ph || 0), spin);
+  // Welche Seite schaut zu uns? (Normale der Oberseite)
+  const n0 = T(0, 0, 0);
+  const n1 = T(0, 1, 0);
+  const obenSichtbar = n1[2] - n0[2] > 0;
+  const flaeche = (dy) => UMRISS.map(([x, y, z]) => T(x, y + dy, z));
+  const oben = flaeche(DICK);
+  const unten = flaeche(-DICK);
+  const pfad = (pts) => {
     g.beginPath();
-    g.moveTo(-20, 0);
-    g.lineTo(20, 0);
-    g.stroke();
-    g.globalAlpha = 1;
-  }
-  g.scale(sx, 1);
-  const dick = 4.5 * Math.max(0.35, Math.abs(sy));
-  // Rollen
-  if (Math.abs(sy) > 0.15 || b.art !== "kickflip") {
-    const ry = zeigeUnten ? -dick - 3 : dick + 1.5;
-    g.fillStyle = F.rolle;
-    g.strokeStyle = P_t(opt);
-    g.lineWidth = 1.8;
-    for (const wx of [-12, 12]) {
+    pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath();
+  };
+  const rollen = () => {
+    g.lineWidth = 1.6;
+    for (const [rx, rz] of ROLLEN) {
+      // Achse
+      const a = T(rx, -DICK, 0);
+      const c = T(rx, -DICK - 3.5, rz);
+      g.strokeStyle = F.achse;
+      g.lineWidth = 2.4;
       g.beginPath();
-      g.arc(wx, ry * Math.abs(sy || 1), 3.4, 0, 7);
+      g.moveTo(a[0], a[1]);
+      g.lineTo(c[0], c[1]);
+      g.stroke();
+    }
+    for (const [rx, rz] of ROLLEN) {
+      const m = T(rx, -DICK - 5, rz);
+      const r = 3.1;
+      g.fillStyle = F.rolle;
+      g.strokeStyle = tinte;
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.arc(m[0], m[1], r, 0, 7);
       g.fill();
       g.stroke();
-      if (F.schleim) {
+      if (F.schleim && Math.abs(spin) < 0.01) {
         g.fillStyle = "#39ff88";
-        g.fillRect(wx - 1, ry + 3, 2, 3 + rnd() * 3);
-        g.fillStyle = F.rolle;
+        g.fillRect(m[0] - 0.8, m[1] + 2, 1.6, 2 + rnd() * 3);
       }
     }
-  }
-  // Deck: dicke Linie mit hochgezogenen Enden (Seitenansicht), Unterseite beim Flip sichtbar
-  const deck = () => {
-    g.beginPath();
-    g.moveTo(-22, -dick - 3);
-    g.quadraticCurveTo(-19, -1, -14, -1);
-    g.lineTo(14, -1);
-    g.quadraticCurveTo(19, -1, 22, -dick - 3);
   };
-  g.lineCap = "round";
-  g.lineJoin = "round";
-  g.strokeStyle = P_t(opt);
-  g.lineWidth = dick + 4.5;
-  deck();
-  g.stroke();
-  g.strokeStyle = zeigeUnten ? F.unten : F.deck;
-  g.lineWidth = dick;
-  deck();
-  g.stroke();
-  if (!zeigeUnten && Math.abs(sy) > 0.5) {
-    // Griptape oben
-    g.strokeStyle = "rgba(0,0,0,0.55)";
-    g.lineWidth = 1.4;
+  if (F.leuchten && !manga) {
+    g.save();
+    g.globalAlpha = 0.25;
+    g.fillStyle = F.leuchten;
     g.beginPath();
-    g.moveTo(-13, -1 - dick / 2 + 0.5);
-    g.lineTo(13, -1 - dick / 2 + 0.5);
+    g.ellipse(0, 4, 26, 6, 0, 0, 7);
+    g.fill();
+    g.restore();
+  }
+  if (obenSichtbar) rollen();
+  // hintere Fläche (wird zur sichtbaren Kante), dann die vordere
+  const hinten = obenSichtbar ? unten : oben;
+  const vorn = obenSichtbar ? oben : unten;
+  g.lineJoin = "round";
+  pfad(hinten);
+  g.fillStyle = F.kante;
+  g.fill();
+  g.strokeStyle = tinte;
+  g.lineWidth = 2.2;
+  g.stroke();
+  pfad(vorn);
+  g.fillStyle = obenSichtbar ? F.oben : F.unten;
+  g.fill();
+  if (obenSichtbar) {
+    // Griptape-Körnung
+    g.save();
+    g.clip();
+    g.globalAlpha = 0.35;
+    g.fillStyle = "#ffffff";
+    for (let i = 0; i < 10; i++) {
+      const p = T(-HL + (i * 3.1) % (HL * 2), DICK, ((i * 7) % 11) - 5);
+      g.fillRect(p[0], p[1], 0.9, 0.9);
+    }
+    g.restore();
+  } else {
+    // Motiv auf der Unterseite
+    const a = T(-HL, -DICK, 0);
+    const c = T(HL, -DICK, 0);
+    g.strokeStyle = F.motiv;
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(a[0], a[1]);
+    g.lineTo(c[0], c[1]);
     g.stroke();
+    if (F.riss) {
+      g.strokeStyle = "#00ffd0";
+      g.lineWidth = 1.2;
+      g.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const p = T(-12 + i * 4, -DICK, i % 2 ? 3 : -3);
+        if (i) g.lineTo(p[0], p[1]);
+        else g.moveTo(p[0], p[1]);
+      }
+      g.stroke();
+    }
   }
   if (F.nieten) {
-    g.fillStyle = P_t(opt);
-    for (const nx of [-12, -6, 6, 12]) g.fillRect(nx - 0.8, -dick * 0.6 - 0.8, 1.6, 1.6);
+    g.fillStyle = tinte;
+    for (const x of [-12, -6, 6, 12]) {
+      const p = T(x, obenSichtbar ? DICK : -DICK, 0);
+      g.fillRect(p[0] - 0.8, p[1] - 0.8, 1.6, 1.6);
+    }
   }
-  if (F.riss) {
-    g.strokeStyle = "#00ffd0";
-    g.lineWidth = 1.4;
-    g.beginPath();
-    g.moveTo(-10, -1);
-    g.lineTo(-4, -dick);
-    g.lineTo(1, -1);
-    g.lineTo(6, -dick);
-    g.stroke();
-  }
+  pfad(vorn);
+  g.strokeStyle = tinte;
+  g.lineWidth = 2.2;
+  g.stroke();
+  if (!obenSichtbar) rollen();
   g.restore();
 }
 const P_t = (opt) => opt.P.tinte;
@@ -477,9 +581,8 @@ export function zeichneRagdoll(g, rd, opt) {
   ];
   // Brett fliegt allein weiter
   g.save();
-  g.translate(rd.brett.x, rd.brett.y);
-  g.rotate(rd.brett.rot);
-  zeichneBrett(g, { art: null, ph: 0 }, board, P, 0, opt, rnd);
+  g.translate(rd.brett.x, rd.brett.y + 9);
+  zeichneBrett(g, { art: "kickflip", ph: (rd.brett.rot / (Math.PI * 2)) * 0.6 }, board, P, 0, opt, rnd, rd.brett.rot);
   g.restore();
   g.lineCap = "round";
   g.lineJoin = "round";

@@ -2,10 +2,9 @@
 // Leertaste / Tippen = Ollie (gedrückt halten = höher). Pfeiltasten oder Wischen in der Luft = Tricks
 // (↑ Kickflip, ↓ Heelflip, ← 360 Shove-it, → Impossible). Am Boden: → anschieben, ← bremsen.
 // Beim Grinden: ← → bzw. linke/rechte Bildschirmhälfte gedrückt halten = Balance, kurz tippen = abspringen.
-import { TRICK_TASTE } from "./logik.js";
 
 export function erstelleEingabe(flaeche, { zustand, pause, aktiv, pausiert }) {
-  const e = { sprung: false, sprungNeu: false, trick: null, links: false, rechts: false };
+  const e = { sprung: false, sprungNeu: false, tricks: [], links: false, rechts: false };
   const tasten = { links: false, rechts: false, knopfL: false, knopfR: false, beruehrL: false, beruehrR: false };
   const zeiger = new Map();
 
@@ -29,7 +28,7 @@ export function erstelleEingabe(flaeche, { zustand, pause, aktiv, pausiert }) {
     ev.preventDefault();
     if (r === "links") tasten.links = true;
     if (r === "rechts") tasten.rechts = true;
-    if (!ev.repeat && zustand() === "luft") e.trick = TRICK_TASTE[r];
+    if (!ev.repeat && zustand() === "luft") e.tricks.push(r);
     mische();
   }
   function hoch(ev) {
@@ -76,8 +75,11 @@ export function erstelleEingabe(flaeche, { zustand, pause, aktiv, pausiert }) {
     const dy = ev.clientY - info.y;
     if (Math.hypot(dx, dy) < 26) return;
     info.gewischt = true;
-    const r = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "rechts" : "links") : dy > 0 ? "runter" : "hoch";
-    if (zustand() === "luft") e.trick = TRICK_TASTE[r];
+    // 8 Richtungen: schräg wischen = Kombi-Trick (z. B. hoch + links)
+    const w = Math.atan2(dy, dx);
+    const sektor = Math.round(w / (Math.PI / 4));
+    const RICHTUNG = { 0: ["rechts"], 1: ["runter", "rechts"], 2: ["runter"], 3: ["runter", "links"], 4: ["links"], "-4": ["links"], "-3": ["hoch", "links"], "-2": ["hoch"], "-1": ["hoch", "rechts"] };
+    if (zustand() === "luft") e.tricks.push(...RICHTUNG[sektor]);
   }
   function zUp(ev) {
     const info = zeiger.get(ev.pointerId);
@@ -123,13 +125,13 @@ export function erstelleEingabe(flaeche, { zustand, pause, aktiv, pausiert }) {
     // nach jedem Logik-Schritt: einmalige Signale löschen
     verbraucht() {
       e.sprungNeu = false;
-      e.trick = null;
+      e.tricks.length = 0;
     },
     loslassen() {
       for (const k of Object.keys(tasten)) tasten[k] = false;
       e.sprung = false;
       e.sprungNeu = false;
-      e.trick = null;
+      e.tricks.length = 0;
       zeiger.clear();
       mische();
     },
