@@ -50,6 +50,7 @@ const ZEIT = {
   minen: { leicht: 3, mittel: 10, schwer: 25 },
   memory: { leicht: 6, mittel: 8, schwer: 10 },
   sudoku: { leicht: 60, mittel: 90, schwer: 120 },
+  wuerfel: { leicht: 3, mittel: 6, schwer: 10 },
 };
 // Spiele ohne Schwierigkeitsgrade landen unter „alle“
 const OHNE_STUFEN = new Set(["schlagzeug", "flatter", "ente"]);

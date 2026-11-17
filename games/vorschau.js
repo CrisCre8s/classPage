@@ -465,6 +465,52 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.arc(120, 72, 3, 0, Math.PI * 2);
     ctx.fill();
   }
+  if (spiel === "wuerfel") {
+    // Zauberwürfel isometrisch, Pop-Art-Farben mit Ben-Day-Punkten im Schatten
+    const farben = { oben: ["#fdfbf2", "#ffe600", "#fdfbf2"], links: ["#ff8a00", "#ff2a3d", "#ff8a00"], rechts: ["#ff2bd6", "#00e5ff", "#ff2bd6"] };
+    const cx = 120;
+    const cy = 60;
+    const k = 15; // Kantenlänge eines Feldes
+    const ix = (u, v) => [cx + (u - v) * k * 0.87, cy - 42 + (u + v) * k * 0.5];
+    const vier = (pts, farbe, punkte) => {
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.closePath();
+      ctx.fillStyle = farbe;
+      ctx.fill();
+      if (punkte) {
+        ctx.save();
+        ctx.clip();
+        ctx.fillStyle = "rgba(10, 8, 20, 0.35)";
+        for (let y = 0; y < 120; y += 4) for (let x = (y / 4) % 2 ? 2 : 0; x < 240; x += 4) ctx.fillRect(x, y, 1.5, 1.5);
+        ctx.restore();
+      }
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#07060a";
+      ctx.stroke();
+    };
+    for (let u = 0; u < 3; u++)
+      for (let v = 0; v < 3; v++) vier([ix(u, v), ix(u + 1, v), ix(u + 1, v + 1), ix(u, v + 1)], farben.oben[(u + v) % 3]);
+    for (let r = 0; r < 3; r++)
+      for (let c = 0; c < 3; c++) {
+        const [x0, y0] = ix(c, 3);
+        const [x1, y1] = ix(c + 1, 3);
+        vier([[x0, y0 + r * k], [x1, y1 + r * k], [x1, y1 + (r + 1) * k], [x0, y0 + (r + 1) * k]], farben.links[(r + c) % 3]);
+        const [a0, b0] = ix(3, c);
+        const [a1, b1] = ix(3, c + 1);
+        vier([[a0, b0 + r * k], [a1, b1 + r * k], [a1, b1 + (r + 1) * k], [a0, b0 + (r + 1) * k]], farben.rechts[(r * 2 + c) % 3], true);
+      }
+    ctx.font = '13px "Press Start 2P", monospace';
+    ctx.fillStyle = "#ffe600";
+    ctx.strokeStyle = "#07060a";
+    ctx.lineWidth = 4;
+    ctx.save();
+    ctx.translate(188, 26);
+    ctx.rotate(-0.2);
+    ctx.strokeText("ZAP!", 0, 0);
+    ctx.fillText("ZAP!", 0, 0);
+    ctx.restore();
+  }
   if (spiel === "sudoku") {
     const z = 12;
     const ox = 66;

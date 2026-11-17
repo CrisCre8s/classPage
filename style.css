@@ -16,6 +16,11 @@
   font-display: swap;
 }
 @font-face {
+  font-family: "Bangers";
+  src: url("/fonts/Bangers.woff") format("woff");
+  font-display: swap;
+}
+@font-face {
   font-family: "Press Start 2P";
   src: url("/fonts/PressStart2P.woff") format("woff");
   font-display: swap;
@@ -5280,4 +5285,256 @@ table.casino-plan td {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* ===== Pop-Würfel (3D-Zauberwürfel im Comic-Look) ===== */
+body.game-on .stage[data-game="wuerfel"] .game-dom {
+  padding: 0;
+  overflow: hidden;
+}
+.wuerfel {
+  --tinte: #0b0a10;
+  --w-gelb: #ffe600;
+  --w-magenta: #ff2bd6;
+  --w-cyan: #00e5ff;
+  --w-papier: #fff8e7;
+  --w-comic: "Bangers", "Comic Sans MS", Impact, sans-serif;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  overflow: hidden;
+  background: #120a1f;
+  font-family: var(--w-comic);
+  letter-spacing: 0.04em;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.wuerfel-hinter {
+  position: absolute;
+  inset: -10px;
+  width: calc(100% + 20px);
+  height: calc(100% + 20px);
+  filter: blur(2.2px) saturate(1.15);
+}
+.wuerfel-buehne {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+.wuerfel-buehne canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.wuerfel-effekte,
+.wuerfel-blitz {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.wuerfel-blitz {
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+.wuerfel-hud {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: none;
+}
+.wuerfel-panel {
+  min-width: 104px;
+  padding: 5px 14px 7px;
+  text-align: center;
+  color: var(--tinte);
+  background-color: var(--w-papier);
+  background-image: radial-gradient(rgba(255, 43, 214, 0.22) 22%, transparent 24%);
+  background-size: 7px 7px;
+  border: 4px solid var(--tinte);
+  box-shadow: 5px 5px 0 var(--tinte);
+  transform: rotate(-1.5deg);
+}
+.wuerfel-panel + .wuerfel-panel {
+  transform: rotate(1.2deg);
+  background-image: radial-gradient(rgba(0, 229, 255, 0.3) 22%, transparent 24%);
+}
+.wuerfel-panel small {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: #43304f;
+}
+.wuerfel-panel b {
+  display: block;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1;
+}
+.wuerfel-leiste {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 0 12px;
+}
+/* Buttons als schräge Sprechblasen */
+.wuerfel-blase {
+  position: relative;
+  padding: 9px 20px 11px;
+  font-family: var(--w-comic);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--tinte);
+  background: var(--w-gelb);
+  border: 4px solid var(--tinte);
+  border-radius: 22px 26px 20px 28px / 26px 20px 28px 22px;
+  box-shadow: 5px 5px 0 var(--tinte);
+  transform: skew(-8deg) rotate(-2deg);
+  cursor: pointer;
+  transition: transform 0.08s steps(2), box-shadow 0.08s steps(2);
+}
+.wuerfel-blase::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  bottom: -16px;
+  width: 18px;
+  height: 18px;
+  background: inherit;
+  border-right: 4px solid var(--tinte);
+  border-bottom: 4px solid var(--tinte);
+  transform: skew(30deg) rotate(45deg);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.wuerfel-blase.cyan {
+  background: var(--w-cyan);
+  transform: skew(-8deg) rotate(1.5deg);
+}
+.wuerfel-blase.magenta {
+  color: #fff;
+  background: var(--w-magenta);
+  -webkit-text-stroke: 1px var(--tinte);
+  transform: skew(6deg) rotate(-1deg);
+}
+.wuerfel-blase.magenta::after {
+  left: auto;
+  right: 22px;
+  transform: skew(-30deg) rotate(45deg);
+}
+.wuerfel-blase:hover {
+  box-shadow: 7px 7px 0 var(--tinte);
+  translate: -2px -2px;
+}
+.wuerfel-blase:active {
+  box-shadow: 2px 2px 0 var(--tinte);
+  translate: 3px 3px;
+}
+.wuerfel-blase:focus-visible {
+  outline: 4px dashed var(--w-cyan);
+  outline-offset: 6px;
+}
+.wuerfel-blase:disabled {
+  opacity: 0.6;
+  filter: grayscale(0.8);
+  cursor: default;
+}
+/* Soundeffekt-Schriftzüge */
+.wuerfel-sfx {
+  position: absolute;
+  z-index: 3;
+  font-family: var(--w-comic);
+  font-size: clamp(38px, 8vmin, 80px);
+  white-space: nowrap;
+  color: var(--w-gelb);
+  -webkit-text-stroke: 3px var(--tinte);
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 var(--w-magenta), 7px 7px 0 var(--tinte);
+  pointer-events: none;
+  animation: wuerfel-sfx 0.62s steps(6) forwards;
+}
+.wuerfel-sfx.klein {
+  font-size: clamp(24px, 4.5vmin, 42px);
+}
+@keyframes wuerfel-sfx {
+  0% { transform: translate(-50%, -50%) rotate(var(--w)) scale(0.2); opacity: 1; }
+  25% { transform: translate(-50%, -50%) rotate(var(--w)) scale(1.15); }
+  40% { transform: translate(-50%, -50%) rotate(var(--w)) scale(0.95); }
+  80% { opacity: 1; }
+  100% { transform: translate(-50%, -62%) rotate(var(--w)) scale(1.05); opacity: 0; }
+}
+.wuerfel-boom {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  z-index: 4;
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.wuerfel-boom .wort {
+  display: block;
+  font-size: clamp(90px, 24vmin, 220px);
+  line-height: 0.9;
+  color: var(--w-gelb);
+  -webkit-text-stroke: 6px var(--tinte);
+  paint-order: stroke fill;
+  text-shadow: 8px 8px 0 #ff2a3d, 14px 14px 0 var(--tinte);
+  animation: wuerfel-boom 0.9s steps(9) both, wuerfel-zittern 0.16s steps(2) 0.9s 6;
+}
+.wuerfel-boom .unter {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 18px;
+  font-size: clamp(22px, 5.5vmin, 48px);
+  white-space: nowrap;
+  color: var(--tinte);
+  background: var(--w-cyan);
+  border: 4px solid var(--tinte);
+  box-shadow: 6px 6px 0 var(--tinte);
+  animation: wuerfel-unter 0.6s steps(4) 0.35s both;
+}
+@keyframes wuerfel-boom {
+  0% { transform: scale(0.1) rotate(-20deg); }
+  50% { transform: scale(1.25) rotate(4deg); }
+  75% { transform: scale(0.92) rotate(-3deg); }
+  100% { transform: scale(1) rotate(-2deg); }
+}
+@keyframes wuerfel-zittern {
+  0% { translate: 3px -2px; }
+  100% { translate: -3px 2px; }
+}
+@keyframes wuerfel-unter {
+  0% { transform: rotate(-3deg) scale(0); }
+  70% { transform: rotate(-3deg) scale(1.15); }
+  100% { transform: rotate(-3deg) scale(1); }
+}
+.wuerfel-fehler {
+  margin: auto;
+  padding: 40px 20px;
+  font-size: 24px;
+  text-align: center;
+  color: var(--w-gelb);
+}
+@media (max-width: 640px), (max-height: 520px) {
+  .wuerfel-panel { min-width: 84px; padding: 4px 10px 6px; }
+  .wuerfel-panel small { font-size: 11px; }
+  .wuerfel-panel b { font-size: 21px; }
+  .wuerfel-blase { font-size: 17px; padding: 6px 12px 8px; }
+  .wuerfel-leiste { gap: 12px; bottom: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wuerfel-sfx,
+  .wuerfel-boom .wort,
+  .wuerfel-boom .unter { animation-duration: 0.01s; }
 }

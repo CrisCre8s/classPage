@@ -27,6 +27,7 @@ const LADER = {
   billard: () => import("./games/billard.js"),
   bubble: () => import("./games/bubble.js"),
   sudoku: () => import("./games/sudoku.js"),
+  wuerfel: () => import("./games/wuerfel.js"),
   ttt: () => import("./games/ttt.js"),
   pfand: () => import("./games/pfand.js"),
   ente: () => import("./games/ente.js"),
