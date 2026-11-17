@@ -26,7 +26,7 @@ const PUNKTE = {
   bits: { minSek: 5, proSek: 400, basis: 500, max: 500000 },
   z2048: { minSek: 10, proSek: 300, basis: 100, max: 1000000 },
   mauer: { minSek: 5, proSek: 150, basis: 300, max: 200000 },
-  skate: { minSek: 3, proSek: 600, basis: 500, max: 2000000 },
+  skate: { minSek: 3, proSek: 3000, basis: 1000, max: 5000000 },
   schlagzeug: { minSek: 10, proSek: 4000, basis: 0, max: 2000000 },
   bloecke: { minSek: 5, proSek: 3000, basis: 0, max: 5000000 },
   flatter: { minSek: 1, proSek: 2, basis: 2, max: 5000 },
@@ -53,7 +53,7 @@ const ZEIT = {
   wuerfel: { leicht: 3, mittel: 6, schwer: 10 },
 };
 // Spiele ohne Schwierigkeitsgrade landen unter „alle“
-const OHNE_STUFEN = new Set(["schlagzeug", "flatter", "ente"]);
+const OHNE_STUFEN = new Set(["schlagzeug", "flatter", "ente", "skate"]);
 // Abzeichen aus dem Casino-Shop (nur Schmuck vor dem Namen, gleiche Kürzel wie games/preise.js)
 const ABZEICHEN = new Set(["zocker", "stern", "diamant", "koenig"]);
 

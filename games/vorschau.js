@@ -133,95 +133,118 @@ export function zeichneVorschau(canvas, spiel) {
     ctx.fillRect(128, 80, 7, 7);
   }
   if (spiel === "skate") {
-    // Abendhimmel über der Stadt, Rampe, Strichmännchen im Kickflip über eine Lücke
+    // Pop-Art-Comic: Neon-Stadt, Halftone, leuchtender Riss, Strichmännchen im Kickflip mit „FLIP!“
     const himmel = ctx.createLinearGradient(0, 0, 0, 100);
-    himmel.addColorStop(0, "#2a1f4a");
-    himmel.addColorStop(0.55, "#6b3a6e");
-    himmel.addColorStop(1, "#e0785a");
+    himmel.addColorStop(0, "#12072b");
+    himmel.addColorStop(0.6, "#3a1162");
+    himmel.addColorStop(1, "#a3236f");
     ctx.fillStyle = himmel;
-    ctx.fillRect(0, 0, 240, 100);
-    ctx.fillStyle = "#ffd27a";
-    ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.arc(196, 70, 16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    // Sterne
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    for (const [x, y] of [[20, 10], [58, 22], [92, 8], [140, 16], [170, 6], [226, 24], [8, 34]]) ctx.fillRect(x, y, 1.5, 1.5);
-    // Skyline in zwei Ebenen
-    ctx.fillStyle = "#3a2a55";
-    for (const [x, w, h] of [[0, 22, 38], [20, 16, 52], [40, 26, 30], [70, 18, 46], [92, 30, 36], [128, 14, 58], [150, 26, 34], [182, 20, 44], [206, 34, 30]]) ctx.fillRect(x, 100 - h, w, h);
-    ctx.fillStyle = "#241a38";
-    for (const [x, w, h] of [[8, 26, 24], [44, 20, 32], [86, 24, 20], [118, 30, 28], [160, 22, 22], [214, 26, 34]]) ctx.fillRect(x, 100 - h, w, h);
-    ctx.fillStyle = "#ffd27a";
-    for (const [x, y] of [[24, 54], [30, 62], [74, 60], [132, 48], [132, 58], [186, 62], [96, 70], [212, 76]]) ctx.fillRect(x, y, 2, 3);
-    // Boden mit Lücke
-    ctx.fillStyle = "#1a1722";
-    ctx.fillRect(0, 100, 240, 20);
-    ctx.fillStyle = "#4a4060";
-    ctx.fillRect(0, 100, 92, 3);
-    ctx.fillRect(148, 100, 92, 3);
-    ctx.fillStyle = "#0b0a10";
-    ctx.fillRect(92, 100, 56, 20);
-    ctx.fillStyle = "#3a6fd0";
-    ctx.fillRect(92, 110, 56, 10);
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.fillRect(100, 112, 10, 1.5);
-    ctx.fillRect(124, 115, 14, 1.5);
-    // Absprungrampe
-    ctx.fillStyle = "#8a6a4a";
-    ctx.beginPath();
-    ctx.moveTo(56, 100);
-    ctx.quadraticCurveTo(84, 98, 92, 84);
-    ctx.lineTo(92, 100);
-    ctx.fill();
-    ctx.fillStyle = "#c9a27a";
-    ctx.fillRect(90, 84, 3, 16);
-    // Bewegungslinien
-    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.fillRect(0, 0, 240, 120);
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    for (let y = 0; y < 100; y += 6) for (let x = (y / 6) % 2 ? 3 : 0; x < 240; x += 6) ctx.fillRect(x, y, 1.3, 1.3);
+    ctx.fillStyle = "#2a1650";
+    ctx.strokeStyle = "#0b0a10";
     ctx.lineWidth = 1.5;
-    ctx.lineCap = "round";
-    for (const [x, y, l] of [[78, 44, 18], [82, 52, 14], [76, 60, 20]]) {
+    for (const [x, w, h] of [[0, 30, 50], [28, 22, 66], [52, 34, 40], [150, 26, 58], [178, 30, 44], [210, 30, 62]]) {
+      ctx.fillRect(x, 96 - h, w, h);
+      ctx.strokeRect(x, 96 - h, w, h);
+    }
+    ctx.fillStyle = "#ffe600";
+    for (const [x, y] of [[6, 56], [14, 66], [34, 40], [40, 52], [160, 46], [186, 60], [216, 42], [222, 54]]) ctx.fillRect(x, y, 3, 4);
+    // Riss
+    ctx.fillStyle = "rgba(255,43,214,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(196, 56, 18, 34, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    for (const [x, y] of [[196, 24], [203, 36], [199, 46], [206, 58], [200, 72], [196, 88], [190, 72], [194, 60], [188, 46], [193, 36]]) ctx.lineTo(x, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#0a0014";
+    ctx.beginPath();
+    for (const [x, y] of [[196, 32], [199, 42], [197, 52], [200, 60], [197, 72], [196, 80], [194, 70], [196, 60], [193, 50], [195, 40]]) ctx.lineTo(x, y);
+    ctx.closePath();
+    ctx.fill();
+    // Boden mit Kante
+    ctx.fillStyle = "#241a3a";
+    ctx.fillRect(0, 96, 240, 24);
+    ctx.fillStyle = "#ff2bd6";
+    ctx.fillRect(0, 96, 240, 3);
+    ctx.strokeStyle = "#0b0a10";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 96);
+    ctx.lineTo(240, 96);
+    ctx.stroke();
+    // Geländer
+    ctx.strokeStyle = "#c8d0da";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(20, 80);
+    ctx.lineTo(80, 80);
+    ctx.stroke();
+    // Strichmännchen mit Papierrand und Farbversatz
+    const fig = (farbe, breite, dx, dy) => {
+      ctx.strokeStyle = farbe;
+      ctx.lineWidth = breite;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(112 + dx, 70 + dy); ctx.lineTo(118 + dx, 60 + dy); ctx.lineTo(124 + dx, 56 + dy); ctx.lineTo(130 + dx, 64 + dy); ctx.lineTo(136 + dx, 70 + dy);
+      ctx.moveTo(124 + dx, 56 + dy); ctx.lineTo(127 + dx, 38 + dy);
+      ctx.moveTo(126 + dx, 42 + dy); ctx.lineTo(114 + dx, 36 + dy); ctx.lineTo(106 + dx, 30 + dy);
+      ctx.moveTo(127 + dx, 42 + dy); ctx.lineTo(138 + dx, 36 + dy); ctx.lineTo(146 + dx, 38 + dy);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(129 + dx, 29 + dy, 7, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+    fig("#fff8e7", 6, 0, 0);
+    fig("rgba(0,229,255,0.8)", 2.8, -1.5, 0);
+    fig("rgba(255,43,214,0.8)", 2.8, 1.5, 1);
+    fig("#0b0a10", 2.8, 0, 0);
+    ctx.fillStyle = "#fff8e7";
+    ctx.beginPath();
+    ctx.arc(129, 29, 5.6, 0, Math.PI * 2);
+    ctx.fill();
+    // Brett im Flip (Unterseite sichtbar)
+    ctx.save();
+    ctx.translate(124, 78);
+    ctx.rotate(-0.2);
+    ctx.fillStyle = "#e94b3c";
+    ctx.strokeStyle = "#0b0a10";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-17, -2.5, 34, 5, 2.5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+    // Speedlines
+    ctx.strokeStyle = "#fff8e7";
+    ctx.lineWidth = 1.5;
+    for (const [x, y, l] of [[76, 40, 22], [82, 50, 16], [74, 60, 24]]) {
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(x + l, y - 3);
+      ctx.lineTo(x + l, y);
       ctx.stroke();
     }
-    // Strichmännchen im Sprung (Knie angezogen, Arme ausgebreitet)
-    ctx.strokeStyle = "#f2f2f3";
-    ctx.lineWidth = 2.6;
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(114, 58); ctx.lineTo(118, 50); ctx.lineTo(124, 46); ctx.lineTo(128, 54); ctx.lineTo(132, 58);
-    ctx.moveTo(124, 46); ctx.lineTo(126, 30);
-    ctx.moveTo(125, 34); ctx.lineTo(114, 30); ctx.lineTo(106, 34);
-    ctx.moveTo(126, 34); ctx.lineTo(136, 28); ctx.lineTo(144, 30);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(128, 22, 6, 0, Math.PI * 2);
-    ctx.stroke();
-    // Board im Flip (schräg, Unterseite sichtbar)
+    // FLIP!
     ctx.save();
-    ctx.translate(123, 64);
-    ctx.rotate(-0.28);
-    ctx.fillStyle = "#b48ef0";
-    ctx.beginPath();
-    ctx.roundRect(-18, -2.5, 36, 5, 2.5);
-    ctx.fill();
-    ctx.fillStyle = "#f5d97a";
-    ctx.fillRect(-11, 2.5, 5, 4);
-    ctx.fillRect(6, 2.5, 5, 4);
+    ctx.translate(58, 22);
+    ctx.rotate(-0.15);
+    ctx.font = "22px Bangers, Impact, sans-serif";
+    ctx.textAlign = "center";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#0b0a10";
+    ctx.strokeText("FLIP!", 2, 2);
+    ctx.fillStyle = "#ff2bd6";
+    ctx.fillText("FLIP!", 2, 2);
+    ctx.strokeText("FLIP!", 0, 0);
+    ctx.fillStyle = "#ffe600";
+    ctx.fillText("FLIP!", 0, 0);
     ctx.restore();
-    // Münzen
-    for (const [x, y] of [[152, 40], [166, 48], [180, 58]]) {
-      ctx.fillStyle = gelb;
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#c99a2e";
-      ctx.fillRect(x - 0.75, y - 2.5, 1.5, 5);
-    }
   }
   if (spiel === "schlagzeug") {
     // kleines Schlagzeug: Bass, zwei Toms, Snare, Becken

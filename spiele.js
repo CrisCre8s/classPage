@@ -15,7 +15,7 @@ const LADER = {
   z2048: () => import("./games/z2048.js"),
   vier: () => import("./games/vier.js"),
   mauer: () => import("./games/mauer.js"),
-  skate: () => import("./games/skate.js"),
+  skate: () => import("./games/skater/index.js"),
   schlagzeug: () => import("./games/schlagzeug.js"),
   binaer: () => import("./games/binaer.js"),
   subnetz: () => import("./games/subnetz.js"),
@@ -693,7 +693,7 @@ function initKarten() {
     const spiel = k.dataset.game;
     const art = k.querySelector(".game-art");
     zeichneVorschau(art, spiel);
-    document.fonts?.load('16px "Press Start 2P"').then(() => zeichneVorschau(art, spiel));
+    if (document.fonts) Promise.all([document.fonts.load('16px "Press Start 2P"'), document.fonts.load("16px Bangers")]).then(() => zeichneVorschau(art, spiel)).catch(() => {});
 
     k.querySelector(".play").addEventListener("click", () => starten(spiel));
     const radios = [...k.querySelectorAll('[role="radio"]')];
