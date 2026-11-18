@@ -4,7 +4,7 @@ import * as T from "./lib/three.module.js";
 
 export const DOM = true;
 export const HILFE =
-  "Mischen, dann lösen · Hintergrund ziehen: Ansicht drehen · auf einem Feld ziehen: Ebene drehen · Tasten R L U D F B, mit Shift gegen den Uhrzeigersinn · Strg+Z rückgängig · die Zeit läuft ab dem ersten Zug nach dem Mischen";
+  "Mischen, dann lösen · Hintergrund ziehen: Würfel frei in alle Richtungen drehen (auch ganz umdrehen) · auf einem Feld ziehen: Ebene drehen · Tasten R L U D F B (immer die Seite, die gerade rechts, links, oben … zu sehen ist), mit Shift gegen den Uhrzeigersinn · X Y Z: ganzen Würfel um 90° kippen · Strg+Z rückgängig · die Zeit läuft ab dem ersten Zug nach dem Mischen";
 const MISCHZUEGE = { leicht: 8, mittel: 15, schwer: 25 };
 
 // =====================================================================
@@ -391,7 +391,17 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const z = ausNotation(e.key.toUpperCase() + (e.shiftKey ? "'" : ""));
+    const taste = e.key.toUpperCase();
+    // X / Y / Z: ganzen Würfel kippen (nur die Ansicht, zählt nicht als Zug)
+    const kipp = { X: ACHSE_X, Y: ACHSE_Y, Z: ACHSE_Z }[taste];
+    if (kipp) {
+      e.preventDefault();
+      ansichtKippen(kipp, e.shiftKey ? -1 : 1);
+      return;
+    }
+    // R L U D F B beziehen sich auf das, was man gerade sieht (rechts, oben, vorn …)
+    const basis = seiteZuAnsicht(taste);
+    const z = basis && (e.shiftKey ? { ...basis, richtung: -basis.richtung } : basis);
     if (z) {
       e.preventDefault();
       zug(z);
@@ -403,7 +413,41 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   // ---------- Maus / Touch ----------
   const ray = new T.Raycaster();
   const zeiger = new T.Vector2();
-  const ansicht = { theta: -0.62, phi: 1.02, abstand: 11.5 };
+  // Ansicht frei in alle Richtungen (Trackball): Lage der Kamera als Quaternion, keine Sperre an den Polen
+  const ansicht = { q: new T.Quaternion(), abstand: 11.5, ziel: null };
+  {
+    const th = -0.62;
+    const ph = 1.02;
+    const m = new T.Matrix4().lookAt(new T.Vector3(Math.sin(ph) * Math.sin(th), Math.cos(ph), Math.sin(ph) * Math.cos(th)), new T.Vector3(), new T.Vector3(0, 1, 0));
+    ansicht.q.setFromRotationMatrix(m);
+  }
+  const ACHSE_X = new T.Vector3(1, 0, 0);
+  const ACHSE_Y = new T.Vector3(0, 1, 0);
+  const ACHSE_Z = new T.Vector3(0, 0, 1);
+  const hilfsQ = new T.Quaternion();
+  // um die eigenen Bildschirmachsen der Kamera drehen
+  function ansichtDrehen(achse, winkel) {
+    hilfsQ.setFromAxisAngle(achse, winkel);
+    ansicht.q.multiply(hilfsQ).normalize();
+  }
+  // ganzen Würfel um 90° kippen (Taste X/Y/Z): weich animiert
+  function ansichtKippen(achse, richtung) {
+    const start = (ansicht.ziel ? ansicht.ziel.q : ansicht.q).clone();
+    const q = start.clone().multiply(new T.Quaternion().setFromAxisAngle(achse, (-richtung * Math.PI) / 2));
+    ansicht.ziel = { von: ansicht.q.clone(), q, t: 0 };
+  }
+  // Welche Würfelseite liegt (von der Kamera aus) rechts, oben, vorn …? Damit passen die Tasten zur Ansicht.
+  function seiteZuAnsicht(buchstabe) {
+    const richtung = { R: [ACHSE_X, 1], L: [ACHSE_X, -1], U: [ACHSE_Y, 1], D: [ACHSE_Y, -1], F: [ACHSE_Z, 1], B: [ACHSE_Z, -1] }[buchstabe];
+    if (!richtung) return null;
+    const v = richtung[0].clone().multiplyScalar(richtung[1]).applyQuaternion(ansicht.q);
+    const k = [v.x, v.y, v.z];
+    let ai = 0;
+    for (let i = 1; i < 3; i++) if (Math.abs(k[i]) > Math.abs(k[ai])) ai = i;
+    const ebene = Math.sign(k[ai]);
+    // im Uhrzeigersinn, wenn man von außen auf die Seite schaut
+    return { achse: ACHSEN[ai], ebene, richtung: -ebene };
+  }
   let ziehen = null;
   const leinwand = renderer.domElement;
   function rechteck() {
@@ -429,8 +473,9 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   leinwand.addEventListener("pointermove", (e) => {
     if (!ziehen || e.pointerId !== ziehen.id) return;
     if (ziehen.art === "ansicht") {
-      ansicht.theta -= (e.clientX - ziehen.lx) * 0.0085;
-      ansicht.phi = Math.min(Math.PI - 0.2, Math.max(0.2, ansicht.phi - (e.clientY - ziehen.ly) * 0.0085));
+      ansicht.ziel = null;
+      ansichtDrehen(ACHSE_Y, -(e.clientX - ziehen.lx) * 0.0085);
+      ansichtDrehen(ACHSE_X, -(e.clientY - ziehen.ly) * 0.0085);
       ziehen.lx = e.clientX;
       ziehen.ly = e.clientY;
       return;
@@ -780,10 +825,16 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       naechsteAnimation();
       animationSchritt(dt);
     }
-    if (modus === "geloest") ansicht.theta += dt * 0.6;
-    const { theta, phi, abstand } = ansicht;
-    kamera.position.set(abstand * Math.sin(phi) * Math.sin(theta), abstand * Math.cos(phi), abstand * Math.sin(phi) * Math.cos(theta));
-    kamera.lookAt(0, 0, 0);
+    if (ansicht.ziel) {
+      const z = ansicht.ziel;
+      z.t = Math.min(1, z.t + dt / 0.28);
+      const e = 1 - Math.pow(1 - z.t, 3);
+      ansicht.q.copy(z.von).slerp(z.q, e);
+      if (z.t >= 1) ansicht.ziel = null;
+    }
+    if (modus === "geloest") ansichtDrehen(ACHSE_Y, dt * 0.6);
+    kamera.quaternion.copy(ansicht.q);
+    kamera.position.set(0, 0, ansicht.abstand).applyQuaternion(ansicht.q);
     // Licht kommt immer von oben links vorn (relativ zur Kamera)
     lichtWelt.set(-0.38, 0.62, 0.86).applyQuaternion(kamera.quaternion).normalize();
     glitch = Math.max(0, glitch - dt * 5);
