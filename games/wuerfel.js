@@ -1,20 +1,24 @@
-// Pop-Würfel: 3×3-Zauberwürfel in 3D (Three.js) im Comic-/Pop-Art-Look.
-// Wertung: Zeit vom ersten Zug nach dem Mischen bis gelöst. Stufe = Anzahl Mischzüge.
+// Pop-Würfel: Zauberwürfel in 3D (Three.js). Leicht = 3×3, Mittel = 4×4, Schwer = 5×5.
+// Zwei Skins: „Klassisch“ (wie ein echter Würfel) und „Sketch“ (Pop-Art-Comic).
+// Wertung: Zeit vom ersten Zug nach dem Mischen bis gelöst.
 import * as T from "./lib/three.module.js";
 
 export const DOM = true;
 export const HILFE =
-  "Mischen, dann lösen · Hintergrund ziehen: Würfel frei in alle Richtungen drehen (auch ganz umdrehen) · auf einem Feld ziehen: Ebene drehen · Tasten R L U D F B (immer die Seite, die gerade rechts, links, oben … zu sehen ist), mit Shift gegen den Uhrzeigersinn · X Y Z: ganzen Würfel um 90° kippen · Strg+Z rückgängig · die Zeit läuft ab dem ersten Zug nach dem Mischen";
-const MISCHZUEGE = { leicht: 8, mittel: 15, schwer: 25 };
+  "Leicht = 3×3, Mittel = 4×4, Schwer = 5×5 · Skin oben rechts umschalten (Klassisch/Sketch) · Mischen, dann lösen · Hintergrund ziehen: Würfel frei in alle Richtungen drehen (auch ganz umdrehen) · auf einem Feld ziehen: Ebene drehen (beim 4×4/5×5 auch die inneren Ebenen) · Tasten R L U D F B (immer die Seite, die gerade rechts, links, oben … zu sehen ist), mit Shift gegen den Uhrzeigersinn · X Y Z: ganzen Würfel um 90° kippen · Strg+Z rückgängig · die Zeit läuft ab dem ersten Zug nach dem Mischen";
+const GROESSE = { leicht: 3, mittel: 4, schwer: 5 };
+const MISCHZUEGE = { 3: 22, 4: 36, 5: 50 };
 
 // =====================================================================
 // Würfelzustand ohne Grafik (ganzzahlig, dadurch exakt)
 // =====================================================================
-// Jeder der 26 Steine hat eine Position (-1..1 je Achse) und eine Ausrichtung (3×3-Matrix aus -1/0/1).
+// Jeder äußere Stein hat eine Position und eine Ausrichtung (3×3-Matrix aus -1/0/1).
+// Positionen sind doppelt gezählt, damit sie auch beim 4×4 ganzzahlig bleiben:
+// beim N×N läuft jede Achse von -(N-1) bis N-1 in Zweierschritten (3×3: -2, 0, 2).
 // Ein Zug dreht alle Steine einer Ebene um 90° um eine Achse.
 const ACHSEN = ["x", "y", "z"];
-const FARBE_SEITE = { px: "rot", nx: "orange", py: "weiss", ny: "gelb", pz: "magenta", nz: "cyan" };
-// Notation: Achse, Ebene, Richtung (+1 = gegen den Uhrzeigersinn um +Achse, Rechte-Hand-Regel)
+const FARBE_SEITE = { px: "rot", nx: "orange", py: "weiss", ny: "gelb", pz: "gruen", nz: "blau" };
+// Notation: Achse, Seite (±1, außen), Richtung (+1 = gegen den Uhrzeigersinn um +Achse, Rechte-Hand-Regel)
 const ZUEGE = { R: ["x", 1, -1], L: ["x", -1, 1], U: ["y", 1, -1], D: ["y", -1, 1], F: ["z", 1, -1], B: ["z", -1, 1] };
 
 function drehMatrix(achse, s) {
@@ -28,16 +32,19 @@ function malMat(a, b) {
   for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) for (let k = 0; k < 3; k++) r[i][j] += a[i][k] * b[k][j];
   return r;
 }
-export function neuerWuerfel() {
+export const ebenen = (n) => Array.from({ length: n }, (_, i) => 2 * i - (n - 1));
+export function neuerWuerfel(n = 3) {
   const steine = [];
-  for (let x = -1; x <= 1; x++)
-    for (let y = -1; y <= 1; y++)
-      for (let z = -1; z <= 1; z++) {
-        if (!x && !y && !z) continue;
+  const a = n - 1;
+  for (const x of ebenen(n))
+    for (const y of ebenen(n))
+      for (const z of ebenen(n)) {
+        // nur die Steine außen (innen sieht man nichts)
+        if (Math.abs(x) < a && Math.abs(y) < a && Math.abs(z) < a) continue;
         const aufkleber = [];
-        if (x) aufkleber.push({ n: [x, 0, 0], farbe: FARBE_SEITE[x > 0 ? "px" : "nx"] });
-        if (y) aufkleber.push({ n: [0, y, 0], farbe: FARBE_SEITE[y > 0 ? "py" : "ny"] });
-        if (z) aufkleber.push({ n: [0, 0, z], farbe: FARBE_SEITE[z > 0 ? "pz" : "nz"] });
+        if (Math.abs(x) === a) aufkleber.push({ n: [Math.sign(x), 0, 0], farbe: FARBE_SEITE[x > 0 ? "px" : "nx"] });
+        if (Math.abs(y) === a) aufkleber.push({ n: [0, Math.sign(y), 0], farbe: FARBE_SEITE[y > 0 ? "py" : "ny"] });
+        if (Math.abs(z) === a) aufkleber.push({ n: [0, 0, Math.sign(z)], farbe: FARBE_SEITE[z > 0 ? "pz" : "nz"] });
         steine.push({ pos: [x, y, z], m: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], aufkleber });
       }
   return steine;
@@ -52,11 +59,11 @@ export function zugAnwenden(steine, zug) {
   }
 }
 const gegenzug = (z) => ({ achse: z.achse, ebene: z.ebene, richtung: -z.richtung });
-export function ausNotation(text) {
+export function ausNotation(text, n = 3) {
   const z = ZUEGE[text[0].toUpperCase()];
   if (!z) return null;
   const strich = text.includes("'");
-  return { achse: z[0], ebene: z[1], richtung: strich ? -z[2] : z[2] };
+  return { achse: z[0], ebene: z[1] * (n - 1), richtung: strich ? -z[2] : z[2] };
 }
 export function istGeloest(steine) {
   const seite = {};
@@ -69,14 +76,15 @@ export function istGeloest(steine) {
   return true;
 }
 // zufällige Züge, nie zweimal hintereinander dieselbe Achse (sonst heben sie sich teils auf)
-export function mischFolge(n, zufall = Math.random) {
+export function mischFolge(anzahl, zufall = Math.random, n = 3) {
   const folge = [];
+  const lagen = ebenen(n);
   let letzte = null;
-  while (folge.length < n) {
+  while (folge.length < anzahl) {
     const achse = ACHSEN[Math.floor(zufall() * 3)];
     if (achse === letzte) continue;
     letzte = achse;
-    folge.push({ achse, ebene: zufall() < 0.5 ? -1 : 1, richtung: zufall() < 0.5 ? -1 : 1 });
+    folge.push({ achse, ebene: lagen[Math.floor(zufall() * n)], richtung: zufall() < 0.5 ? -1 : 1 });
   }
   return folge;
 }
@@ -95,6 +103,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
         <div class="wuerfel-panel"><small>ZEIT</small><b data-zeit>0:00.00</b></div>
         <div class="wuerfel-panel"><small>ZÜGE</small><b data-zuege>0</b></div>
       </div>
+      <button class="wuerfel-skin" type="button" data-skin aria-label="Skin wechseln"></button>
       <div class="wuerfel-leiste">
         <button class="wuerfel-blase" type="button" data-a="mischen">MISCHEN!</button>
         <button class="wuerfel-blase cyan" type="button" data-a="rueck">RÜCKGÄNGIG</button>
@@ -108,7 +117,16 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   const blitz = wurzel.querySelector(".wuerfel-blitz");
   const fx = effekte.getContext("2d");
   const istHandy = matchMedia("(pointer: coarse)").matches;
-  const mischZahl = MISCHZUEGE[stufe] || 15;
+  const N = GROESSE[stufe] || 3;
+  const mischZahl = MISCHZUEGE[N];
+  // Skin: „klassisch“ (Standard) oder „sketch“ (Pop-Art-Comic), wird gemerkt
+  let skin = "klassisch";
+  try {
+    if (localStorage.getItem("wuerfel-skin") === "sketch") skin = "sketch";
+  } catch {
+    /* egal */
+  }
+  const comic = () => skin === "sketch";
 
   // ---------- Renderer ----------
   let renderer;
@@ -180,12 +198,28 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     materialien.push(m);
     return m;
   }
-  const FARBEN = { rot: "#ff2a3d", orange: "#ff8a00", weiss: "#fdfbf2", gelb: "#ffe600", magenta: "#ff2bd6", cyan: "#00e5ff" };
-  const MAT = {};
-  for (const [k, v] of Object.entries(FARBEN)) MAT[k] = celMaterial(v, true);
-  const matKoerper = celMaterial("#1c1726");
+  // Sketch: knallige Comic-Farben mit Cel-Shading
+  const FARBEN_SKETCH = { rot: "#ff2a3d", orange: "#ff8a00", weiss: "#fdfbf2", gelb: "#ffe600", gruen: "#ff2bd6", blau: "#00e5ff" };
+  // Klassisch: Farben wie beim echten Würfel, glänzende Aufkleber auf schwarzem Kunststoff
+  const FARBEN_KLASSISCH = { rot: "#b71234", orange: "#ff5800", weiss: "#f4f4f4", gelb: "#ffd500", gruen: "#009b48", blau: "#0046ad" };
+  const MAT_SKETCH = {};
+  for (const [k, v] of Object.entries(FARBEN_SKETCH)) MAT_SKETCH[k] = celMaterial(v, true);
+  const MAT_KLASSISCH = {};
+  for (const [k, v] of Object.entries(FARBEN_KLASSISCH)) {
+    const m = new T.MeshStandardMaterial({ color: v, roughness: 0.28, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    materialien.push(m);
+    MAT_KLASSISCH[k] = m;
+  }
+  const koerperSketch = celMaterial("#1c1726");
+  const koerperKlassisch = new T.MeshStandardMaterial({ color: 0x111114, roughness: 0.55, metalness: 0.05 });
+  materialien.push(koerperKlassisch);
   const matHuelle = new T.MeshBasicMaterial({ color: 0x07060a, side: T.BackSide });
   materialien.push(matHuelle);
+  // Licht für den klassischen Skin (folgt der Kamera)
+  const umgebung = new T.HemisphereLight(0xffffff, 0x404050, 0.75);
+  const sonne = new T.DirectionalLight(0xffffff, 0.85);
+  const fuell = new T.DirectionalLight(0xffffff, 0.3);
+  szene.add(umgebung, sonne, fuell, sonne.target, fuell.target);
 
   function rundesQuadrat(g, r) {
     const s = new T.Shape();
@@ -202,11 +236,15 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     return new T.ShapeGeometry(s, 4);
   }
   const geoKoerper = new T.BoxGeometry(0.95, 0.95, 0.95);
+  const geoKoerperKlassisch = new T.BoxGeometry(0.985, 0.985, 0.985);
   const geoHuelle = new T.BoxGeometry(1.085, 1.085, 1.085); // Inverted Hull: schwarze Tuschekontur
   const geoAufkleber = rundesQuadrat(0.8, 0.12);
+  const geoAufkleberKlassisch = rundesQuadrat(0.86, 0.1);
 
   // ---------- Steine ----------
-  let steine = neuerWuerfel();
+  let steine = neuerWuerfel(N);
+  // der ganze Würfel ist immer gleich groß, egal ob 3×3 oder 5×5
+  wuerfelGruppe.scale.setScalar(3 / N);
   const steinObjekte = [];
   const aufkleberMeshes = [];
   function baueSteine() {
@@ -215,12 +253,12 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     aufkleberMeshes.length = 0;
     steine.forEach((s, i) => {
       const g = new T.Group();
-      g.add(new T.Mesh(geoHuelle, matHuelle));
-      g.add(new T.Mesh(geoKoerper, matKoerper));
+      if (comic()) g.add(new T.Mesh(geoHuelle, matHuelle));
+      g.add(new T.Mesh(comic() ? geoKoerper : geoKoerperKlassisch, comic() ? koerperSketch : koerperKlassisch));
       for (const a of s.aufkleber) {
-        const m = new T.Mesh(geoAufkleber, MAT[a.farbe]);
+        const m = new T.Mesh(comic() ? geoAufkleber : geoAufkleberKlassisch, (comic() ? MAT_SKETCH : MAT_KLASSISCH)[a.farbe]);
         const n = new T.Vector3(...a.n);
-        m.position.copy(n).multiplyScalar(0.487);
+        m.position.copy(n).multiplyScalar(comic() ? 0.487 : 0.4945);
         m.lookAt(n.clone().multiplyScalar(2));
         m.userData = { stein: i, n: a.n };
         g.add(m);
@@ -235,7 +273,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
   function synchronisiere() {
     steine.forEach((s, i) => {
       const o = steinObjekte[i];
-      o.position.set(s.pos[0], s.pos[1], s.pos[2]);
+      o.position.set(s.pos[0] / 2, s.pos[1] / 2, s.pos[2] / 2);
       const m = s.m;
       tmpM.set(m[0][0], m[0][1], m[0][2], 0, m[1][0], m[1][1], m[1][2], 0, m[2][0], m[2][1], m[2][2], 0, 0, 0, 0, 1);
       o.quaternion.setFromRotationMatrix(tmpM);
@@ -294,7 +332,11 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
         teile.push(i);
       }
     });
-    animation = { z, pivot, teile, t: 0, dauer: schnell ? 0.14 : 0.34 };
+    animation = { z, pivot, teile, t: 0, dauer: schnell ? (N > 3 ? 0.09 : 0.12) : comic() ? 0.34 : 0.2 };
+    if (!comic()) {
+      if (!schnell) navigator.vibrate?.(8);
+      return;
+    }
     glitchStart(schnell ? 0.45 : 1);
     speedlinesStart(z, schnell ? 0.6 : 1);
     if (!schnell || Math.random() < 0.25) sfx(schnell ? "SHUFFLE!" : ["TWIST!", "ZACK!", "WHAM!", "KRRK!", "SWOOSH!", "CLACK!"][Math.floor(Math.random() * 6)], schnell);
@@ -305,9 +347,11 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     if (!a) return;
     a.t += dt;
     // „Animation auf Zweiern“: nur 12 Bilder pro Sekunde, leicht ruckelig wie im Zeichentrick
+    // (im klassischen Skin flüssig)
     const schritte = Math.max(2, Math.round(a.dauer * 12));
-    const k = Math.min(1, Math.ceil((a.t / a.dauer) * schritte) / schritte);
-    const e = k < 1 ? 1 - Math.pow(1 - k, 2.2) : 1;
+    const roh = Math.min(1, a.t / a.dauer);
+    const k = comic() ? Math.min(1, Math.ceil(roh * schritte) / schritte) : roh;
+    const e = comic() ? (k < 1 ? 1 - Math.pow(1 - k, 2.2) : 1) : k * k * (3 - 2 * k);
     a.pivot.rotation.set(0, 0, 0);
     a.pivot.rotation[a.z.achse] = (Math.PI / 2) * a.z.richtung * e;
     if (a.t >= a.dauer) {
@@ -317,6 +361,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       synchronisiere();
       animation = null;
       nachZug(a.z);
+      if (skinWunsch && !schlange.length) skinAnwenden();
     }
   }
   function nachZug(z) {
@@ -342,7 +387,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     if (a === "rueck") rueckgaengig();
     if (a === "reset") zuruecksetzen();
   });
-  function mischen(folge = mischFolge(mischZahl)) {
+  function mischen(folge = mischFolge(mischZahl, Math.random, N)) {
     if (modus === "mischen") return;
     if (modus === "pause") nachricht(null);
     boomWeg();
@@ -371,15 +416,17 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       wuerfelGruppe.remove(animation.pivot);
       animation = null;
     }
-    steine = neuerWuerfel();
+    steine = neuerWuerfel(N);
     baueSteine();
     modus = "frei";
     zugZahl = 0;
     verlauf.length = 0;
     knoepfe();
     status(`Mischen drücken (${mischZahl} Züge), dann lösen`);
-    sfx("RESET!", false);
-    glitchStart(0.8);
+    if (comic()) {
+      sfx("RESET!", false);
+      glitchStart(0.8);
+    }
   }
 
   // ---------- Tastatur ----------
@@ -401,6 +448,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     }
     // R L U D F B beziehen sich auf das, was man gerade sieht (rechts, oben, vorn …)
     const basis = seiteZuAnsicht(taste);
+    if (basis) basis.ebene *= N - 1;
     const z = basis && (e.shiftKey ? { ...basis, richtung: -basis.richtung } : basis);
     if (z) {
       e.preventDefault();
@@ -580,6 +628,12 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     knoepfe();
     hud();
     status(`Gelöst in ${zeitText(ms)} · ${zugZahl} Züge`);
+    if (!comic()) {
+      // Klassisch: ruhig, ohne Knall – kurz drehen lassen, dann Ergebnis
+      navigator.vibrate?.([30, 40, 30]);
+      zeiten.push(setTimeout(() => meldeErgebnis(ms), 900));
+      return;
+    }
     const r = wurzel.getBoundingClientRect();
     const cx = r.width / 2;
     const cy = r.height * 0.46;
@@ -611,15 +665,17 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     zeiten.push(
       setTimeout(() => {
         boomWeg();
-        const sek = ms / 1000;
-        const neu = ergebnis({ gewonnen: true, zeit: sek });
-        nachricht(`<p class="big">Gelöst!</p><p>${zeitText(ms)} min · ${zugZahl} Züge${neu ? " · neue Bestzeit!" : ""}</p><p><button class="btn" type="button" data-wuerfel-neu>Nochmal mischen</button></p>`);
-        document.querySelector("#stage-msg [data-wuerfel-neu]")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          mischen();
-        });
+        meldeErgebnis(ms);
       }, 2300)
     );
+  }
+  function meldeErgebnis(ms) {
+    const neu = ergebnis({ gewonnen: true, zeit: ms / 1000 });
+    nachricht(`<p class="big">Gelöst!</p><p>${N}×${N} in ${zeitText(ms)} min · ${zugZahl} Züge${neu ? " · neue Bestzeit!" : ""}</p><p><button class="btn" type="button" data-wuerfel-neu>Nochmal mischen</button></p>`);
+    document.querySelector("#stage-msg [data-wuerfel-neu]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      mischen();
+    });
   }
   function boomWeg() {
     boomEl?.remove();
@@ -683,6 +739,26 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     hinter.height = Math.round(h * s);
     const g = hinter.getContext("2d");
     g.setTransform(s, 0, 0, s, 0, 0);
+    if (!comic()) {
+      // Klassisch: ruhiger Studio-Hintergrund mit weichem Schatten unter dem Würfel
+      const rg = g.createRadialGradient(b / 2, h * 0.42, 0, b / 2, h * 0.42, Math.max(b, h) * 0.75);
+      rg.addColorStop(0, "#4a5263");
+      rg.addColorStop(0.55, "#262b35");
+      rg.addColorStop(1, "#111318");
+      g.fillStyle = rg;
+      g.fillRect(0, 0, b, h);
+      const sch = g.createRadialGradient(b / 2, h * 0.8, 0, b / 2, h * 0.8, Math.min(b, h) * 0.32);
+      sch.addColorStop(0, "rgba(0,0,0,0.45)");
+      sch.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = sch;
+      g.save();
+      g.translate(b / 2, h * 0.8);
+      g.scale(1, 0.22);
+      g.translate(-b / 2, -h * 0.8);
+      g.fillRect(0, 0, b, h * 2);
+      g.restore();
+      return;
+    }
     let saat = 7;
     const z = () => (saat = (saat * 16807) % 2147483647) / 2147483647;
     const vl = g.createLinearGradient(0, 0, 0, h);
@@ -837,22 +913,63 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     kamera.position.set(0, 0, ansicht.abstand).applyQuaternion(ansicht.q);
     // Licht kommt immer von oben links vorn (relativ zur Kamera)
     lichtWelt.set(-0.38, 0.62, 0.86).applyQuaternion(kamera.quaternion).normalize();
+    // Licht für den klassischen Skin: oben links vorn, wandert mit der Kamera
+    sonne.position.set(-4, 6, 8).applyQuaternion(kamera.quaternion);
+    fuell.position.set(5, -3, 4).applyQuaternion(kamera.quaternion);
     glitch = Math.max(0, glitch - dt * 5);
     postMat.uniforms.uGlitch.value = glitch;
     postMat.uniforms.uZeit.value = jetzt / 1000;
     const zittern = glitch > 0.05 ? glitch * 5 : 0;
     buehne.style.transform = zittern ? `translate(${(Math.random() - 0.5) * zittern}px, ${(Math.random() - 0.5) * zittern}px)` : "";
-    renderer.setRenderTarget(ziel);
-    renderer.clear();
-    renderer.render(szene, kamera);
-    renderer.setRenderTarget(null);
-    renderer.clear();
-    renderer.render(postSzene, postKamera);
+    if (comic()) {
+      renderer.setRenderTarget(ziel);
+      renderer.clear();
+      renderer.render(szene, kamera);
+      renderer.setRenderTarget(null);
+      renderer.clear();
+      renderer.render(postSzene, postKamera);
+    } else {
+      renderer.setRenderTarget(null);
+      renderer.clear();
+      renderer.render(szene, kamera);
+    }
     zeichneEffekte(dt, breite, hoehe);
     hud();
   }
 
+  // ---------- Skin wechseln ----------
+  const SKIN_NAME = { klassisch: "KLASSISCH", sketch: "SKETCH" };
+  const skinKnopf = wurzel.querySelector("[data-skin]");
+  let skinWunsch = null;
+  function skinZeigen() {
+    wurzel.classList.toggle("skin-klassisch", !comic());
+    wurzel.classList.toggle("skin-sketch", comic());
+    skinKnopf.innerHTML = `<small>SKIN</small> ${SKIN_NAME[skin]} <span aria-hidden="true">⇄</span>`;
+  }
+  function skinAnwenden() {
+    skin = skinWunsch;
+    skinWunsch = null;
+    try {
+      localStorage.setItem("wuerfel-skin", skin);
+    } catch {
+      /* egal */
+    }
+    linien = [];
+    explosion = [];
+    glitch = 0;
+    boomWeg();
+    baueSteine();
+    skinZeigen();
+    breite = 0; // Hintergrund neu malen
+  }
+  skinKnopf.addEventListener("click", () => {
+    skinWunsch = (skinWunsch || skin) === "klassisch" ? "sketch" : "klassisch";
+    if (!animation && !schlange.length) skinAnwenden();
+    else skinKnopf.innerHTML = `<small>SKIN</small> ${SKIN_NAME[skinWunsch]} …`;
+  });
+
   baueSteine();
+  skinZeigen();
   groesse();
   knoepfe();
   hud();
@@ -860,7 +977,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
     breite = 0; // Hintergrund mit der Comic-Schrift neu malen
   }).catch(() => {});
   raf = requestAnimationFrame(bild);
-  if (import.meta.env?.DEV) window.__wuerfel = { modus: () => modus, istGeloest: () => istGeloest(steine), mischen: (txt) => mischen(txt.split(" ").map(ausNotation)) };
+  if (import.meta.env?.DEV) window.__wuerfel = { modus: () => modus, istGeloest: () => istGeloest(steine), mischen: (txt) => mischen(txt.split(" ").map((t) => ausNotation(t, N))), skin: () => skin };
 
   return {
     pause() {
@@ -882,7 +999,7 @@ export function start({ dom, stufe, status, nachricht, ergebnis }) {
       beobachter.disconnect();
       for (const m of materialien) m.dispose();
       postMat.dispose();
-      [geoKoerper, geoHuelle, geoAufkleber, postGeo].forEach((g) => g.dispose());
+      [geoKoerper, geoKoerperKlassisch, geoHuelle, geoAufkleber, geoAufkleberKlassisch, postGeo].forEach((g) => g.dispose());
       ziel.dispose();
       renderer.dispose();
       renderer.forceContextLoss?.();
